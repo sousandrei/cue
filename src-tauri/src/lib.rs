@@ -48,6 +48,7 @@ pub fn run() {
             commands::remove_song,
             commands::read_file_content,
             commands::initialize_setup,
+            commands::get_song_by_id,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

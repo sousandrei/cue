@@ -25,6 +25,7 @@ struct DownloadErrorPayload {
 
 #[derive(Clone, Serialize, Deserialize)]
 pub struct MetadataPayload {
+    pub id: String,
     pub url: String,
     pub title: String,
     pub artist: String,
@@ -35,6 +36,7 @@ pub struct MetadataPayload {
 
 #[derive(Deserialize)]
 struct YtDlpOutput {
+    id: Option<String>,
     url: Option<String>,
     title: Option<String>,
     artist: Option<String>,
@@ -88,6 +90,7 @@ pub async fn get_metadata<R: Runtime>(
         let video_url = yt_data.url.unwrap_or_else(|| url.clone());
 
         results.push(MetadataPayload {
+            id: yt_data.id.unwrap_or_else(|| "unknown".into()),
             url: video_url,
             title,
             artist,

@@ -100,7 +100,7 @@ export function useDownload() {
 
 	const startDownload = useCallback(
 		async (url: string, metadata: MetadataPayload) => {
-			const id = crypto.randomUUID();
+			const id = metadata.id;
 			const title = `${metadata.artist} - ${metadata.title}`;
 			const newDownload: DownloadJob = {
 				id,

@@ -6,6 +6,7 @@ export interface Config {
 }
 
 export interface MetadataPayload {
+	id: string;
 	url: string;
 	title: string;
 	artist: string;
@@ -64,9 +65,24 @@ export async function downloadAudio(
 	return await invoke("download_audio", { url, id, metadata });
 }
 
+export interface Song {
+	id: string;
+	title: string;
+	artist: string;
+	album?: string;
+	filename: string;
+}
+
 /**
  * Reads the content of a file from the given path.
  */
 export async function readFileContent(path: string): Promise<string> {
 	return await invoke<string>("read_file_content", { path });
+}
+
+/**
+ * Gets a song by its unique ID. Returns null if not found.
+ */
+export async function getSongById(id: string): Promise<Song | null> {
+	return await invoke<Song | null>("get_song_by_id", { id });
 }

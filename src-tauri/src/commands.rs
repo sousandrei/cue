@@ -136,6 +136,18 @@ pub async fn search_songs(
     db.search_songs(&query).await.map_err(|e| e.to_string())
 }
 
+#[command]
+pub async fn get_song_by_id(
+    state: State<'_, Mutex<Option<Database>>>,
+    id: String,
+) -> Result<Option<Song>, String> {
+    let db = {
+        let db_guard = state.lock().unwrap();
+        db_guard.clone().ok_or("Database not initialized")?
+    };
+    db.get_song_by_id(&id).await.map_err(|e| e.to_string())
+}
+
 // --- Download Commands ---
 
 #[command]

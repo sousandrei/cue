@@ -9,7 +9,7 @@ import { DownloadQueueStatus } from "@/components/DownloadQueueStatus";
 import { Header } from "@/components/Header";
 import { useDownload } from "@/hooks/useDownload";
 import { useMetadata } from "@/hooks/useMetadata";
-import { readFileContent } from "@/lib/tauri-commands";
+import { getSongById, readFileContent } from "@/lib/tauri-commands";
 
 export const Route = createFileRoute("/")({
 	component: Index,
@@ -29,14 +29,39 @@ function Index() {
 		try {
 			const metadataList = await fetchMetadata(currentUrl);
 			if (metadataList && metadataList.length > 0) {
+				const toQueue = [];
+				let skipCount = 0;
+
 				for (const metadata of metadataList) {
+					const isQueued = downloads.some((d) => d.id === metadata.id);
+					const existingSong = await getSongById(metadata.id);
+
+					if (isQueued || existingSong) {
+						skipCount++;
+						continue;
+					}
+					toQueue.push(metadata);
+				}
+
+				for (const metadata of toQueue) {
 					await startDownload(metadata.url, metadata);
 				}
-				toast.success(
-					metadataList.length > 1
-						? `Added ${metadataList.length} songs to queue`
-						: "Added to queue",
-				);
+
+				if (skipCount > 0) {
+					toast.info(
+						skipCount === metadataList.length
+							? "Already in library or queue"
+							: `${skipCount} items skipped (already in library)`,
+					);
+				}
+
+				if (toQueue.length > 0) {
+					toast.success(
+						toQueue.length > 1
+							? `Added ${toQueue.length} songs to queue`
+							: "Added to queue",
+					);
+				}
 			}
 		} catch (error) {
 			console.error("Failed to start download process:", error);
@@ -75,12 +100,20 @@ function Index() {
 			toast.success(`Importing ${urls.length} songs...`, { id: "bulk-import" });
 
 			let failCount = 0;
+			let skipCount = 0;
 
 			for (const bulkUrl of urls) {
 				try {
 					const metadataList = await fetchMetadata(bulkUrl);
 					if (metadataList && metadataList.length > 0) {
 						for (const metadata of metadataList) {
+							const isQueued = downloads.some((d) => d.id === metadata.id);
+							const existingSong = await getSongById(metadata.id);
+
+							if (isQueued || existingSong) {
+								skipCount++;
+								continue;
+							}
 							await startDownload(metadata.url, metadata);
 						}
 					} else {
@@ -90,6 +123,12 @@ function Index() {
 					failCount++;
 					console.error(`Failed to import ${bulkUrl}:`, e);
 				}
+			}
+
+			if (skipCount > 0) {
+				toast.info(`${skipCount} songs skipped (already in library)`, {
+					id: "bulk-import-skip",
+				});
 			}
 
 			if (failCount > 0) {
