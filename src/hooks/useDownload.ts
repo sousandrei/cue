@@ -12,8 +12,9 @@ export interface DownloadJob {
 	id: string;
 	title: string;
 	progress: number;
-	status: "pending" | "downloading" | "completed" | "error";
+	status: "queued" | "pending" | "downloading" | "completed" | "error";
 	url: string;
+	metadata: MetadataPayload;
 }
 
 export function useDownload() {
@@ -28,7 +29,7 @@ export function useDownload() {
 						return {
 							...d,
 							progress: payload.progress,
-							status: payload.status,
+							status: payload.status as DownloadJob["status"],
 						};
 					}
 					return d;
@@ -58,6 +59,42 @@ export function useDownload() {
 		};
 	}, []);
 
+	// Queue processor
+	useEffect(() => {
+		const isProcessing = downloads.some(
+			(d) => d.status === "pending" || d.status === "downloading",
+		);
+
+		if (!isProcessing) {
+			const nextJob = downloads.find((d) => d.status === "queued");
+			if (nextJob) {
+				// Start the next job
+				setDownloads((prev) =>
+					prev.map((d) =>
+						d.id === nextJob.id ? { ...d, status: "pending" } : d,
+					),
+				);
+
+				downloadAudio(nextJob.url, nextJob.id, nextJob.metadata).catch(
+					(err) => {
+						const error = err instanceof Error ? err.message : String(err);
+						setDownloads((prev) =>
+							prev.map((d) =>
+								d.id === nextJob.id
+									? {
+										...d,
+										status: "error",
+										title: `Failed to start: ${error}`,
+									}
+									: d,
+							),
+						);
+					},
+				);
+			}
+		}
+	}, [downloads]);
+
 	const startDownload = useCallback(
 		async (url: string, metadata: MetadataPayload) => {
 			const id = crypto.randomUUID();
@@ -66,25 +103,12 @@ export function useDownload() {
 				id,
 				title,
 				progress: 0,
-				status: "pending",
+				status: "queued",
 				url: url,
+				metadata,
 			};
 
-			setDownloads((prev) => [newDownload, ...prev]);
-
-			try {
-				await downloadAudio(url, id, metadata);
-			} catch (err) {
-				const error = err instanceof Error ? err.message : String(err);
-				console.error("Failed to start download:", error);
-				setDownloads((prev) =>
-					prev.map((d) =>
-						d.id === id
-							? { ...d, status: "error", title: `Failed to start: ${error}` }
-							: d,
-					),
-				);
-			}
+			setDownloads((prev) => [...prev, newDownload]);
 		},
 		[],
 	);

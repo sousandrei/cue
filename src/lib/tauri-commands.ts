@@ -36,3 +36,10 @@ export async function downloadAudio(
 ): Promise<void> {
 	return await invoke("download_audio", { url, id, metadata });
 }
+
+/**
+ * Reads the content of a file from the given path.
+ */
+export async function readFileContent(path: string): Promise<string> {
+	return await invoke<string>("read_file_content", { path });
+}

@@ -8,10 +8,24 @@ interface DownloadListProps {
 }
 
 export function DownloadList({ downloads, removeDownload }: DownloadListProps) {
+	const history = downloads.filter(
+		(d) => d.status === "completed" || d.status === "error",
+	);
+
 	return (
 		<div className="space-y-4 w-full">
+			<div className="flex items-center justify-between px-1">
+				<h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">
+					Recent Activity
+				</h2>
+				{history.length > 0 && (
+					<span className="text-xs text-muted-foreground/60">
+						{history.length} items
+					</span>
+				)}
+			</div>
 			<AnimatePresence mode="popLayout">
-				{downloads.map((download) => (
+				{history.map((download) => (
 					<DownloadItem
 						key={download.id}
 						download={download}
@@ -20,13 +34,13 @@ export function DownloadList({ downloads, removeDownload }: DownloadListProps) {
 				))}
 			</AnimatePresence>
 
-			{downloads.length === 0 && (
+			{history.length === 0 && (
 				<motion.div
 					initial={{ opacity: 0 }}
 					animate={{ opacity: 1 }}
-					className="text-center text-muted-foreground/40 text-sm py-12"
+					className="text-center text-muted-foreground/40 text-sm py-12 border-2 border-dashed border-muted-foreground/10 rounded-2xl"
 				>
-					No active downloads
+					No download history
 				</motion.div>
 			)}
 		</div>

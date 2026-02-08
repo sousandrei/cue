@@ -40,6 +40,7 @@ pub fn run() {
             commands::download_audio,
             commands::get_metadata,
             commands::remove_song,
+            commands::read_file_content,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

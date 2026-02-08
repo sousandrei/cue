@@ -83,3 +83,8 @@ pub async fn download_audio<R: Runtime>(
 ) -> Result<(), String> {
     download::download_audio(app, cfg, url, id, metadata).await
 }
+
+#[command]
+pub async fn read_file_content(path: String) -> Result<String, String> {
+    std::fs::read_to_string(path).map_err(|e| e.to_string())
+}
