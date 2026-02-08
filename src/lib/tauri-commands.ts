@@ -1,5 +1,10 @@
 import { invoke } from "@tauri-apps/api/core";
 
+export interface Config {
+	library_path: string;
+	yt_dlp_version: string;
+}
+
 export interface MetadataPayload {
 	title: string;
 	artist: string;
@@ -17,6 +22,27 @@ export interface DownloadProgressPayload {
 export interface DownloadErrorPayload {
 	id: string;
 	error: string;
+}
+
+/**
+ * Fetches the current configuration. Returns null if not initialized.
+ */
+export async function getConfig(): Promise<Config | null> {
+	return await invoke<Config | null>("get_config");
+}
+
+/**
+ * Updates the configuration.
+ */
+export async function updateConfig(newConfig: Config): Promise<void> {
+	return await invoke("update_config", { newConfig });
+}
+
+/**
+ * Initializes the application setup.
+ */
+export async function initializeSetup(libraryPath: string): Promise<void> {
+	return await invoke("initialize_setup", { libraryPath });
 }
 
 /**

@@ -13,20 +13,26 @@ pub fn run() {
         .setup(|app| {
             tauri::async_runtime::block_on(async {
                 let config = config::load_config().expect("failed to load config");
-                let db_path = format!("sqlite:{}/songs.db", config.library_path);
-                let pool = db::init_db(&db_path)
-                    .await
-                    .expect("failed to initialize database");
 
-                app.manage(Database { pool });
+                if let Some(cfg) = config {
+                    let db_path = format!("sqlite:{}/songs.db", cfg.library_path);
+                    let pool = db::init_db(&db_path)
+                        .await
+                        .expect("failed to initialize database");
 
-                // Initialize yt-dlp
-                if let Err(e) = download::ensure_ytdlp(app.handle(), &config.yt_dlp_version).await {
-                    eprintln!("Failed to ensure yt-dlp: {}", e);
+                    app.manage(Mutex::new(Some(Database { pool })));
+
+                    // Initialize yt-dlp
+                    if let Err(e) = download::ensure_ytdlp(app.handle(), &cfg.yt_dlp_version).await
+                    {
+                        eprintln!("Failed to ensure yt-dlp: {}", e);
+                    }
+
+                    app.manage(Mutex::new(Some(cfg)));
+                } else {
+                    app.manage(Mutex::new(None::<Database>));
+                    app.manage(Mutex::new(None::<config::Config>));
                 }
-
-                // Manage config state
-                app.manage(Mutex::new(config));
             });
             Ok(())
         })
@@ -41,6 +47,7 @@ pub fn run() {
             commands::get_metadata,
             commands::remove_song,
             commands::read_file_content,
+            commands::initialize_setup,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

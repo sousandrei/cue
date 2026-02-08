@@ -5,6 +5,7 @@ pub mod entities;
 
 use entities::{Playlist, Song};
 
+#[derive(Clone)]
 pub struct Database {
     pub pool: SqlitePool,
 }
@@ -13,8 +14,7 @@ pub async fn init_db(db_path: &str) -> anyhow::Result<SqlitePool> {
     let opts = SqliteConnectOptions::from_str(db_path)?.create_if_missing(true);
     let pool = SqlitePool::connect_with(opts).await?;
 
-    let mut conn = pool.acquire().await?;
-    sqlx::migrate!("./migrations").run(&mut conn).await?;
+    sqlx::migrate!("./migrations").run(&pool).await?;
 
     Ok(pool)
 }

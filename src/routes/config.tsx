@@ -1,9 +1,9 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { invoke } from "@tauri-apps/api/core";
-import { open } from "@tauri-apps/plugin-dialog";
-import { FolderOpen, Loader2, Save, Settings } from "lucide-react";
+import { Loader2, Save, Settings } from "lucide-react";
 import { useEffect, useState } from "react";
 
+import { FolderPicker } from "@/components/FolderPicker";
 import { Header } from "@/components/Header";
 import { Button } from "@/components/ui/button";
 import {
@@ -42,22 +42,6 @@ function ConfigPage() {
 		};
 		fetchConfig();
 	}, []);
-
-	const handleSelectDir = async () => {
-		if (!config) return;
-		try {
-			const selected = await open({
-				directory: true,
-				multiple: false,
-				defaultPath: config.library_path,
-			});
-			if (selected && typeof selected === "string") {
-				setConfig({ ...config, library_path: selected });
-			}
-		} catch (error) {
-			console.error("Failed to select directory:", error);
-		}
-	};
 
 	const handleSave = async () => {
 		if (!config) return;
@@ -106,30 +90,12 @@ function ConfigPage() {
 						</CardDescription>
 					</CardHeader>
 					<CardContent className="space-y-6">
-						<div className="space-y-2">
-							<label
-								htmlFor="library-path"
-								className="text-sm font-medium text-muted-foreground ml-1"
-							>
-								Music Library Path
-							</label>
-							<div className="flex gap-2">
-								<Input
-									id="library-path"
-									value={config.library_path}
-									readOnly
-									className="bg-background/50 border-border/50"
-								/>
-								<Button
-									variant="outline"
-									size="icon"
-									onClick={handleSelectDir}
-									className="shrink-0 border-border/50"
-								>
-									<FolderOpen className="w-4 h-4" />
-								</Button>
-							</div>
-						</div>
+						<FolderPicker
+							id="library-path"
+							label="Music Library Path"
+							value={config.library_path}
+							onChange={(val) => setConfig({ ...config, library_path: val })}
+						/>
 
 						<div className="space-y-2">
 							<label

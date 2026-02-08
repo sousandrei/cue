@@ -27,24 +27,14 @@ impl Default for Config {
     }
 }
 
-pub fn load_config() -> Result<Config, String> {
+pub fn load_config() -> Result<Option<Config>, String> {
     let config_dir = dirs::config_dir()
         .ok_or("Could not find config directory")?
         .join("synqed");
     let config_path = config_dir.join("config.yaml");
 
     if !config_path.exists() {
-        fs::create_dir_all(&config_dir)
-            .map_err(|e| format!("Failed to create config directory: {}", e))?;
-
-        let config = Config::default();
-        let config_str = serde_yaml::to_string(&config)
-            .map_err(|e| format!("Failed to serialize default config: {}", e))?;
-
-        fs::write(&config_path, config_str)
-            .map_err(|e| format!("Failed to write default config file: {}", e))?;
-
-        return Ok(config);
+        return Ok(None);
     }
 
     let config_content = fs::read_to_string(&config_path)
@@ -53,7 +43,7 @@ pub fn load_config() -> Result<Config, String> {
     let config: Config = serde_yaml::from_str(&config_content)
         .map_err(|e| format!("Failed to parse config file: {}", e))?;
 
-    Ok(config)
+    Ok(Some(config))
 }
 
 pub fn save_config(config: &Config) -> Result<(), String> {

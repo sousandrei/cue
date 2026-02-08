@@ -82,10 +82,10 @@ export function useDownload() {
 							prev.map((d) =>
 								d.id === nextJob.id
 									? {
-										...d,
-										status: "error",
-										title: `Failed to start: ${error}`,
-									}
+											...d,
+											status: "error",
+											title: `Failed to start: ${error}`,
+										}
 									: d,
 							),
 						);

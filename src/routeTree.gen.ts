@@ -9,11 +9,17 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as SetupRouteImport } from './routes/setup'
 import { Route as PlaylistsRouteImport } from './routes/playlists'
 import { Route as LibraryRouteImport } from './routes/library'
 import { Route as ConfigRouteImport } from './routes/config'
 import { Route as IndexRouteImport } from './routes/index'
 
+const SetupRoute = SetupRouteImport.update({
+  id: '/setup',
+  path: '/setup',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const PlaylistsRoute = PlaylistsRouteImport.update({
   id: '/playlists',
   path: '/playlists',
@@ -40,12 +46,14 @@ export interface FileRoutesByFullPath {
   '/config': typeof ConfigRoute
   '/library': typeof LibraryRoute
   '/playlists': typeof PlaylistsRoute
+  '/setup': typeof SetupRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/config': typeof ConfigRoute
   '/library': typeof LibraryRoute
   '/playlists': typeof PlaylistsRoute
+  '/setup': typeof SetupRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -53,13 +61,14 @@ export interface FileRoutesById {
   '/config': typeof ConfigRoute
   '/library': typeof LibraryRoute
   '/playlists': typeof PlaylistsRoute
+  '/setup': typeof SetupRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/config' | '/library' | '/playlists'
+  fullPaths: '/' | '/config' | '/library' | '/playlists' | '/setup'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/config' | '/library' | '/playlists'
-  id: '__root__' | '/' | '/config' | '/library' | '/playlists'
+  to: '/' | '/config' | '/library' | '/playlists' | '/setup'
+  id: '__root__' | '/' | '/config' | '/library' | '/playlists' | '/setup'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -67,10 +76,18 @@ export interface RootRouteChildren {
   ConfigRoute: typeof ConfigRoute
   LibraryRoute: typeof LibraryRoute
   PlaylistsRoute: typeof PlaylistsRoute
+  SetupRoute: typeof SetupRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/setup': {
+      id: '/setup'
+      path: '/setup'
+      fullPath: '/setup'
+      preLoaderRoute: typeof SetupRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/playlists': {
       id: '/playlists'
       path: '/playlists'
@@ -107,6 +124,7 @@ const rootRouteChildren: RootRouteChildren = {
   ConfigRoute: ConfigRoute,
   LibraryRoute: LibraryRoute,
   PlaylistsRoute: PlaylistsRoute,
+  SetupRoute: SetupRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

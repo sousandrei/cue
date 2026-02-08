@@ -45,11 +45,12 @@ struct YtDlpOutput {
 
 pub async fn get_metadata<R: Runtime>(
     app: AppHandle<R>,
-    cfg: State<'_, Mutex<Config>>,
+    cfg: State<'_, Mutex<Option<Config>>>,
     url: String,
 ) -> Result<MetadataPayload, String> {
     let target_version = {
-        let config = cfg.lock().unwrap();
+        let config_guard = cfg.lock().unwrap();
+        let config = config_guard.as_ref().ok_or("Config not initialized")?;
         config.yt_dlp_version.clone()
     };
 
@@ -58,7 +59,7 @@ pub async fn get_metadata<R: Runtime>(
         .map_err(|e| e.to_string())?;
 
     let output = Command::new(ytdlp_path)
-        .args(&["--dump-json", "--flat-playlist", &url])
+        .args(["--dump-json", "--flat-playlist", &url])
         .output()
         .await
         .map_err(|e| format!("Failed to execute yt-dlp: {}", e))?;
@@ -89,7 +90,7 @@ pub async fn get_metadata<R: Runtime>(
 
 pub async fn download_audio<R: Runtime>(
     app: AppHandle<R>,
-    cfg: State<'_, Mutex<Config>>,
+    cfg: State<'_, Mutex<Option<Config>>>,
     url: String,
     id: String,
     metadata: MetadataPayload,
@@ -99,7 +100,8 @@ pub async fn download_audio<R: Runtime>(
 
     // Clone config values needed for async task
     let (library_path, _version) = {
-        let config = cfg.lock().unwrap();
+        let config_guard = cfg.lock().unwrap();
+        let config = config_guard.as_ref().ok_or("Config not initialized")?;
         (config.library_path.clone(), config.yt_dlp_version.clone())
     };
 
@@ -277,7 +279,7 @@ async fn run_download<R: Runtime>(
     let output_template = format!("{}/%(title)s-%(id)s.%(ext)s", songs_dir.to_string_lossy());
 
     let mut cmd = Command::new(&ytdlp_path);
-    cmd.args(&[
+    cmd.args([
         "--restrict-filenames",
         "-x",
         "--audio-format",
@@ -337,7 +339,7 @@ async fn run_download<R: Runtime>(
 
     // Resolve final filename
     let output = Command::new(&ytdlp_path)
-        .args(&[
+        .args([
             "--restrict-filenames",
             "-o",
             &output_template,
@@ -357,9 +359,16 @@ async fn run_download<R: Runtime>(
     let final_path = path.with_extension("mp3");
 
     // Add to database
-    let db = app
-        .try_state::<crate::db::Database>()
+    let db_state = app
+        .try_state::<Mutex<Option<crate::db::Database>>>()
         .ok_or_else(|| anyhow::anyhow!("Database state not found"))?;
+
+    let db = {
+        let db_guard = db_state.lock().unwrap();
+        db_guard
+            .clone()
+            .ok_or_else(|| anyhow::anyhow!("Database not initialized"))?
+    };
 
     let song = crate::db::entities::Song {
         id: id.clone(),
