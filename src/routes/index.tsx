@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { AnimatePresence, motion } from "framer-motion";
-import { AlertCircle, ArrowRight, CheckCircle2, Music } from "lucide-react";
+import { AlertCircle, ArrowRight, CheckCircle2, Music, X } from "lucide-react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -50,7 +50,7 @@ function Index() {
 						? {
 							...d,
 							status: "downloading",
-							title: `Downloading: Song from ${d.url}`,
+							title: d.title,
 						}
 						: d,
 				),
@@ -167,12 +167,31 @@ function Index() {
 												</p>
 											</div>
 
-											<div className="text-xs font-mono font-medium text-muted-foreground">
-												{Math.round(download.progress)}%
-											</div>
+											{download.status === "completed" ||
+												download.status === "error" ? (
+												<Button
+													variant="ghost"
+													size="icon"
+													className="h-8 w-8 rounded-full"
+													onClick={() =>
+														setDownloads((prev) =>
+															prev.filter((d) => d.id !== download.id),
+														)
+													}
+												>
+													<X className="w-4 h-4" />
+												</Button>
+											) : (
+												<div className="text-xs font-mono font-medium text-muted-foreground">
+													{Math.round(download.progress)}%
+												</div>
+											)}
 										</div>
 
-										<Progress value={download.progress} className="h-1.5" />
+										{(download.status === "pending" ||
+											download.status === "downloading") && (
+												<Progress value={download.progress} className="h-1.5" />
+											)}
 									</CardContent>
 								</Card>
 							</motion.div>
