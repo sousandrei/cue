@@ -1,86 +1,36 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { AnimatePresence, motion } from "framer-motion";
-import { AlertCircle, ArrowRight, CheckCircle2, Music, X } from "lucide-react";
-import { useState, useEffect } from "react";
+import { AlertCircle, ArrowRight, CheckCircle2, Music, X, Loader2 } from "lucide-react";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Progress } from "@/components/ui/progress";
-import { invoke } from '@tauri-apps/api/core';
-import { listen } from '@tauri-apps/api/event';
+import { useDownload } from "@/hooks/useDownload";
+import { useMetadata } from "@/hooks/useMetadata";
 
 export const Route = createFileRoute("/")({
 	component: Index,
 });
 
-interface Download {
-	id: string;
-	title: string;
-	progress: number;
-	status: "pending" | "downloading" | "completed" | "error";
-	url: string;
-}
-
 function Index() {
 	const [url, setUrl] = useState("");
-	const [downloads, setDownloads] = useState<Download[]>([]);
-
-	useEffect(() => {
-		const unlistenProgress = listen('download://progress', (event: any) => {
-			const payload = event.payload as { id: string, progress: number, status: string };
-			setDownloads(prev => prev.map(d => {
-				if (d.id === payload.id) {
-					return {
-						...d,
-						progress: payload.progress,
-						status: payload.status as any,
-						// If completed, we might want to update title or something, but for now keep it simple
-					};
-				}
-				return d;
-			}));
-		});
-
-		const unlistenError = listen('download://error', (event: any) => {
-			const payload = event.payload as { id: string, error: string };
-			setDownloads(prev => prev.map(d => {
-				if (d.id === payload.id) {
-					return {
-						...d,
-						status: 'error',
-						title: `Error: ${payload.error}`
-					};
-				}
-				return d;
-			}));
-		});
-
-		return () => {
-			unlistenProgress.then(f => f());
-			unlistenError.then(f => f());
-		};
-	}, []);
+	const { downloads, startDownload, removeDownload } = useDownload();
+	const { fetchMetadata, loading } = useMetadata();
 
 	const handleAddDownload = async () => {
-		if (!url.trim()) return;
+		if (!url.trim() || loading) return;
 
-		const id = crypto.randomUUID();
-		const newDownload: Download = {
-			id,
-			title: `Downloading: ${url}`,
-			progress: 0,
-			status: "pending",
-			url: url,
-		};
-
-		setDownloads((prev) => [newDownload, ...prev]);
+		const currentUrl = url.trim();
 		setUrl("");
 
 		try {
-			await invoke("download_audio", { url: newDownload.url, id: newDownload.id });
+			const metadata = await fetchMetadata(currentUrl);
+			if (metadata) {
+				await startDownload(currentUrl, metadata);
+			}
 		} catch (error) {
-			console.error("Failed to start download:", error);
-			setDownloads(prev => prev.map(d => d.id === id ? { ...d, status: 'error', title: `Failed to start: ${error}` } : d));
+			console.error("Failed to start download process:", error);
 		}
 	};
 
@@ -114,15 +64,20 @@ function Index() {
 							value={url}
 							onChange={(e) => setUrl(e.target.value)}
 							onKeyDown={handleKeyDown}
+							disabled={loading}
 							autoFocus
 						/>
 						<Button
 							size="icon"
 							className="absolute right-2 h-10 w-10 rounded-full transition-transform hover:scale-105 active:scale-95"
 							onClick={handleAddDownload}
-							disabled={!url.trim()}
+							disabled={!url.trim() || loading}
 						>
-							<ArrowRight className="h-5 w-5" />
+							{loading ? (
+								<Loader2 className="h-5 w-5 animate-spin" />
+							) : (
+								<ArrowRight className="h-5 w-5" />
+							)}
 						</Button>
 					</div>
 				</div>
@@ -174,11 +129,7 @@ function Index() {
 													variant="ghost"
 													size="icon"
 													className="h-8 w-8 rounded-full"
-													onClick={() =>
-														setDownloads((prev) =>
-															prev.filter((d) => d.id !== download.id),
-														)
-													}
+													onClick={() => removeDownload(download.id)}
 												>
 													<X className="w-4 h-4" />
 												</Button>

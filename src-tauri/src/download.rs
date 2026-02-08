@@ -1,5 +1,5 @@
 use reqwest::Client;
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 use std::fs;
 use std::path::PathBuf;
 use std::process::Stdio;
@@ -23,12 +23,78 @@ struct DownloadErrorPayload {
     error: String,
 }
 
+#[derive(Clone, Serialize, Deserialize)]
+pub struct MetadataPayload {
+    pub title: String,
+    pub artist: String,
+    pub album: Option<String>,
+    pub thumbnail: Option<String>,
+    pub duration: Option<f64>,
+}
+
+#[derive(Deserialize)]
+struct YtDlpOutput {
+    title: Option<String>,
+    artist: Option<String>,
+    creator: Option<String>,
+    uploader: Option<String>,
+    album: Option<String>,
+    thumbnail: Option<String>,
+    duration: Option<f64>,
+}
+
+#[tauri::command]
+pub async fn get_metadata<R: Runtime>(
+    app: AppHandle<R>,
+    cfg: State<'_, Mutex<Config>>,
+    url: String,
+) -> Result<MetadataPayload, String> {
+    let target_version = {
+        let config = cfg.lock().unwrap();
+        config.yt_dlp_version.clone()
+    };
+
+    let ytdlp_path = ensure_ytdlp(&app, &target_version)
+        .await
+        .map_err(|e| e.to_string())?;
+
+    let output = Command::new(ytdlp_path)
+        .args(&["--dump-json", "--flat-playlist", &url])
+        .output()
+        .await
+        .map_err(|e| format!("Failed to execute yt-dlp: {}", e))?;
+
+    if !output.status.success() {
+        let stderr = String::from_utf8_lossy(&output.stderr);
+        return Err(format!("yt-dlp failed: {}", stderr));
+    }
+
+    let yt_data: YtDlpOutput = serde_json::from_slice(&output.stdout)
+        .map_err(|e| format!("Failed to parse yt-dlp output: {}", e))?;
+
+    let title = yt_data.title.unwrap_or_else(|| "Unknown Title".into());
+    let artist = yt_data
+        .artist
+        .or(yt_data.creator)
+        .or(yt_data.uploader)
+        .unwrap_or_else(|| "Unknown Artist".into());
+
+    Ok(MetadataPayload {
+        title,
+        artist,
+        album: yt_data.album,
+        thumbnail: yt_data.thumbnail,
+        duration: yt_data.duration,
+    })
+}
+
 #[tauri::command]
 pub async fn download_audio<R: Runtime>(
     app: AppHandle<R>,
     cfg: State<'_, Mutex<Config>>,
     url: String,
     id: String,
+    metadata: MetadataPayload,
 ) -> Result<(), String> {
     let app_handle = app.clone();
     let download_id = id.clone();
@@ -40,7 +106,15 @@ pub async fn download_audio<R: Runtime>(
     };
 
     tauri::async_runtime::spawn(async move {
-        match run_download(url, download_id.clone(), &app_handle, library_path).await {
+        match run_download(
+            url,
+            download_id.clone(),
+            &app_handle,
+            library_path,
+            metadata,
+        )
+        .await
+        {
             Ok(_) => {
                 let _ = app_handle.emit(
                     "download://progress",
@@ -177,6 +251,7 @@ async fn run_download<R: Runtime>(
     id: String,
     app: &AppHandle<R>,
     library_path: String,
+    metadata: MetadataPayload,
 ) -> Result<(), anyhow::Error> {
     // Resolve path directly assuming it exists
     let app_data_dir = app
@@ -199,7 +274,7 @@ async fn run_download<R: Runtime>(
 
     let output_template = format!("{}/%(title)s-%(id)s.%(ext)s", library_path);
 
-    let mut cmd = Command::new(ytdlp_path);
+    let mut cmd = Command::new(&ytdlp_path);
     cmd.args(&[
         "--restrict-filenames",
         "-x",
@@ -251,12 +326,50 @@ async fn run_download<R: Runtime>(
 
     let status = child.wait().await?;
 
-    if status.success() {
-        Ok(())
-    } else {
-        Err(anyhow::anyhow!(
+    if !status.success() {
+        return Err(anyhow::anyhow!(
             "Download failed with exit code: {:?}",
             status.code()
-        ))
+        ));
     }
+
+    // Resolve final filename
+    let output = Command::new(&ytdlp_path)
+        .args(&[
+            "--restrict-filenames",
+            "-o",
+            &output_template,
+            "--get-filename",
+            &url,
+        ])
+        .output()
+        .await?;
+
+    let filename = String::from_utf8_lossy(&output.stdout).trim().to_string();
+    if filename.is_empty() {
+        return Err(anyhow::anyhow!("Failed to resolve downloaded filename"));
+    }
+
+    // Force .mp3 extension
+    let path = PathBuf::from(filename);
+    let final_path = path.with_extension("mp3");
+
+    // Add to database
+    let db = app
+        .try_state::<crate::db::Database>()
+        .ok_or_else(|| anyhow::anyhow!("Database state not found"))?;
+
+    let song = crate::db::entities::Song {
+        id: id.clone(),
+        title: metadata.title,
+        artist: metadata.artist,
+        album: metadata.album,
+        file_path: final_path.to_string_lossy().to_string(),
+    };
+
+    db.add_song(&song)
+        .await
+        .map_err(|e| anyhow::anyhow!("Failed to add song to database: {}", e))?;
+
+    Ok(())
 }
