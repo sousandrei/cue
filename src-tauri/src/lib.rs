@@ -1,5 +1,6 @@
 mod config;
 mod db;
+mod download;
 
 use db::DbState;
 use std::sync::Mutex;
@@ -81,6 +82,29 @@ async fn get_playlists(state: State<'_, DbState>) -> Result<Vec<db::Playlist>, S
     db::get_playlists(&pool).await.map_err(|e| e.to_string())
 }
 
+#[tauri::command]
+async fn update_config(
+    state: State<'_, Mutex<config::Config>>,
+    app: tauri::AppHandle,
+    new_config: config::Config,
+) -> Result<(), String> {
+    // Save to file
+    config::save_config(&new_config).map_err(|e| e.to_string())?;
+
+    // Update state
+    {
+        let mut config = state.lock().unwrap();
+        *config = new_config.clone();
+    }
+
+    // Ensure yt-dlp version
+    download::ensure_ytdlp(&app, &new_config.yt_dlp_version)
+        .await
+        .map_err(|e| e.to_string())?;
+
+    Ok(())
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
@@ -91,9 +115,18 @@ pub fn run() {
                 let pool = db::init_db(&db_path)
                     .await
                     .expect("failed to initialize database");
+
                 app.manage(DbState {
                     pool: Mutex::new(pool),
                 });
+
+                // Initialize yt-dlp
+                if let Err(e) = download::ensure_ytdlp(app.handle(), &config.yt_dlp_version).await {
+                    eprintln!("Failed to ensure yt-dlp: {}", e);
+                }
+
+                // Manage config state
+                app.manage(Mutex::new(config));
             });
             Ok(())
         })
@@ -107,7 +140,9 @@ pub fn run() {
             create_playlist,
             add_song_to_playlist,
             remove_song_from_playlist,
-            get_playlists
+            get_playlists,
+            update_config,
+            download::download_audio
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

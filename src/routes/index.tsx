@@ -1,12 +1,13 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { AnimatePresence, motion } from "framer-motion";
 import { AlertCircle, ArrowRight, CheckCircle2, Music, X } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Progress } from "@/components/ui/progress";
 import { invoke } from '@tauri-apps/api/core';
+import { listen } from '@tauri-apps/api/event';
 
 export const Route = createFileRoute("/")({
 	component: Index,
@@ -24,12 +25,49 @@ function Index() {
 	const [url, setUrl] = useState("");
 	const [downloads, setDownloads] = useState<Download[]>([]);
 
-	const handleAddDownload = () => {
+	useEffect(() => {
+		const unlistenProgress = listen('download://progress', (event: any) => {
+			const payload = event.payload as { id: string, progress: number, status: string };
+			setDownloads(prev => prev.map(d => {
+				if (d.id === payload.id) {
+					return {
+						...d,
+						progress: payload.progress,
+						status: payload.status as any,
+						// If completed, we might want to update title or something, but for now keep it simple
+					};
+				}
+				return d;
+			}));
+		});
+
+		const unlistenError = listen('download://error', (event: any) => {
+			const payload = event.payload as { id: string, error: string };
+			setDownloads(prev => prev.map(d => {
+				if (d.id === payload.id) {
+					return {
+						...d,
+						status: 'error',
+						title: `Error: ${payload.error}`
+					};
+				}
+				return d;
+			}));
+		});
+
+		return () => {
+			unlistenProgress.then(f => f());
+			unlistenError.then(f => f());
+		};
+	}, []);
+
+	const handleAddDownload = async () => {
 		if (!url.trim()) return;
 
+		const id = crypto.randomUUID();
 		const newDownload: Download = {
-			id: crypto.randomUUID(),
-			title: `Fetching info for: ${url}`,
+			id,
+			title: `Downloading: ${url}`,
 			progress: 0,
 			status: "pending",
 			url: url,
@@ -38,62 +76,12 @@ function Index() {
 		setDownloads((prev) => [newDownload, ...prev]);
 		setUrl("");
 
-		// Simulate download process
-		simulateDownload(newDownload.id);
-	};
-
-	const simulateDownload = (id: string) => {
-		// Mock steps: pending -> downloading -> progress updates -> completed
-		setTimeout(() => {
-			setDownloads((prev) =>
-				prev.map((d) =>
-					d.id === id
-						? {
-							...d,
-							status: "downloading",
-							title: d.title,
-						}
-						: d,
-				),
-			);
-
-			let progress = 0;
-			const interval = setInterval(() => {
-				progress += Math.random() * 50;
-				if (progress >= 100) {
-					progress = 100;
-					clearInterval(interval);
-					setDownloads((prev) =>
-						prev.map((d) =>
-							d.id === id
-								? {
-									...d,
-									progress: 100,
-									status: "completed",
-									title: `Downloaded: Song from ${d.url}`,
-								}
-								: d,
-						),
-					);
-
-					invoke("add_song", {
-						song: {
-							id: "some_song_id",
-							title: "some_title",
-							artist: "some_artist",
-							album: "some_album",
-							file_path: "./src/some_file_path",
-						}
-					}).then(() => {
-						console.log("Song added successfully");
-					});
-				} else {
-					setDownloads((prev) =>
-						prev.map((d) => (d.id === id ? { ...d, progress } : d)),
-					);
-				}
-			}, 500);
-		}, 1000);
+		try {
+			await invoke("download_audio", { url: newDownload.url, id: newDownload.id });
+		} catch (error) {
+			console.error("Failed to start download:", error);
+			setDownloads(prev => prev.map(d => d.id === id ? { ...d, status: 'error', title: `Failed to start: ${error}` } : d));
+		}
 	};
 
 	const handleKeyDown = (e: React.KeyboardEvent) => {
