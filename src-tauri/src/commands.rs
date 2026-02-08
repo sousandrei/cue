@@ -4,7 +4,7 @@ use tauri::{command, AppHandle, Runtime, State};
 use crate::config::{self, Config};
 use crate::db::entities::Song;
 use crate::db::Database;
-use crate::download::{self, MetadataPayload};
+use crate::download::{self, DownloadJob, MetadataPayload};
 
 // --- Config Commands ---
 
@@ -166,18 +166,50 @@ pub async fn get_metadata<R: Runtime>(
 }
 
 #[command]
-pub async fn download_audio<R: Runtime>(
-    app: AppHandle<R>,
-    cfg: State<'_, Mutex<Option<Config>>>,
+pub async fn add_to_queue(
+    manager: State<'_, download::DownloadManager>,
     url: String,
     id: String,
     metadata: MetadataPayload,
 ) -> Result<(), String> {
-    {
-        let config_guard = cfg.lock().unwrap();
-        let _config = config_guard.as_ref().ok_or("Config not initialized")?;
-    }
-    download::download_audio(app, cfg, url, id, metadata).await
+    let job = DownloadJob {
+        id,
+        title: format!("{} - {}", metadata.artist, metadata.title),
+        progress: 0.0,
+        status: "queued".into(),
+        url,
+        metadata,
+    };
+    manager.add_job(job);
+    Ok(())
+}
+
+#[command]
+pub async fn get_downloads(
+    manager: State<'_, download::DownloadManager>,
+) -> Result<Vec<DownloadJob>, String> {
+    Ok(manager.get_jobs())
+}
+
+#[command]
+pub async fn remove_download(
+    manager: State<'_, download::DownloadManager>,
+    id: String,
+) -> Result<(), String> {
+    manager.remove_job(&id);
+    Ok(())
+}
+
+#[command]
+pub async fn clear_history(manager: State<'_, download::DownloadManager>) -> Result<(), String> {
+    manager.clear_history();
+    Ok(())
+}
+
+#[command]
+pub async fn clear_queue(manager: State<'_, download::DownloadManager>) -> Result<(), String> {
+    manager.clear_queue();
+    Ok(())
 }
 
 #[command]

@@ -21,7 +21,10 @@ pub fn run() {
                         .expect("failed to initialize database");
 
                     app.manage(Mutex::new(Some(Database { pool })));
-                    app.manage(download::ActiveProcesses(Mutex::new(std::collections::HashMap::new())));
+                    app.manage(download::ActiveProcesses(Mutex::new(
+                        std::collections::HashMap::new(),
+                    )));
+                    app.manage(download::DownloadManager::new(app.handle().clone()));
 
                     // Initialize yt-dlp
                     if let Err(e) = download::ensure_ytdlp(app.handle(), &cfg.yt_dlp_version).await
@@ -44,9 +47,13 @@ pub fn run() {
             commands::update_config,
             commands::get_songs,
             commands::search_songs,
-            commands::download_audio,
             commands::get_metadata,
             commands::remove_song,
+            commands::remove_download,
+            commands::add_to_queue,
+            commands::get_downloads,
+            commands::clear_history,
+            commands::clear_queue,
             commands::read_file_content,
             commands::initialize_setup,
             commands::get_song_by_id,

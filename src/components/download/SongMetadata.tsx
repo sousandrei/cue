@@ -18,7 +18,13 @@ export function SongMetadata({
 					{metadata.title}
 				</p>
 				<p className="text-[10px] text-muted-foreground truncate leading-snug mt-0.5">
-					{metadata.artist}
+					<span className="font-medium">{metadata.artist}</span>
+					{metadata.album && (
+						<>
+							<span className="mx-1 opacity-40">•</span>
+							<span>{metadata.album}</span>
+						</>
+					)}
 				</p>
 			</div>
 		);

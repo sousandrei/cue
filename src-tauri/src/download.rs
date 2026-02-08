@@ -7,7 +7,6 @@ use std::process::Stdio;
 use std::sync::Mutex;
 use tauri::{AppHandle, Emitter, Manager, Runtime, State};
 use tokio::io::{AsyncBufReadExt, AsyncWriteExt, BufReader};
-use tokio::process::Child;
 use tokio::process::Command;
 use tokio::sync::oneshot;
 
@@ -38,6 +37,149 @@ pub struct MetadataPayload {
     pub album: Option<String>,
     pub thumbnail: Option<String>,
     pub duration: Option<f64>,
+}
+
+#[derive(Clone, Serialize, Deserialize)]
+pub struct DownloadJob {
+    pub id: String,
+    pub title: String,
+    pub progress: f64,
+    pub status: String, // "queued" | "pending" | "downloading" | "completed" | "error"
+    pub url: String,
+    pub metadata: MetadataPayload,
+}
+
+pub struct DownloadManager {
+    pub jobs: Mutex<Vec<DownloadJob>>,
+    pub app: AppHandle,
+}
+
+impl DownloadManager {
+    pub fn new(app: AppHandle) -> Self {
+        Self {
+            jobs: Mutex::new(Vec::new()),
+            app,
+        }
+    }
+
+    pub fn add_job(&self, job: DownloadJob) {
+        {
+            let mut jobs = self.jobs.lock().unwrap();
+            jobs.push(job);
+        }
+        self.emit_update();
+        self.trigger_processing();
+    }
+
+    pub fn get_jobs(&self) -> Vec<DownloadJob> {
+        let jobs = self.jobs.lock().unwrap();
+        jobs.clone()
+    }
+
+    pub fn remove_job(&self, id: &str) {
+        {
+            let mut jobs = self.jobs.lock().unwrap();
+            jobs.retain(|j| j.id != id);
+        }
+        self.emit_update();
+    }
+
+    pub fn clear_history(&self) {
+        {
+            let mut jobs = self.jobs.lock().unwrap();
+            jobs.retain(|j| j.status != "completed" && j.status != "error");
+        }
+        self.emit_update();
+    }
+
+    pub fn clear_queue(&self) {
+        {
+            let mut jobs = self.jobs.lock().unwrap();
+            jobs.retain(|j| j.status != "queued");
+        }
+        self.emit_update();
+    }
+
+    fn emit_update(&self) {
+        let jobs = self.jobs.lock().unwrap();
+        let _ = self.app.emit("download://list-updated", jobs.clone());
+    }
+
+    pub fn update_job_status(&self, id: &str, status: &str, progress: f64) {
+        {
+            let mut jobs = self.jobs.lock().unwrap();
+            if let Some(job) = jobs.iter_mut().find(|j| j.id == id) {
+                job.status = status.to_string();
+                job.progress = progress;
+            }
+        }
+        self.emit_update();
+    }
+
+    pub fn trigger_processing(&self) {
+        let app = self.app.clone();
+        tauri::async_runtime::spawn(async move {
+            let manager = app.state::<DownloadManager>();
+
+            let next_job_info = {
+                let jobs_guard = manager.jobs.lock().unwrap();
+                let is_processing = jobs_guard
+                    .iter()
+                    .any(|j| j.status == "pending" || j.status == "downloading");
+
+                if is_processing {
+                    return;
+                }
+
+                jobs_guard
+                    .iter()
+                    .find(|j| j.status == "queued")
+                    .map(|j| (j.id.clone(), j.url.clone(), j.metadata.clone()))
+            };
+
+            if let Some((id, url, metadata)) = next_job_info {
+                // Set to pending
+                {
+                    let mut jobs_guard = manager.jobs.lock().unwrap();
+                    if let Some(job) = jobs_guard.iter_mut().find(|j| j.id == id) {
+                        job.status = "pending".into();
+                    }
+                }
+                manager.emit_update();
+
+                // Start download
+                let config_state = app.state::<Mutex<Option<Config>>>();
+                let library_path = {
+                    let config_guard = config_state.lock().unwrap();
+                    config_guard.as_ref().unwrap().library_path.clone()
+                };
+
+                let result =
+                    run_download(url, id.clone(), app.clone(), library_path, metadata).await;
+
+                if let Err(e) = result {
+                    let error_msg = e.to_string();
+                    let is_cancelled = error_msg == "Download cancelled";
+
+                    manager.update_job_status(&id, "error", 0.0);
+
+                    let _ = app.emit(
+                        "download://error",
+                        DownloadErrorPayload {
+                            id: id.clone(),
+                            error: error_msg,
+                            is_cancelled,
+                        },
+                    );
+                } else {
+                    manager.update_job_status(&id, "completed", 100.0);
+                }
+
+                // Process next
+                manager.trigger_processing();
+            }
+        });
+    }
 }
 
 #[derive(Deserialize)]
@@ -111,71 +253,6 @@ pub async fn get_metadata<R: Runtime>(
     }
 
     Ok(results)
-}
-
-pub async fn download_audio<R: Runtime>(
-    app: AppHandle<R>,
-    cfg: State<'_, Mutex<Option<Config>>>,
-    url: String,
-    id: String,
-    metadata: MetadataPayload,
-) -> Result<(), String> {
-    let app_handle = app.clone();
-    let download_id = id.clone();
-
-    // Clone config values needed for async task
-    let (library_path, _version) = {
-        let config_guard = cfg.lock().unwrap();
-        let config = config_guard.as_ref().ok_or("Config not initialized")?;
-        (config.library_path.clone(), config.yt_dlp_version.clone())
-    };
-
-    tauri::async_runtime::spawn(async move {
-        match run_download(
-            url,
-            download_id.clone(),
-            app_handle.clone(),
-            library_path,
-            metadata,
-        )
-        .await
-        {
-            Ok(_) => {
-                let _ = app_handle.emit(
-                    "download://progress",
-                    DownloadProgressPayload {
-                        id: download_id,
-                        progress: 100.0,
-                        status: "completed".into(),
-                    },
-                );
-            }
-            Err(e) => {
-                let error_msg = e.to_string();
-                let is_cancelled = error_msg == "Download cancelled";
-                
-                let _ = app_handle.emit(
-                    "download://progress",
-                    DownloadProgressPayload {
-                        id: download_id.clone(),
-                        progress: 0.0,
-                        status: "error".into(),
-                    },
-                );
-
-                let _ = app_handle.emit(
-                    "download://error",
-                    DownloadErrorPayload {
-                        id: download_id,
-                        error: error_msg,
-                        is_cancelled,
-                    },
-                );
-            }
-        }
-    });
-
-    Ok(())
 }
 
 pub async fn ensure_ytdlp<R: Runtime>(
@@ -357,14 +434,25 @@ async fn run_download<R: Runtime>(
                         if let Some(rest) = line.strip_prefix("download-progress:") {
                             if let Some(percentage_str) = rest.strip_suffix('%') {
                                 if let Ok(percentage) = percentage_str.trim().parse::<f64>() {
+                                    let progress_payload = DownloadProgressPayload {
+                                        id: id.clone(),
+                                        progress: percentage,
+                                        status: "downloading".into(),
+                                    };
                                     app.emit(
                                         "download://progress",
-                                        DownloadProgressPayload {
-                                            id: id.clone(),
-                                            progress: percentage,
-                                            status: "downloading".into(),
-                                        },
+                                        progress_payload.clone(),
                                     )?;
+
+                                    // Update manager state
+                                    let manager = app.state::<DownloadManager>();
+                                    {
+                                        let mut jobs = manager.jobs.lock().unwrap();
+                                        if let Some(job) = jobs.iter_mut().find(|j| j.id == id) {
+                                            job.progress = percentage;
+                                            job.status = "downloading".into();
+                                        }
+                                    }
                                 }
                             }
                         }

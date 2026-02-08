@@ -15,6 +15,15 @@ export interface MetadataPayload {
 	duration: number | null;
 }
 
+export interface DownloadJob {
+	id: string;
+	title: string;
+	progress: number;
+	status: "queued" | "pending" | "downloading" | "completed" | "error";
+	url: string;
+	metadata: MetadataPayload;
+}
+
 export interface DownloadProgressPayload {
 	id: string;
 	progress: number;
@@ -55,17 +64,6 @@ export async function getMetadata(url: string): Promise<MetadataPayload[]> {
 	return await invoke<MetadataPayload[]>("get_metadata", { url });
 }
 
-/**
- * Starts an audio download job.
- */
-export async function downloadAudio(
-	url: string,
-	id: string,
-	metadata: MetadataPayload,
-): Promise<void> {
-	return await invoke("download_audio", { url, id, metadata });
-}
-
 export interface Song {
 	id: string;
 	title: string;
@@ -93,4 +91,43 @@ export async function getSongById(id: string): Promise<Song | null> {
  */
 export async function cancelDownload(id: string): Promise<void> {
 	return await invoke("cancel_download", { id });
+}
+
+/**
+ * Adds a new job to the download queue.
+ */
+export async function addToQueue(
+	url: string,
+	id: string,
+	metadata: MetadataPayload,
+): Promise<void> {
+	return await invoke("add_to_queue", { url, id, metadata });
+}
+
+/**
+ * Gets the current list of download jobs.
+ */
+export async function getDownloads(): Promise<DownloadJob[]> {
+	return await invoke("get_downloads");
+}
+
+/**
+ * Removes a download job.
+ */
+export async function removeDownload(id: string): Promise<void> {
+	return await invoke("remove_download", { id });
+}
+
+/**
+ * Clears completed/error downloads.
+ */
+export async function clearHistory(): Promise<void> {
+	return await invoke("clear_history");
+}
+
+/**
+ * Clears the queued downloads.
+ */
+export async function clearQueue(): Promise<void> {
+	return await invoke("clear_queue");
 }
