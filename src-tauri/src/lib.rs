@@ -31,7 +31,9 @@ pub fn run() {
             Ok(())
         })
         .plugin(tauri_plugin_opener::init())
+        .plugin(tauri_plugin_dialog::init())
         .invoke_handler(tauri::generate_handler![
+            commands::get_config,
             commands::update_config,
             commands::get_songs,
             commands::search_songs,

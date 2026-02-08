@@ -1,7 +1,5 @@
-SELECT 
-    id, 
-    title, 
-    artist, 
-    album, 
-    file_path
+    title,
+    artist,
+    album,
+    filename
 FROM songs

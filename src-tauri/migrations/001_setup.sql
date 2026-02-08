@@ -3,7 +3,7 @@ CREATE TABLE IF NOT EXISTS songs (
     title TEXT NOT NULL,
     artist TEXT NOT NULL,
     album TEXT,
-    file_path TEXT NOT NULL
+    filename TEXT NOT NULL
 );
 
 CREATE TABLE IF NOT EXISTS playlists (

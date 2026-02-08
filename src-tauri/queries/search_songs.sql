@@ -3,7 +3,7 @@ SELECT
     title, 
     artist, 
     album, 
-    file_path
+    filename
 FROM songs 
 WHERE 
     title LIKE ?1 

@@ -26,7 +26,7 @@ impl Database {
             .bind(&song.title)
             .bind(&song.artist)
             .bind(&song.album)
-            .bind(&song.file_path)
+            .bind(&song.filename)
             .execute(&self.pool)
             .await?;
         Ok(())
@@ -53,7 +53,7 @@ impl Database {
             .bind(&song.title)
             .bind(&song.artist)
             .bind(&song.album)
-            .bind(&song.file_path)
+            .bind(&song.filename)
             .bind(&song.id)
             .execute(&self.pool)
             .await?;
@@ -138,7 +138,7 @@ mod tests {
             title: "Test Song".to_string(),
             artist: "Test Artist".to_string(),
             album: Some("Test Album".to_string()),
-            file_path: "/path/to/test.mp3".to_string(),
+            filename: "test.mp3".to_string(),
         };
 
         db.add_song(&song).await.unwrap();
@@ -155,14 +155,14 @@ mod tests {
             title: "Apple".to_string(),
             artist: "Artist A".to_string(),
             album: None,
-            file_path: "path1".to_string(),
+            filename: "path1".to_string(),
         };
         let song2 = Song {
             id: "2".to_string(),
             title: "Banana".to_string(),
             artist: "Artist B".to_string(),
             album: None,
-            file_path: "path2".to_string(),
+            filename: "path2".to_string(),
         };
 
         db.add_song(&song1).await.unwrap();

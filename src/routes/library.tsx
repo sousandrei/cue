@@ -13,7 +13,7 @@ interface Song {
 	title: string;
 	artist: string;
 	album?: string;
-	file_path: string;
+	filename: string;
 }
 
 export const Route = createFileRoute("/library")({

@@ -6,7 +6,7 @@ pub struct Song {
     pub title: String,
     pub artist: String,
     pub album: Option<String>,
-    pub file_path: String,
+    pub filename: String,
 }
 
 #[derive(Debug, Serialize, Deserialize, sqlx::FromRow)]

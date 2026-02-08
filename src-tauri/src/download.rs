@@ -362,7 +362,11 @@ async fn run_download<R: Runtime>(
         title: metadata.title,
         artist: metadata.artist,
         album: metadata.album,
-        file_path: final_path.to_string_lossy().to_string(),
+        filename: final_path
+            .file_name()
+            .unwrap()
+            .to_string_lossy()
+            .to_string(),
     };
 
     db.add_song(&song)

@@ -9,6 +9,12 @@ use crate::download::{self, MetadataPayload};
 // --- Config Commands ---
 
 #[command]
+pub async fn get_config(state: State<'_, Mutex<Config>>) -> Result<Config, String> {
+    let config = state.lock().unwrap();
+    Ok(config.clone())
+}
+
+#[command]
 pub async fn update_config(
     state: State<'_, Mutex<Config>>,
     app: AppHandle,
@@ -20,16 +26,27 @@ pub async fn update_config(
 // --- DB Commands ---
 
 #[command]
-pub async fn remove_song(state: State<'_, Database>, id: String) -> Result<(), String> {
+pub async fn remove_song(
+    state: State<'_, Database>,
+    cfg: State<'_, Mutex<Config>>,
+    id: String,
+) -> Result<(), String> {
     let song = state
         .get_song_by_id(&id)
         .await
         .map_err(|e| e.to_string())?
         .ok_or_else(|| "Song not found".to_string())?;
 
+    let library_path = {
+        let config = cfg.lock().unwrap();
+        config.library_path.clone()
+    };
+
+    let file_path = std::path::Path::new(&library_path).join(&song.filename);
+
     // Delete the file from the filesystem
-    if let Err(e) = std::fs::remove_file(&song.file_path) {
-        eprintln!("Failed to delete file {}: {}", song.file_path, e);
+    if let Err(e) = std::fs::remove_file(&file_path) {
+        eprintln!("Failed to delete file {}: {}", file_path.display(), e);
     }
 
     state.remove_song(&id).await.map_err(|e| e.to_string())
