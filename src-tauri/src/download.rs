@@ -8,6 +8,8 @@ use tauri::{AppHandle, Emitter, Manager, Runtime, State};
 use tokio::io::{AsyncBufReadExt, AsyncWriteExt, BufReader};
 use tokio::process::Command;
 
+use crate::config::Config;
+
 #[derive(Clone, Serialize)]
 struct DownloadProgressPayload {
     id: String,
@@ -24,7 +26,7 @@ struct DownloadErrorPayload {
 #[tauri::command]
 pub async fn download_audio<R: Runtime>(
     app: AppHandle<R>,
-    config_state: State<'_, Mutex<crate::config::Config>>,
+    cfg: State<'_, Mutex<Config>>,
     url: String,
     id: String,
 ) -> Result<(), String> {
@@ -33,7 +35,7 @@ pub async fn download_audio<R: Runtime>(
 
     // Clone config values needed for async task
     let (library_path, _version) = {
-        let config = config_state.lock().unwrap();
+        let config = cfg.lock().unwrap();
         (config.library_path.clone(), config.yt_dlp_version.clone())
     };
 
