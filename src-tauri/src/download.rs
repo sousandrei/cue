@@ -270,7 +270,11 @@ async fn run_download<R: Runtime>(
         ));
     }
 
-    let output_template = format!("{}/%(title)s-%(id)s.%(ext)s", library_path);
+    let songs_dir = std::path::Path::new(&library_path).join("Songs");
+    if !songs_dir.exists() {
+        fs::create_dir_all(&songs_dir)?;
+    }
+    let output_template = format!("{}/%(title)s-%(id)s.%(ext)s", songs_dir.to_string_lossy());
 
     let mut cmd = Command::new(&ytdlp_path);
     cmd.args(&[

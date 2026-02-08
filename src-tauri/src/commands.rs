@@ -42,7 +42,7 @@ pub async fn remove_song(
         config.library_path.clone()
     };
 
-    let file_path = std::path::Path::new(&library_path).join(&song.filename);
+    let file_path = std::path::Path::new(&library_path).join("Songs").join(&song.filename);
 
     // Delete the file from the filesystem
     if let Err(e) = std::fs::remove_file(&file_path) {

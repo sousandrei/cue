@@ -1,4 +1,2 @@
-INSERT INTO playlists 
-    (id, name) 
-VALUES 
-    (?2, ?1)
+INSERT INTO playlists (id, name) 
+VALUES (?2, ?1)
