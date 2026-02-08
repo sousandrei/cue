@@ -24,6 +24,7 @@ export interface DownloadProgressPayload {
 export interface DownloadErrorPayload {
 	id: string;
 	error: string;
+	is_cancelled: boolean;
 }
 
 /**
@@ -85,4 +86,11 @@ export async function readFileContent(path: string): Promise<string> {
  */
 export async function getSongById(id: string): Promise<Song | null> {
 	return await invoke<Song | null>("get_song_by_id", { id });
+}
+
+/**
+ * Cancels an ongoing download job.
+ */
+export async function cancelDownload(id: string): Promise<void> {
+	return await invoke("cancel_download", { id });
 }

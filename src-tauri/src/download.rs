@@ -1,14 +1,19 @@
 use reqwest::Client;
 use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
 use std::fs;
 use std::path::PathBuf;
 use std::process::Stdio;
 use std::sync::Mutex;
 use tauri::{AppHandle, Emitter, Manager, Runtime, State};
 use tokio::io::{AsyncBufReadExt, AsyncWriteExt, BufReader};
+use tokio::process::Child;
 use tokio::process::Command;
+use tokio::sync::oneshot;
 
 use crate::config::Config;
+
+pub struct ActiveProcesses(pub Mutex<HashMap<String, oneshot::Sender<()>>>);
 
 #[derive(Clone, Serialize)]
 struct DownloadProgressPayload {
@@ -21,6 +26,7 @@ struct DownloadProgressPayload {
 struct DownloadErrorPayload {
     id: String,
     error: String,
+    is_cancelled: bool,
 }
 
 #[derive(Clone, Serialize, Deserialize)]
@@ -128,7 +134,7 @@ pub async fn download_audio<R: Runtime>(
         match run_download(
             url,
             download_id.clone(),
-            &app_handle,
+            app_handle.clone(),
             library_path,
             metadata,
         )
@@ -145,6 +151,9 @@ pub async fn download_audio<R: Runtime>(
                 );
             }
             Err(e) => {
+                let error_msg = e.to_string();
+                let is_cancelled = error_msg == "Download cancelled";
+                
                 let _ = app_handle.emit(
                     "download://progress",
                     DownloadProgressPayload {
@@ -158,7 +167,8 @@ pub async fn download_audio<R: Runtime>(
                     "download://error",
                     DownloadErrorPayload {
                         id: download_id,
-                        error: e.to_string(),
+                        error: error_msg,
+                        is_cancelled,
                     },
                 );
             }
@@ -268,7 +278,7 @@ pub async fn ensure_ytdlp<R: Runtime>(
 async fn run_download<R: Runtime>(
     url: String,
     id: String,
-    app: &AppHandle<R>,
+    app: AppHandle<R>,
     library_path: String,
     metadata: MetadataPayload,
 ) -> Result<(), anyhow::Error> {
@@ -322,6 +332,15 @@ async fn run_download<R: Runtime>(
 
     let mut child = cmd.stdout(Stdio::piped()).stderr(Stdio::piped()).spawn()?;
 
+    let (cancel_tx, mut cancel_rx) = oneshot::channel();
+
+    // Register active process
+    {
+        let processes_state = app.state::<ActiveProcesses>();
+        let mut processes = processes_state.0.lock().unwrap();
+        processes.insert(id.clone(), cancel_tx);
+    }
+
     let stdout = child
         .stdout
         .take()
@@ -329,25 +348,47 @@ async fn run_download<R: Runtime>(
 
     let mut reader = BufReader::new(stdout).lines();
 
-    while let Some(line) = reader.next_line().await? {
-        let line = line.trim();
-        if let Some(rest) = line.strip_prefix("download-progress:") {
-            if let Some(percentage_str) = rest.strip_suffix('%') {
-                if let Ok(percentage) = percentage_str.trim().parse::<f64>() {
-                    app.emit(
-                        "download://progress",
-                        DownloadProgressPayload {
-                            id: id.clone(),
-                            progress: percentage,
-                            status: "downloading".into(),
-                        },
-                    )?;
+    let status = loop {
+        tokio::select! {
+            line_res = reader.next_line() => {
+                match line_res {
+                    Ok(Some(line)) => {
+                        let line = line.trim();
+                        if let Some(rest) = line.strip_prefix("download-progress:") {
+                            if let Some(percentage_str) = rest.strip_suffix('%') {
+                                if let Ok(percentage) = percentage_str.trim().parse::<f64>() {
+                                    app.emit(
+                                        "download://progress",
+                                        DownloadProgressPayload {
+                                            id: id.clone(),
+                                            progress: percentage,
+                                            status: "downloading".into(),
+                                        },
+                                    )?;
+                                }
+                            }
+                        }
+                    }
+                    Ok(None) => {
+                        // Stdout closed, wait for child
+                        break child.wait().await?;
+                    }
+                    Err(e) => return Err(e.into()),
                 }
             }
+            _ = &mut cancel_rx => {
+                child.kill().await?;
+                return Err(anyhow::anyhow!("Download cancelled"));
+            }
         }
-    }
+    };
 
-    let status = child.wait().await?;
+    // Unregister
+    {
+        let processes_state = app.state::<ActiveProcesses>();
+        let mut processes = processes_state.0.lock().unwrap();
+        processes.remove(&id);
+    }
 
     if !status.success() {
         return Err(anyhow::anyhow!(

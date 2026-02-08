@@ -3,6 +3,7 @@ import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 
 import {
+	cancelDownload,
 	type DownloadErrorPayload,
 	type DownloadProgressPayload,
 	downloadAudio,
@@ -40,14 +41,18 @@ export function useDownload() {
 
 		const unlistenError = listen("download://error", (event) => {
 			const payload = event.payload as DownloadErrorPayload;
-			toast.error(`Download failed: ${payload.error}`);
+			if (!payload.is_cancelled) {
+				toast.error(`Download failed: ${payload.error}`);
+			}
 			setDownloads((prev) =>
 				prev.map((d) => {
 					if (d.id === payload.id) {
 						return {
 							...d,
 							status: "error",
-							title: `Error: ${payload.error}`,
+							title: payload.is_cancelled
+								? "Download cancelled"
+								: `Error: ${payload.error}`,
 						};
 					}
 					return d;
@@ -116,9 +121,18 @@ export function useDownload() {
 		[],
 	);
 
-	const removeDownload = useCallback((id: string) => {
-		setDownloads((prev) => prev.filter((d) => d.id !== id));
-	}, []);
+	const removeDownload = useCallback(
+		(id: string) => {
+			const job = downloads.find((d) => d.id === id);
+			if (job && (job.status === "downloading" || job.status === "pending")) {
+				cancelDownload(id).catch((err) =>
+					console.error("Failed to cancel download:", err),
+				);
+			}
+			setDownloads((prev) => prev.filter((d) => d.id !== id));
+		},
+		[downloads],
+	);
 
 	const clearHistory = useCallback(() => {
 		setDownloads((prev) =>

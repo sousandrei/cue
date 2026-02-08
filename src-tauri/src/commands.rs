@@ -181,6 +181,18 @@ pub async fn download_audio<R: Runtime>(
 }
 
 #[command]
+pub async fn cancel_download(
+    state: State<'_, download::ActiveProcesses>,
+    id: String,
+) -> Result<(), String> {
+    let mut processes = state.0.lock().unwrap();
+    if let Some(cancel_tx) = processes.remove(&id) {
+        let _ = cancel_tx.send(());
+    }
+    Ok(())
+}
+
+#[command]
 pub async fn read_file_content(path: String) -> Result<String, String> {
     std::fs::read_to_string(path).map_err(|e| e.to_string())
 }

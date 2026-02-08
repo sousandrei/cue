@@ -21,6 +21,7 @@ pub fn run() {
                         .expect("failed to initialize database");
 
                     app.manage(Mutex::new(Some(Database { pool })));
+                    app.manage(download::ActiveProcesses(Mutex::new(std::collections::HashMap::new())));
 
                     // Initialize yt-dlp
                     if let Err(e) = download::ensure_ytdlp(app.handle(), &cfg.yt_dlp_version).await
@@ -49,6 +50,7 @@ pub fn run() {
             commands::read_file_content,
             commands::initialize_setup,
             commands::get_song_by_id,
+            commands::cancel_download,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
