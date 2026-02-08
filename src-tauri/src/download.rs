@@ -25,6 +25,7 @@ struct DownloadErrorPayload {
 
 #[derive(Clone, Serialize, Deserialize)]
 pub struct MetadataPayload {
+    pub url: String,
     pub title: String,
     pub artist: String,
     pub album: Option<String>,
@@ -34,6 +35,7 @@ pub struct MetadataPayload {
 
 #[derive(Deserialize)]
 struct YtDlpOutput {
+    url: Option<String>,
     title: Option<String>,
     artist: Option<String>,
     creator: Option<String>,
@@ -47,7 +49,7 @@ pub async fn get_metadata<R: Runtime>(
     app: AppHandle<R>,
     cfg: State<'_, Mutex<Option<Config>>>,
     url: String,
-) -> Result<MetadataPayload, String> {
+) -> Result<Vec<MetadataPayload>, String> {
     let target_version = {
         let config_guard = cfg.lock().unwrap();
         let config = config_guard.as_ref().ok_or("Config not initialized")?;
@@ -69,23 +71,37 @@ pub async fn get_metadata<R: Runtime>(
         return Err(format!("yt-dlp failed: {}", stderr));
     }
 
-    let yt_data: YtDlpOutput = serde_json::from_slice(&output.stdout)
-        .map_err(|e| format!("Failed to parse yt-dlp output: {}", e))?;
+    let stream = serde_json::Deserializer::from_slice(&output.stdout).into_iter::<YtDlpOutput>();
+    let mut results = Vec::new();
 
-    let title = yt_data.title.unwrap_or_else(|| "Unknown Title".into());
-    let artist = yt_data
-        .artist
-        .or(yt_data.creator)
-        .or(yt_data.uploader)
-        .unwrap_or_else(|| "Unknown Artist".into());
+    for entry in stream {
+        let yt_data = entry.map_err(|e| format!("Failed to parse yt-dlp output: {}", e))?;
 
-    Ok(MetadataPayload {
-        title,
-        artist,
-        album: yt_data.album,
-        thumbnail: yt_data.thumbnail,
-        duration: yt_data.duration,
-    })
+        let title = yt_data.title.unwrap_or_else(|| "Unknown Title".into());
+        let artist = yt_data
+            .artist
+            .or(yt_data.creator)
+            .or(yt_data.uploader)
+            .unwrap_or_else(|| "Unknown Artist".into());
+
+        // Use individual video URL if available, otherwise fallback to the provided URL
+        let video_url = yt_data.url.unwrap_or_else(|| url.clone());
+
+        results.push(MetadataPayload {
+            url: video_url,
+            title,
+            artist,
+            album: yt_data.album,
+            thumbnail: yt_data.thumbnail,
+            duration: yt_data.duration,
+        });
+    }
+
+    if results.is_empty() {
+        return Err("No metadata found".into());
+    }
+
+    Ok(results)
 }
 
 pub async fn download_audio<R: Runtime>(

@@ -27,10 +27,16 @@ function Index() {
 		setUrl("");
 
 		try {
-			const metadata = await fetchMetadata(currentUrl);
-			if (metadata) {
-				await startDownload(currentUrl, metadata);
-				toast.success("Added to queue");
+			const metadataList = await fetchMetadata(currentUrl);
+			if (metadataList && metadataList.length > 0) {
+				for (const metadata of metadataList) {
+					await startDownload(metadata.url, metadata);
+				}
+				toast.success(
+					metadataList.length > 1
+						? `Added ${metadataList.length} songs to queue`
+						: "Added to queue",
+				);
 			}
 		} catch (error) {
 			console.error("Failed to start download process:", error);
@@ -72,9 +78,11 @@ function Index() {
 
 			for (const bulkUrl of urls) {
 				try {
-					const metadata = await fetchMetadata(bulkUrl);
-					if (metadata) {
-						await startDownload(bulkUrl, metadata);
+					const metadataList = await fetchMetadata(bulkUrl);
+					if (metadataList && metadataList.length > 0) {
+						for (const metadata of metadataList) {
+							await startDownload(metadata.url, metadata);
+						}
 					} else {
 						failCount++;
 					}

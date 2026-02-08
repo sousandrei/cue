@@ -143,7 +143,7 @@ pub async fn get_metadata<R: Runtime>(
     app: AppHandle<R>,
     cfg: State<'_, Mutex<Option<Config>>>,
     url: String,
-) -> Result<MetadataPayload, String> {
+) -> Result<Vec<MetadataPayload>, String> {
     {
         let config_guard = cfg.lock().unwrap();
         let _config = config_guard.as_ref().ok_or("Config not initialized")?;

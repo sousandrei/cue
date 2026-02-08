@@ -6,6 +6,7 @@ export interface Config {
 }
 
 export interface MetadataPayload {
+	url: string;
 	title: string;
 	artist: string;
 	album: string | null;
@@ -48,8 +49,8 @@ export async function initializeSetup(libraryPath: string): Promise<void> {
 /**
  * Fetches metadata for a given URL using the backend get_metadata command.
  */
-export async function getMetadata(url: string): Promise<MetadataPayload> {
-	return await invoke<MetadataPayload>("get_metadata", { url });
+export async function getMetadata(url: string): Promise<MetadataPayload[]> {
+	return await invoke<MetadataPayload[]>("get_metadata", { url });
 }
 
 /**
