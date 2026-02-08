@@ -1,11 +1,5 @@
 import { AnimatePresence, motion } from "framer-motion";
-import {
-	ChevronDown,
-	ChevronUp,
-	ListOrdered,
-	Loader2,
-	Music,
-} from "lucide-react";
+import { ChevronDown, ChevronUp, ListOrdered, Music, X } from "lucide-react";
 import { useState } from "react";
 
 import { Button } from "@/components/ui/button";
@@ -15,9 +9,13 @@ import type { DownloadJob } from "@/hooks/useDownload";
 
 interface DownloadQueueStatusProps {
 	downloads: DownloadJob[];
+	onRemove: (id: string) => void;
 }
 
-export function DownloadQueueStatus({ downloads }: DownloadQueueStatusProps) {
+export function DownloadQueueStatus({
+	downloads,
+	onRemove,
+}: DownloadQueueStatusProps) {
 	const [isExpanded, setIsExpanded] = useState(false);
 
 	const activeDownload = downloads.find(
@@ -45,18 +43,33 @@ export function DownloadQueueStatus({ downloads }: DownloadQueueStatusProps) {
 									<Music className="w-5 h-5 text-primary" />
 								</div>
 								<div className="flex-1 min-w-0">
-									<h3 className="text-sm font-semibold truncate">
-										{activeDownload.title}
+									<h3 className="text-sm font-bold truncate leading-tight">
+										{activeDownload.metadata.title}
 									</h3>
-									<p className="text-xs text-muted-foreground flex items-center gap-1">
-										<Loader2 className="w-3 h-3 animate-spin" />
-										{activeDownload.status === "downloading"
-											? "Downloading..."
-											: "Preparing..."}
+									<p className="text-[11px] text-muted-foreground truncate leading-tight mt-0.5">
+										<span className="font-medium text-muted-foreground/80">
+											{activeDownload.metadata.artist}
+										</span>
+										{activeDownload.metadata.album && (
+											<>
+												<span className="mx-1 opacity-40">•</span>
+												<span>{activeDownload.metadata.album}</span>
+											</>
+										)}
 									</p>
 								</div>
-								<div className="text-sm font-mono font-bold text-primary">
-									{Math.round(activeDownload.progress)}%
+								<div className="flex items-center gap-3">
+									<div className="text-base font-mono font-black text-primary tracking-tighter">
+										{Math.round(activeDownload.progress)}%
+									</div>
+									<Button
+										variant="ghost"
+										size="icon"
+										className="h-8 w-8 rounded-full hover:bg-destructive/10 hover:text-destructive"
+										onClick={() => onRemove(activeDownload.id)}
+									>
+										<X className="w-4 h-4" />
+									</Button>
 								</div>
 							</div>
 							<Progress value={activeDownload.progress} className="h-2" />
@@ -101,13 +114,22 @@ export function DownloadQueueStatus({ downloads }: DownloadQueueStatusProps) {
 												key={job.id}
 												className="flex items-center gap-3 p-2 rounded-lg bg-background/50 border border-muted-foreground/5"
 											>
-												<Music className="w-3 h-3 text-muted-foreground" />
-												<span className="text-xs truncate flex-1">
-													{job.title}
-												</span>
-												<span className="text-[10px] uppercase font-bold text-muted-foreground/60">
-													Queued
-												</span>
+												<div className="flex-1 min-w-0">
+													<p className="text-xs font-bold truncate leading-tight">
+														{job.metadata.title}
+													</p>
+													<p className="text-[10px] text-muted-foreground truncate leading-tight mt-0.5">
+														{job.metadata.artist}
+													</p>
+												</div>
+												<Button
+													variant="ghost"
+													size="icon"
+													className="h-6 w-6 rounded-full hover:bg-destructive/10 hover:text-destructive"
+													onClick={() => onRemove(job.id)}
+												>
+													<X className="w-3 h-3" />
+												</Button>
 											</div>
 										))}
 									</motion.div>

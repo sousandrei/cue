@@ -107,7 +107,10 @@ function Index() {
 				<Header />
 
 				<div className="flex flex-col gap-6">
-					<DownloadQueueStatus downloads={downloads} />
+					<DownloadQueueStatus
+						downloads={downloads}
+						onRemove={removeDownload}
+					/>
 
 					<DownloadInput
 						url={url}

@@ -20,10 +20,10 @@ export function DownloadItem({ download, removeDownload }: DownloadItemProps) {
 			transition={{ type: "spring", stiffness: 500, damping: 30 }}
 		>
 			<Card className="overflow-hidden border-muted-foreground/10 bg-card/50 backdrop-blur-sm">
-				<CardContent className="p-4">
-					<div className="flex items-center gap-4 mb-3">
+				<CardContent className="py-2.5 px-3">
+					<div className="flex items-center gap-3">
 						<div
-							className={`p-2 rounded-full ${
+							className={`p-1.5 rounded-full shrink-0 ${
 								download.status === "completed"
 									? "bg-green-500/20 text-green-500"
 									: download.status === "error"
@@ -32,20 +32,28 @@ export function DownloadItem({ download, removeDownload }: DownloadItemProps) {
 							}`}
 						>
 							{download.status === "completed" ? (
-								<CheckCircle2 className="w-5 h-5" />
+								<CheckCircle2 className="w-4 h-4" />
 							) : download.status === "error" ? (
-								<AlertCircle className="w-5 h-5" />
+								<AlertCircle className="w-4 h-4" />
 							) : (
-								<Music className="w-5 h-5" />
+								<Music className="w-4 h-4" />
 							)}
 						</div>
 
 						<div className="flex-1 min-w-0">
-							<h3 className="font-medium truncate text-sm sm:text-base">
-								{download.title}
+							<h3 className="font-bold truncate text-sm sm:text-[15px] leading-tight">
+								{download.metadata.title}
 							</h3>
-							<p className="text-xs text-muted-foreground capitalize">
-								{download.status}
+							<p className="text-[11px] text-muted-foreground truncate leading-tight mt-0.5">
+								<span className="font-medium text-muted-foreground/80">
+									{download.metadata.artist}
+								</span>
+								{download.metadata.album && (
+									<>
+										<span className="mx-1 opacity-40">•</span>
+										<span>{download.metadata.album}</span>
+									</>
+								)}
 							</p>
 						</div>
 
