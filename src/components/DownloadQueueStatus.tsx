@@ -1,11 +1,13 @@
 import { AnimatePresence, motion } from "framer-motion";
-import { ChevronDown, ChevronUp, ListOrdered, Music, X } from "lucide-react";
+import { ChevronDown, ChevronUp, ListOrdered, X } from "lucide-react";
 import { useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import type { DownloadJob } from "@/hooks/useDownload";
+import { SongMetadata } from "./download/SongMetadata";
+import { StatusIcon } from "./download/StatusIcon";
 
 interface DownloadQueueStatusProps {
 	downloads: DownloadJob[];
@@ -39,25 +41,11 @@ export function DownloadQueueStatus({
 					{activeDownload ? (
 						<div className="space-y-4">
 							<div className="flex items-center gap-3">
-								<div className="bg-primary/20 p-2 rounded-full animate-pulse">
-									<Music className="w-5 h-5 text-primary" />
-								</div>
-								<div className="flex-1 min-w-0">
-									<h3 className="text-sm font-bold truncate leading-tight">
-										{activeDownload.metadata.title}
-									</h3>
-									<p className="text-[11px] text-muted-foreground truncate leading-tight mt-0.5">
-										<span className="font-medium text-muted-foreground/80">
-											{activeDownload.metadata.artist}
-										</span>
-										{activeDownload.metadata.album && (
-											<>
-												<span className="mx-1 opacity-40">•</span>
-												<span>{activeDownload.metadata.album}</span>
-											</>
-										)}
-									</p>
-								</div>
+								<StatusIcon
+									status={activeDownload.status}
+									className="animate-pulse"
+								/>
+								<SongMetadata metadata={activeDownload.metadata} />
 								<div className="flex items-center gap-3">
 									<div className="text-base font-mono font-black text-primary tracking-tighter">
 										{Math.round(activeDownload.progress)}%
@@ -114,14 +102,7 @@ export function DownloadQueueStatus({
 												key={job.id}
 												className="flex items-center gap-3 p-2 rounded-lg bg-background/50 border border-muted-foreground/5"
 											>
-												<div className="flex-1 min-w-0">
-													<p className="text-xs font-bold truncate leading-tight">
-														{job.metadata.title}
-													</p>
-													<p className="text-[10px] text-muted-foreground truncate leading-tight mt-0.5">
-														{job.metadata.artist}
-													</p>
-												</div>
+												<SongMetadata metadata={job.metadata} size="sm" />
 												<Button
 													variant="ghost"
 													size="icon"
