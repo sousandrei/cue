@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Progress } from "@/components/ui/progress";
+import { invoke } from '@tauri-apps/api/core';
 
 export const Route = createFileRoute("/")({
 	component: Index,
@@ -58,7 +59,7 @@ function Index() {
 
 			let progress = 0;
 			const interval = setInterval(() => {
-				progress += Math.random() * 10;
+				progress += Math.random() * 50;
 				if (progress >= 100) {
 					progress = 100;
 					clearInterval(interval);
@@ -74,6 +75,18 @@ function Index() {
 								: d,
 						),
 					);
+
+					invoke("add_song", {
+						song: {
+							id: "some_song_id",
+							title: "some_title",
+							artist: "some_artist",
+							album: "some_album",
+							file_path: "./src/some_file_path",
+						}
+					}).then(() => {
+						console.log("Song added successfully");
+					});
 				} else {
 					setDownloads((prev) =>
 						prev.map((d) => (d.id === id ? { ...d, progress } : d)),
