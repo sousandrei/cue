@@ -77,7 +77,6 @@ pub fn save_config(config: &Config) -> Result<(), String> {
     Ok(())
 }
 
-#[tauri::command]
 pub async fn update_config(
     state: State<'_, Mutex<Config>>,
     app: tauri::AppHandle,

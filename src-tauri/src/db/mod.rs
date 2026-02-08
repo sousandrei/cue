@@ -1,7 +1,6 @@
 use sqlx::sqlite::{SqliteConnectOptions, SqlitePool};
 use std::str::FromStr;
 
-pub mod commands;
 pub mod entities;
 
 use entities::{Playlist, Song};
@@ -39,6 +38,14 @@ impl Database {
             .execute(&self.pool)
             .await?;
         Ok(())
+    }
+
+    pub async fn get_song_by_id(&self, id: &str) -> Result<Option<Song>, sqlx::Error> {
+        let song = sqlx::query_as::<_, Song>(include_str!("../../queries/get_song_by_id.sql"))
+            .bind(id)
+            .fetch_optional(&self.pool)
+            .await?;
+        Ok(song)
     }
 
     pub async fn edit_song(&self, song: &Song) -> Result<(), sqlx::Error> {

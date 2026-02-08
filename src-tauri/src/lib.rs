@@ -1,3 +1,4 @@
+mod commands;
 mod config;
 mod db;
 mod download;
@@ -31,18 +32,12 @@ pub fn run() {
         })
         .plugin(tauri_plugin_opener::init())
         .invoke_handler(tauri::generate_handler![
-            config::update_config,
-            db::commands::add_song,
-            db::commands::remove_song,
-            db::commands::edit_song,
-            db::commands::get_songs,
-            db::commands::search_songs,
-            db::commands::create_playlist,
-            db::commands::add_song_to_playlist,
-            db::commands::remove_song_from_playlist,
-            db::commands::get_playlists,
-            download::download_audio,
-            download::get_metadata
+            commands::update_config,
+            commands::get_songs,
+            commands::search_songs,
+            commands::download_audio,
+            commands::get_metadata,
+            commands::remove_song,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

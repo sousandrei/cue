@@ -43,7 +43,6 @@ struct YtDlpOutput {
     duration: Option<f64>,
 }
 
-#[tauri::command]
 pub async fn get_metadata<R: Runtime>(
     app: AppHandle<R>,
     cfg: State<'_, Mutex<Config>>,
@@ -88,7 +87,6 @@ pub async fn get_metadata<R: Runtime>(
     })
 }
 
-#[tauri::command]
 pub async fn download_audio<R: Runtime>(
     app: AppHandle<R>,
     cfg: State<'_, Mutex<Config>>,
