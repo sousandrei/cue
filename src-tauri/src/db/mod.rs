@@ -5,8 +5,8 @@ pub struct DbState {
     pub pool: Mutex<SqlitePool>,
 }
 
-pub async fn init_db() -> anyhow::Result<SqlitePool> {
-    let opts = SqliteConnectOptions::from_str("sqlite:songs.db")?.create_if_missing(true);
+pub async fn init_db(db_path: &str) -> anyhow::Result<SqlitePool> {
+    let opts = SqliteConnectOptions::from_str(db_path)?.create_if_missing(true);
     let pool = SqlitePool::connect_with(opts).await?;
 
     let mut conn = pool.acquire().await?;

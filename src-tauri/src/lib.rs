@@ -1,3 +1,4 @@
+mod config;
 mod db;
 
 use db::DbState;
@@ -85,7 +86,11 @@ pub fn run() {
     tauri::Builder::default()
         .setup(|app| {
             tauri::async_runtime::block_on(async {
-                let pool = db::init_db().await.expect("failed to initialize database");
+                let config = config::load_config().expect("failed to load config");
+                let db_path = format!("sqlite:{}/songs.db", config.library_path);
+                let pool = db::init_db(&db_path)
+                    .await
+                    .expect("failed to initialize database");
                 app.manage(DbState {
                     pool: Mutex::new(pool),
                 });

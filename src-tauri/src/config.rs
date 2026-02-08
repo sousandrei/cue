@@ -1,0 +1,50 @@
+use serde::{Deserialize, Serialize};
+use std::fs;
+
+#[derive(Debug, Deserialize, Serialize)]
+pub struct Config {
+    pub library_path: String,
+}
+
+impl Default for Config {
+    fn default() -> Self {
+        let library_path = dirs::audio_dir()
+            .map(|p| p.to_string_lossy().to_string())
+            .unwrap_or_else(|| {
+                dirs::home_dir()
+                    .map(|h| h.join("Music").to_string_lossy().to_string())
+                    .unwrap_or_else(|| ".".to_string())
+            });
+
+        Self { library_path }
+    }
+}
+
+pub fn load_config() -> Result<Config, String> {
+    let config_dir = dirs::config_dir()
+        .ok_or("Could not find config directory")?
+        .join("synqed");
+    let config_path = config_dir.join("config.yaml");
+
+    if !config_path.exists() {
+        fs::create_dir_all(&config_dir)
+            .map_err(|e| format!("Failed to create config directory: {}", e))?;
+
+        let config = Config::default();
+        let config_str = serde_yaml::to_string(&config)
+            .map_err(|e| format!("Failed to serialize default config: {}", e))?;
+
+        fs::write(&config_path, config_str)
+            .map_err(|e| format!("Failed to write default config file: {}", e))?;
+
+        return Ok(config);
+    }
+
+    let config_content = fs::read_to_string(&config_path)
+        .map_err(|e| format!("Failed to read config file: {}", e))?;
+
+    let config: Config = serde_yaml::from_str(&config_content)
+        .map_err(|e| format!("Failed to parse config file: {}", e))?;
+
+    Ok(config)
+}
