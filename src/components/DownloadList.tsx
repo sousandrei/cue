@@ -1,6 +1,9 @@
-import { AnimatePresence, motion } from "framer-motion";
+import { AnimatePresence } from "framer-motion";
+import { History } from "lucide-react";
+
 import type { DownloadJob } from "@/hooks/useDownload";
 import { DownloadItem } from "./DownloadItem";
+import { EmptyState } from "./EmptyState";
 
 interface DownloadListProps {
 	downloads: DownloadJob[];
@@ -51,13 +54,11 @@ export function DownloadList({
 			</AnimatePresence>
 
 			{history.length === 0 && (
-				<motion.div
-					initial={{ opacity: 0 }}
-					animate={{ opacity: 1 }}
-					className="text-center text-muted-foreground/40 text-sm py-12 border-2 border-dashed border-muted-foreground/10 rounded-2xl"
-				>
-					No download history
-				</motion.div>
+				<EmptyState
+					icon={History}
+					title="No recent activity"
+					description="Your download history will appear here once you start syncing songs."
+				/>
 			)}
 		</div>
 	);

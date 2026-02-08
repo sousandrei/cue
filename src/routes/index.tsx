@@ -142,8 +142,8 @@ function Index() {
 	};
 
 	return (
-		<div className="min-h-screen bg-background flex flex-col items-center p-4 pt-12">
-			<div className="w-full max-w-2xl flex flex-col gap-8">
+		<div className="min-h-screen bg-background flex flex-col items-center p-4 pt-8">
+			<div className="w-full max-w-2xl flex flex-col gap-6">
 				<Header />
 
 				<div className="flex flex-col gap-6">

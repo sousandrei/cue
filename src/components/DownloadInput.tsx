@@ -31,7 +31,7 @@ export function DownloadInput({
 					<Input
 						type="text"
 						placeholder="Paste URL here..."
-						className="h-14 pl-6 pr-14 text-lg bg-background/95 backdrop-blur-xl border-muted-foreground/20 shadow-xl rounded-full focus-visible:ring-0 focus-visible:border-primary transition-all"
+						className="h-14 pl-6 pr-14 text-lg bg-background/95 text-foreground backdrop-blur-xl border-muted-foreground/20 shadow-xl rounded-full focus-visible:ring-0 focus-visible:border-primary transition-all"
 						value={url}
 						onChange={(e) => setUrl(e.target.value)}
 						onKeyDown={handleKeyDown}
@@ -40,7 +40,7 @@ export function DownloadInput({
 					/>
 					<Button
 						size="icon"
-						className="absolute right-2 h-10 w-10 rounded-full transition-transform hover:scale-105 active:scale-95"
+						className="absolute right-2 h-10 w-10 rounded-full transition-transform hover:scale-105 active:scale-95 bg-primary hover:bg-primary/90"
 						onClick={onAdd}
 						disabled={!url.trim() || loading}
 					>
@@ -55,7 +55,7 @@ export function DownloadInput({
 			<Button
 				variant="outline"
 				size="icon"
-				className="h-14 w-14 rounded-full border-muted-foreground/20 bg-background/95 backdrop-blur-xl shadow-xl hover:bg-accent hover:border-primary transition-all shrink-0"
+				className="h-14 w-14 rounded-full border-muted-foreground/30 bg-background/95 backdrop-blur-xl shadow-xl hover:bg-accent hover:border-primary transition-all shrink-0 text-muted-foreground hover:text-primary"
 				onClick={onUpload}
 				disabled={loading}
 				title="Bulk Import (txt)"
