@@ -12,7 +12,8 @@ interface DockItem {
 const items: DockItem[] = [
 	{ title: "Home", icon: Home, href: "/" },
 	{ title: "Library", icon: Table, href: "/library" },
-	{ title: "Playlists", icon: Table, href: "/playlists" },
+	// TODO: add playlist functionality
+	// { title: "Playlists", icon: Table, href: "/playlists" },
 	{ title: "Config", icon: Settings, href: "/config" },
 ];
 
