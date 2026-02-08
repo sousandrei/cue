@@ -1,7 +1,9 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { Music, Rocket } from "lucide-react";
 import { useState } from "react";
+import { toast } from "sonner";
 import { FolderPicker } from "@/components/FolderPicker";
+
 import { Button } from "@/components/ui/button";
 import {
 	Card,
@@ -26,9 +28,11 @@ function SetupWizard() {
 		setLoading(true);
 		try {
 			await initializeSetup(path);
+			toast.success("Setup completed successfully!");
 			navigate({ to: "/" });
 		} catch (error) {
 			console.error("Failed to initialize setup:", error);
+			toast.error(`Setup failed: ${error}`);
 		} finally {
 			setLoading(false);
 		}

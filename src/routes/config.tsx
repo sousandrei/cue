@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { invoke } from "@tauri-apps/api/core";
 import { Loader2, Save, Settings } from "lucide-react";
 import { useEffect, useState } from "react";
+import { toast } from "sonner";
 
 import { FolderPicker } from "@/components/FolderPicker";
 import { Header } from "@/components/Header";
@@ -36,6 +37,7 @@ function ConfigPage() {
 				setConfig(data);
 			} catch (error) {
 				console.error("Failed to fetch config:", error);
+				toast.error(`Failed to load config: ${error}`);
 			} finally {
 				setLoading(false);
 			}
@@ -48,8 +50,10 @@ function ConfigPage() {
 		setSaving(true);
 		try {
 			await invoke("update_config", { newConfig: config });
+			toast.success("Settings saved successfully!");
 		} catch (error) {
 			console.error("Failed to update config:", error);
+			toast.error(`Failed to save settings: ${error}`);
 		} finally {
 			setSaving(false);
 		}

@@ -1,5 +1,6 @@
 import { listen } from "@tauri-apps/api/event";
 import { useCallback, useEffect, useState } from "react";
+import { toast } from "sonner";
 
 import {
 	type DownloadErrorPayload,
@@ -39,6 +40,7 @@ export function useDownload() {
 
 		const unlistenError = listen("download://error", (event) => {
 			const payload = event.payload as DownloadErrorPayload;
+			toast.error(`Download failed: ${payload.error}`);
 			setDownloads((prev) =>
 				prev.map((d) => {
 					if (d.id === payload.id) {
@@ -78,6 +80,7 @@ export function useDownload() {
 				downloadAudio(nextJob.url, nextJob.id, nextJob.metadata).catch(
 					(err) => {
 						const error = err instanceof Error ? err.message : String(err);
+						toast.error(`Failed to start download: ${error}`);
 						setDownloads((prev) =>
 							prev.map((d) =>
 								d.id === nextJob.id

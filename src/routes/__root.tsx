@@ -5,6 +5,7 @@ import {
 	useNavigate,
 } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
+import { Toaster } from "sonner";
 
 import { FloatingDock } from "@/components/floating-dock";
 import { getConfig } from "@/lib/tauri-commands";
@@ -34,6 +35,7 @@ const RootLayout = () => {
 
 	return (
 		<div className="min-h-screen w-full relative">
+			<Toaster position="top-right" richColors closeButton />
 			<Outlet />
 			<FloatingDock />
 		</div>

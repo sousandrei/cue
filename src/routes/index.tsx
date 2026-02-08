@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { open } from "@tauri-apps/plugin-dialog";
 import { useState } from "react";
+import { toast } from "sonner";
 
 import { DownloadInput } from "@/components/DownloadInput";
 import { DownloadList } from "@/components/DownloadList";
@@ -29,9 +30,11 @@ function Index() {
 			const metadata = await fetchMetadata(currentUrl);
 			if (metadata) {
 				await startDownload(currentUrl, metadata);
+				toast.success("Added to queue");
 			}
 		} catch (error) {
 			console.error("Failed to start download process:", error);
+			toast.error(`Failed to fetch metadata: ${error}`);
 		}
 	};
 
@@ -49,6 +52,7 @@ function Index() {
 
 			if (!selected) return;
 
+			toast.loading("Reading file...", { id: "bulk-import" });
 			const content = await readFileContent(selected as string);
 			const urls = content
 				.split("\n")
@@ -57,14 +61,35 @@ function Index() {
 					(u) => u.length > 0 && (u.startsWith("http") || u.startsWith("www")),
 				);
 
+			if (urls.length === 0) {
+				toast.error("No valid URLs found in file", { id: "bulk-import" });
+				return;
+			}
+
+			toast.success(`Importing ${urls.length} songs...`, { id: "bulk-import" });
+
+			let failCount = 0;
+
 			for (const bulkUrl of urls) {
-				const metadata = await fetchMetadata(bulkUrl);
-				if (metadata) {
-					await startDownload(bulkUrl, metadata);
+				try {
+					const metadata = await fetchMetadata(bulkUrl);
+					if (metadata) {
+						await startDownload(bulkUrl, metadata);
+					} else {
+						failCount++;
+					}
+				} catch (e) {
+					failCount++;
+					console.error(`Failed to import ${bulkUrl}:`, e);
 				}
+			}
+
+			if (failCount > 0) {
+				toast.error(`Import finished with ${failCount} errors`);
 			}
 		} catch (error) {
 			console.error("Failed bulk import:", error);
+			toast.error(`Bulk import failed: ${error}`, { id: "bulk-import" });
 		}
 	};
 
