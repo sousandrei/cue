@@ -120,9 +120,21 @@ export function useDownload() {
 		setDownloads((prev) => prev.filter((d) => d.id !== id));
 	}, []);
 
+	const clearHistory = useCallback(() => {
+		setDownloads((prev) =>
+			prev.filter((d) => d.status !== "completed" && d.status !== "error"),
+		);
+	}, []);
+
+	const clearQueue = useCallback(() => {
+		setDownloads((prev) => prev.filter((d) => d.status !== "queued"));
+	}, []);
+
 	return {
 		downloads,
 		startDownload,
 		removeDownload,
+		clearHistory,
+		clearQueue,
 	};
 }

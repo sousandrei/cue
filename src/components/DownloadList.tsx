@@ -5,9 +5,14 @@ import { DownloadItem } from "./DownloadItem";
 interface DownloadListProps {
 	downloads: DownloadJob[];
 	removeDownload: (id: string) => void;
+	onClear: () => void;
 }
 
-export function DownloadList({ downloads, removeDownload }: DownloadListProps) {
+export function DownloadList({
+	downloads,
+	removeDownload,
+	onClear,
+}: DownloadListProps) {
 	const history = downloads.filter(
 		(d) => d.status === "completed" || d.status === "error",
 	);
@@ -18,11 +23,22 @@ export function DownloadList({ downloads, removeDownload }: DownloadListProps) {
 				<h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">
 					Recent Activity
 				</h2>
-				{history.length > 0 && (
-					<span className="text-xs text-muted-foreground/60">
-						{history.length} items
-					</span>
-				)}
+				<div className="flex items-center gap-3">
+					{history.length > 0 && (
+						<>
+							<button
+								type="button"
+								onClick={onClear}
+								className="text-xs text-muted-foreground/60 hover:text-primary transition-colors font-medium"
+							>
+								Clear history
+							</button>
+							<span className="text-xs text-muted-foreground/40 font-mono">
+								{history.length}
+							</span>
+						</>
+					)}
+				</div>
 			</div>
 			<AnimatePresence mode="popLayout">
 				{history.map((download) => (

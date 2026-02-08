@@ -12,11 +12,13 @@ import { StatusIcon } from "./download/StatusIcon";
 interface DownloadQueueStatusProps {
 	downloads: DownloadJob[];
 	onRemove: (id: string) => void;
+	onClearQueue: () => void;
 }
 
 export function DownloadQueueStatus({
 	downloads,
 	onRemove,
+	onClearQueue,
 }: DownloadQueueStatusProps) {
 	const [isExpanded, setIsExpanded] = useState(false);
 
@@ -72,22 +74,34 @@ export function DownloadQueueStatus({
 					)}
 
 					{queuedDownloads.length > 0 && (
-						<div className="mt-4 pt-4 border-t border-primary/10">
-							<Button
-								variant="ghost"
-								size="sm"
-								className="w-full flex justify-between h-8 hover:bg-primary/10"
-								onClick={() => setIsExpanded(!isExpanded)}
-							>
-								<span className="text-xs font-semibold">
-									Queue ({queuedDownloads.length})
-								</span>
-								{isExpanded ? (
-									<ChevronUp className="w-4 h-4" />
-								) : (
-									<ChevronDown className="w-4 h-4" />
+						<div className="flex flex-col">
+							<div className="flex items-center gap-2 mt-4 pt-4 border-t border-primary/10">
+								<Button
+									variant="ghost"
+									size="sm"
+									className="flex-1 flex justify-between h-8 hover:bg-primary/10"
+									onClick={() => setIsExpanded(!isExpanded)}
+								>
+									<span className="text-xs font-semibold">
+										Queue ({queuedDownloads.length})
+									</span>
+									{isExpanded ? (
+										<ChevronUp className="w-4 h-4 ml-2" />
+									) : (
+										<ChevronDown className="w-4 h-4 ml-2" />
+									)}
+								</Button>
+								{isExpanded && (
+									<Button
+										variant="ghost"
+										size="sm"
+										className="h-8 px-3 text-xs font-medium hover:text-destructive hover:bg-destructive/10"
+										onClick={onClearQueue}
+									>
+										Clear Queue
+									</Button>
 								)}
-							</Button>
+							</div>
 
 							<AnimatePresence>
 								{isExpanded && (

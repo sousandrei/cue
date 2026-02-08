@@ -17,7 +17,8 @@ export const Route = createFileRoute("/")({
 
 function Index() {
 	const [url, setUrl] = useState("");
-	const { downloads, startDownload, removeDownload } = useDownload();
+	const { downloads, startDownload, removeDownload, clearHistory, clearQueue } =
+		useDownload();
 	const { fetchMetadata, loading } = useMetadata();
 
 	const handleAddDownload = async () => {
@@ -149,6 +150,7 @@ function Index() {
 					<DownloadQueueStatus
 						downloads={downloads}
 						onRemove={removeDownload}
+						onClearQueue={clearQueue}
 					/>
 
 					<DownloadInput
@@ -161,7 +163,11 @@ function Index() {
 				</div>
 
 				<div className="mt-4">
-					<DownloadList downloads={downloads} removeDownload={removeDownload} />
+					<DownloadList
+						downloads={downloads}
+						removeDownload={removeDownload}
+						onClear={clearHistory}
+					/>
 				</div>
 			</div>
 		</div>
