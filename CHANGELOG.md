@@ -1,5 +1,14 @@
 # Changelog
 
+## [1.1.1](https://github.com/sousandrei/cue/compare/v1.1.0...v1.1.1) (2026-02-09)
+
+
+### Bug Fixes
+
+* capabilities to restart ([798cb67](https://github.com/sousandrei/cue/commit/798cb67847b98709dafefcc08ce6d8c1c10ff8d8))
+* max file name ([1553fc7](https://github.com/sousandrei/cue/commit/1553fc77d4ab299accd1ff39056dc8db0b61325f))
+* process permissions ([423b6e8](https://github.com/sousandrei/cue/commit/423b6e8da8152471c7dc00ec96014624bacde044))
+
 ## [1.1.0](https://github.com/sousandrei/cue/compare/v1.0.2...v1.1.0) (2026-02-09)
 
 
