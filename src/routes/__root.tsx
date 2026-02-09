@@ -43,7 +43,7 @@ const RootLayout = () => {
 	return (
 		<div className="min-h-screen w-full relative overflow-x-hidden bg-background text-foreground">
 			<Updater />
-			<Toaster position="top-right" richColors closeButton />
+			<Toaster position="bottom-right" theme="dark" richColors closeButton />
 			<main className="relative grid grid-cols-1 w-full min-h-screen">
 				<AnimatePresence initial={false}>
 					<motion.div

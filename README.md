@@ -1,6 +1,6 @@
 # <img src="app-icon.svg" width="32" height="32" valign="middle" /> Cue
 
-**Cue** is a premium, opinionated media management utility for DJs. It removes technical friction from media acquisition and library organization, providing a native Apple-style experience.
+**Cue** is a premium, opinionated media management utility for DJs. It removes technical friction from media acquisition and library organization, providing a native modern experience.
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Latest Release](https://img.shields.io/github/v/release/sousandrei/cue?label=latest)](https://github.com/sousandrei/cue/releases)
