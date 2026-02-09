@@ -3,6 +3,7 @@ import { invoke } from "@tauri-apps/api/core";
 export interface Config {
 	library_path: string;
 	yt_dlp_version: string;
+	auto_update: boolean;
 }
 
 export interface MetadataPayload {

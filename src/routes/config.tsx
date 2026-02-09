@@ -15,10 +15,12 @@ import {
 	CardTitle,
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { Switch } from "@/components/ui/switch";
 
 interface Config {
 	library_path: string;
 	yt_dlp_version: string;
+	auto_update: boolean;
 }
 
 export const Route = createFileRoute("/config")({
@@ -100,6 +102,27 @@ function ConfigPage() {
 							value={config.library_path}
 							onChange={(val) => setConfig({ ...config, library_path: val })}
 						/>
+
+						<div className="flex items-center justify-between rounded-lg border border-border/50 bg-background/50 p-4">
+							<div className="space-y-0.5">
+								<label
+									htmlFor="auto-update"
+									className="text-base font-medium peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+								>
+									Auto Update
+								</label>
+								<div className="text-sm text-muted-foreground">
+									Automatically check for updates on startup
+								</div>
+							</div>
+							<Switch
+								id="auto-update"
+								checked={config.auto_update}
+								onCheckedChange={(checked) =>
+									setConfig({ ...config, auto_update: checked })
+								}
+							/>
+						</div>
 
 						<div className="space-y-2">
 							<label

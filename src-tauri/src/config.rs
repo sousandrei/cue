@@ -8,6 +8,12 @@ use crate::download;
 pub struct Config {
     pub library_path: String,
     pub yt_dlp_version: String,
+    #[serde(default = "default_auto_update")]
+    pub auto_update: bool,
+}
+
+fn default_auto_update() -> bool {
+    true
 }
 
 impl Default for Config {
@@ -23,6 +29,7 @@ impl Default for Config {
         Self {
             library_path,
             yt_dlp_version: "2026.02.04".to_string(),
+            auto_update: true,
         }
     }
 }

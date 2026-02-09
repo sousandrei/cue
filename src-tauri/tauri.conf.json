@@ -31,5 +31,13 @@
 			"icons/icon.icns",
 			"icons/icon.ico"
 		]
+	},
+	"plugins": {
+		"updater": {
+			"endpoints": [
+				"https://github.com/sousandrei/synqed/releases/latest/download/latest.json"
+			],
+			"pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IEZCQzBGODkyMDM5MjY3NkUKUldSdVo1SURrdmpBKzhqUWxkZDN3djFDUjlzT1JpS0xScE1DRGYxMmMxT2k2NzVieXJLRFBsSE4K"
+		}
 	}
 }

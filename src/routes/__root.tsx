@@ -8,6 +8,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import { useEffect, useState } from "react";
 import { Toaster } from "sonner";
 
+import { Updater } from "@/components/Updater";
 import { FloatingDock } from "@/components/floating-dock";
 import { getConfig } from "@/lib/tauri-commands";
 
@@ -36,6 +37,7 @@ const RootLayout = () => {
 
 	return (
 		<div className="min-h-screen w-full relative overflow-x-hidden bg-background text-foreground">
+			<Updater />
 			<Toaster position="top-right" richColors closeButton />
 			<main className="relative w-full min-h-screen">
 				<AnimatePresence initial={false}>

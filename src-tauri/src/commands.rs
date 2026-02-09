@@ -47,6 +47,7 @@ pub async fn initialize_setup(
     let config = Config {
         library_path: library_path.clone(),
         yt_dlp_version: "2026.02.04".to_string(),
+        auto_update: true,
     };
 
     // Save config
