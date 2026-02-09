@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { invoke } from "@tauri-apps/api/core";
+import { ask } from "@tauri-apps/plugin-dialog";
 import { check } from "@tauri-apps/plugin-updater";
 import { Loader2, Save, SlidersHorizontal } from "lucide-react";
 import { useEffect, useState } from "react";
@@ -106,11 +107,15 @@ function ConfigPage() {
 	};
 
 	const handleFactoryReset = async () => {
-		if (
-			!window.confirm(
-				"Are you sure you want to perform a factory reset? This will delete all downloaded binaries and your configuration. The app will restart.",
-			)
-		) {
+		const confirmed = await ask(
+			"Are you sure you want to perform a factory reset? This will delete all downloaded binaries and your configuration. The app will restart.",
+			{
+				title: "Factory Reset",
+				kind: "warning",
+			},
+		);
+
+		if (!confirmed) {
 			return;
 		}
 
