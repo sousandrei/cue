@@ -1,0 +1,20 @@
+{
+    "packages": {
+        ".": {
+            "release-type": "node",
+            "package-name": "synqed",
+            "extra-files": [
+                "src-tauri/tauri.conf.json",
+                "src-tauri/Cargo.toml"
+            ]
+        }
+    },
+    "plugins": [
+        {
+            "type": "cargo",
+            "manifest": "src-tauri/Cargo.toml"
+        }
+    ],
+    "bump-minor-pre-major": true,
+    "bump-patch-for-minor-pre-major": true
+}
