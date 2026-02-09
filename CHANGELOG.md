@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.0.1](https://github.com/sousandrei/cue/compare/v1.0.0...v1.0.1) (2026-02-09)
+
+
+### Bug Fixes
+
+* release updater config ([c38d2d5](https://github.com/sousandrei/cue/commit/c38d2d5cbdb9fde2ce80524bbcb17c45f753e411))
+
 ## 1.0.0 (2026-02-09)
 
 
