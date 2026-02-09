@@ -1,5 +1,19 @@
 # Changelog
 
+## [1.1.0](https://github.com/sousandrei/cue/compare/v1.0.2...v1.1.0) (2026-02-09)
+
+
+### Features
+
+* better bundling of dependencies ([793cd22](https://github.com/sousandrei/cue/commit/793cd220eb40c3f82ccbe9750c93b71ff4a024c6))
+* bundle ffmpeg and bun ([52a5f6d](https://github.com/sousandrei/cue/commit/52a5f6d71afbcc9e0e4c23d5736cf78d49f7faa9))
+
+
+### Bug Fixes
+
+* allow update auto-restart ([ca31467](https://github.com/sousandrei/cue/commit/ca314676f1ea3b1fe37cc3a36ca103784405ca42))
+* allow update auto-restart ([513840a](https://github.com/sousandrei/cue/commit/513840abb540f467bc9e1612c482ba79ebe6dd89))
+
 ## [1.0.2](https://github.com/sousandrei/cue/compare/v1.0.1...v1.0.2) (2026-02-09)
 
 
