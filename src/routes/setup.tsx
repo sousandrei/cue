@@ -1,6 +1,7 @@
+import { listen } from "@tauri-apps/api/event";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { Music, Rocket } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { FolderPicker } from "@/components/FolderPicker";
 
@@ -12,6 +13,7 @@ import {
 	CardHeader,
 	CardTitle,
 } from "@/components/ui/card";
+import { Progress } from "@/components/ui/progress";
 import { initializeSetup } from "@/lib/tauri-commands";
 
 export const Route = createFileRoute("/setup")({
@@ -21,7 +23,21 @@ export const Route = createFileRoute("/setup")({
 function SetupWizard() {
 	const [path, setPath] = useState("");
 	const [loading, setLoading] = useState(false);
+	const [setupProgress, setSetupProgress] = useState(0);
+	const [setupStatus, setSetupStatus] = useState("");
 	const navigate = useNavigate();
+
+	useEffect(() => {
+		const unlisten = listen("setup://progress", (event) => {
+			const payload = event.payload as { status: string; progress: number };
+			setSetupStatus(payload.status);
+			setSetupProgress(payload.progress);
+		});
+
+		return () => {
+			unlisten.then((f) => f());
+		};
+	}, []);
 
 	const handleFinishSetup = async () => {
 		if (!path) return;
@@ -73,13 +89,25 @@ function SetupWizard() {
 						</div>
 					</div>
 
-					<Button
-						className="w-full h-12 text-lg font-semibold rounded-xl transition-all hover:scale-[1.02] active:scale-[0.98]"
-						disabled={!path || loading}
-						onClick={handleFinishSetup}
-					>
-						{loading ? "Setting up..." : "Finish Setup"}
-					</Button>
+					{loading ? (
+						<div className="space-y-4 pt-4">
+							<div className="flex justify-between text-sm mb-1">
+								<span className="text-muted-foreground animate-pulse">
+									{setupStatus || "Initializing..."}
+								</span>
+								<span className="font-medium">{Math.round(setupProgress)}%</span>
+							</div>
+							<Progress value={setupProgress} className="h-2" />
+						</div>
+					) : (
+						<Button
+							className="w-full h-12 text-lg font-semibold rounded-xl transition-all hover:scale-[1.02] active:scale-[0.98]"
+							disabled={!path || loading}
+							onClick={handleFinishSetup}
+						>
+							Finish Setup
+						</Button>
+					)}
 				</CardContent>
 			</Card>
 		</div>

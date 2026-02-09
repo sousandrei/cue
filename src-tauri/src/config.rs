@@ -9,6 +9,7 @@ pub struct Config {
     pub library_path: String,
     pub yt_dlp_version: String,
     pub ffmpeg_version: String,
+    pub bun_version: String,
     #[serde(default = "default_auto_update")]
     pub auto_update: bool,
 }
@@ -31,6 +32,7 @@ impl Default for Config {
             library_path,
             yt_dlp_version: "2026.02.04".to_string(),
             ffmpeg_version: "7.1".to_string(),
+            bun_version: "1.2.2".to_string(),
             auto_update: true,
         }
     }
@@ -96,6 +98,10 @@ pub async fn update_config(
         .map_err(|e| e.to_string())?;
 
     download::ensure_ffmpeg(&app, &new_config.ffmpeg_version)
+        .await
+        .map_err(|e| e.to_string())?;
+
+    download::ensure_bun(&app, &new_config.bun_version)
         .await
         .map_err(|e| e.to_string())?;
 

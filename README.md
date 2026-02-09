@@ -23,7 +23,7 @@ Cue is designed to be invisible. Just focus on your music.
 ## Features
 
 *   **Zero-Config:** No bitrate sliders or technical jargon. Cue defaults to 320kbps MP3.
-*   **Automatic Setup:** On first launch, Cue automatically downloads its required dependencies (`yt-dlp` and `ffmpeg`) to ensure everything works out of the box.
+*   **Automatic Setup:** On first launch, Cue automatically downloads its required dependencies (`yt-dlp`, `ffmpeg`, and `bun`) to ensure everything works out of the box.
 *   **Minimalist Design:** A pure black canvas optimized for focus.
 
 <p align="center">
