@@ -2,9 +2,9 @@ import { createFileRoute } from "@tanstack/react-router";
 import { Loader2, Music } from "lucide-react";
 import { useMemo } from "react";
 import { Header } from "@/components/Header";
+import { createColumns } from "@/components/library/columns";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { DataTable } from "@/components/ui/data-table";
-import { createColumns } from "@/components/library/columns";
 import { useLibrarySongs } from "@/hooks/useLibrarySongs";
 
 export const Route = createFileRoute("/library")({

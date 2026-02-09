@@ -37,10 +37,7 @@ export function DownloadQueueStatus({
 			<Card className="border-primary/20 bg-primary/5 backdrop-blur-xl shadow-2xl overflow-hidden">
 				<CardContent className="p-4">
 					{activeDownload ? (
-						<ActiveDownloadItem
-							download={activeDownload}
-							onRemove={onRemove}
-						/>
+						<ActiveDownloadItem download={activeDownload} onRemove={onRemove} />
 					) : (
 						<div className="flex items-center gap-3 text-muted-foreground">
 							<div className="bg-muted p-2 rounded-full">

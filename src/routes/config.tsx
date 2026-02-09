@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { invoke } from "@tauri-apps/api/core";
+import { check } from "@tauri-apps/plugin-updater";
 import { Loader2, Save, Settings } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
@@ -47,6 +48,55 @@ function ConfigPage() {
 		fetchConfig();
 	}, []);
 
+	const handleCheckUpdate = async () => {
+		try {
+			toast.loading("Checking for updates...", { id: "manual-check" });
+			const update = await check();
+			toast.dismiss("manual-check");
+
+			if (!update) {
+				toast.info("You are up to date!");
+				return;
+			}
+
+			toast.info(`Update Available: ${update.version}`, {
+				description: `A new version is available.\n${update.body}`,
+				action: {
+					label: "Update Now",
+					onClick: async () => {
+						try {
+							await update.downloadAndInstall((event) => {
+								switch (event.event) {
+									case "Started":
+										toast.loading("Downloading update...", {
+											id: "update-download",
+										});
+										break;
+									case "Finished":
+										toast.dismiss("update-download");
+										toast.success("Update downloaded. Restarting...");
+										break;
+								}
+							});
+
+							await import("@tauri-apps/plugin-process").then(({ relaunch }) =>
+								relaunch(),
+							);
+						} catch (e) {
+							toast.error("Failed to update", { description: String(e) });
+						}
+					},
+				},
+				duration: Infinity,
+			});
+		} catch (error) {
+			console.error("Failed to check for updates:", error);
+			toast.error(`Failed to check for updates: ${error}`, {
+				id: "manual-check",
+			});
+		}
+	};
+
 	const handleSave = async () => {
 		if (!config) return;
 		setSaving(true);
@@ -81,7 +131,7 @@ function ConfigPage() {
 	}
 
 	return (
-		<div className="min-h-screen bg-background flex flex-col items-center p-4">
+		<div className="min-h-screen bg-background flex flex-col items-center p-4 pb-28">
 			<div className="w-full max-w-2xl flex flex-col gap-8">
 				<Header />
 
@@ -103,28 +153,43 @@ function ConfigPage() {
 							onChange={(val) => setConfig({ ...config, library_path: val })}
 						/>
 
-						<div className="flex items-center justify-between rounded-lg border border-border/50 bg-background/50 p-4">
-							<div className="space-y-0.5">
-								<label
-									htmlFor="auto-update"
-									className="text-base font-medium peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-								>
-									Auto Update
-								</label>
-								<div className="text-sm text-muted-foreground">
-									Automatically check for updates on startup
+						<div className="space-y-4 pt-4 border-t border-border/50">
+							<h3 className="text-lg font-medium">Updates</h3>
+							<div className="flex items-center justify-between rounded-lg border border-border/50 bg-background/50 p-4">
+								<div className="space-y-0.5">
+									<label
+										htmlFor="auto-update"
+										className="text-base font-medium peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+									>
+										Auto Update
+									</label>
+									<div className="text-sm text-muted-foreground">
+										Automatically check for updates on startup
+									</div>
 								</div>
+								<Switch
+									id="auto-update"
+									checked={config.auto_update}
+									onCheckedChange={(checked) =>
+										setConfig({ ...config, auto_update: checked })
+									}
+								/>
 							</div>
-							<Switch
-								id="auto-update"
-								checked={config.auto_update}
-								onCheckedChange={(checked) =>
-									setConfig({ ...config, auto_update: checked })
-								}
-							/>
+
+							<div className="flex items-center justify-between rounded-lg border border-border/50 bg-background/50 p-4">
+								<div className="space-y-0.5">
+									<div className="text-base font-medium">Check for Updates</div>
+									<div className="text-sm text-muted-foreground">
+										Manually check for new versions
+									</div>
+								</div>
+								<Button variant="outline" onClick={handleCheckUpdate}>
+									Check Now
+								</Button>
+							</div>
 						</div>
 
-						<div className="space-y-2">
+						<div className="space-y-2 pt-4 border-t border-border/50">
 							<label
 								htmlFor="ytdlp-version"
 								className="text-sm font-medium text-muted-foreground ml-1"

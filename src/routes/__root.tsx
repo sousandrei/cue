@@ -7,9 +7,8 @@ import {
 import { AnimatePresence, motion } from "framer-motion";
 import { useEffect, useState } from "react";
 import { Toaster } from "sonner";
-
-import { Updater } from "@/components/Updater";
 import { FloatingDock } from "@/components/floating-dock";
+import { Updater } from "@/components/Updater";
 import { getConfig } from "@/lib/tauri-commands";
 
 const RootLayout = () => {
@@ -39,7 +38,7 @@ const RootLayout = () => {
 		<div className="min-h-screen w-full relative overflow-x-hidden bg-background text-foreground">
 			<Updater />
 			<Toaster position="top-right" richColors closeButton />
-			<main className="relative w-full min-h-screen">
+			<main className="relative grid grid-cols-1 w-full min-h-screen">
 				<AnimatePresence initial={false}>
 					<motion.div
 						key={location.pathname}
@@ -48,9 +47,9 @@ const RootLayout = () => {
 						exit={{ opacity: 0 }}
 						transition={{
 							duration: 0.3,
-							ease: "linear"
+							ease: "linear",
 						}}
-						className="w-full h-full absolute inset-0"
+						className="row-start-1 col-start-1 w-full min-h-screen"
 					>
 						<Outlet />
 					</motion.div>

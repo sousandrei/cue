@@ -82,18 +82,16 @@ function Index() {
 
 			let processedCount = 0;
 			let totalSkipped = 0;
-			let totalAdded = 0;
 			let failCount = 0;
 
 			for (const bulkUrl of urls) {
-				const { added, skipped, error } = await queueUrl(bulkUrl);
+				const { skipped, error } = await queueUrl(bulkUrl);
 
 				if (error) {
 					failCount++;
 					console.error(`Failed to import ${bulkUrl}:`, error);
 				} else {
 					totalSkipped += skipped;
-					totalAdded += added.length;
 				}
 				processedCount++;
 			}
