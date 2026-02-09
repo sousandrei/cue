@@ -1,5 +1,17 @@
 # Changelog
 
+## [1.2.0](https://github.com/sousandrei/cue/compare/v1.1.1...v1.2.0) (2026-02-09)
+
+
+### Features
+
+* better update logic ([d3d8480](https://github.com/sousandrei/cue/commit/d3d848051435526322375d4d4aec2596dbb8db86))
+
+
+### Bug Fixes
+
+* confirmation dialog on factory reset ([af82daf](https://github.com/sousandrei/cue/commit/af82dafd45a3940f33ad52e01cf9d5605934c0df))
+
 ## [1.1.1](https://github.com/sousandrei/cue/compare/v1.1.0...v1.1.1) (2026-02-09)
 
 
