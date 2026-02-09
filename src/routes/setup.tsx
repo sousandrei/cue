@@ -1,5 +1,5 @@
-import { listen } from "@tauri-apps/api/event";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { listen } from "@tauri-apps/api/event";
 import { Music, Rocket } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
@@ -95,7 +95,9 @@ function SetupWizard() {
 								<span className="text-muted-foreground animate-pulse">
 									{setupStatus || "Initializing..."}
 								</span>
-								<span className="font-medium">{Math.round(setupProgress)}%</span>
+								<span className="font-medium">
+									{Math.round(setupProgress)}%
+								</span>
 							</div>
 							<Progress value={setupProgress} className="h-2" />
 						</div>

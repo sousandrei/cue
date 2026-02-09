@@ -1,3 +1,4 @@
+mod bundler;
 mod commands;
 mod config;
 mod db;
@@ -39,41 +40,71 @@ pub fn run() {
             commands::initialize_setup,
             commands::get_song_by_id,
             commands::cancel_download,
+            commands::factory_reset,
+            commands::check_health,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }
 
 async fn init_app(app: &mut tauri::App) -> Result<(), Box<dyn std::error::Error>> {
-    let config = config::load_config().map_err(|e| e.to_string())?;
+    // Initializing state as empty
+    let cfg_state: config::ConfigState = Mutex::new(None);
+    let db_state: db::DbState = Mutex::new(None);
+    let active_processes = download::ActiveProcesses(Mutex::new(std::collections::HashMap::new()));
+    let download_manager = download::DownloadManager::new(app.handle().clone());
+
+    // Manage states immediately so commands can access them even if loading fails
+    app.manage(cfg_state);
+    app.manage(db_state);
+    app.manage(active_processes);
+    app.manage(download_manager);
+
+    // Now try to load config and initialize DB
+    let config = match config::load_config() {
+        Ok(c) => c,
+        Err(e) => {
+            eprintln!("Warning: Failed to load config: {}", e);
+            None
+        }
+    };
 
     if let Some(cfg) = config {
-        let db_path = format!("sqlite:{}/songs.db", cfg.library_path);
-        let pool = db::init_db(&db_path).await?;
+        let is_healthy = bundler::check_bundler_health(app.handle(), &cfg);
 
-        app.manage(Mutex::new(Some(Database {
-            pool,
-            library_path: cfg.library_path.clone(),
-        })));
-        app.manage(download::ActiveProcesses(Mutex::new(
-            std::collections::HashMap::new(),
-        )));
-        app.manage(download::DownloadManager::new(app.handle().clone()));
+        if is_healthy {
+            let db_path = format!("sqlite:{}/songs.db", cfg.library_path);
+            match db::init_db(&db_path).await {
+                Ok(pool) => {
+                    let state = app.state::<db::DbState>();
+                    let mut db_guard = state.lock().unwrap();
+                    *db_guard = Some(Database {
+                        pool,
+                        library_path: cfg.library_path.clone(),
+                    });
+                }
+                Err(e) => eprintln!("Warning: Failed to initialize DB: {}", e),
+            }
 
-        // Initialize yt-dlp
-        if let Err(e) = download::ensure_ytdlp(app.handle(), &cfg.yt_dlp_version).await {
-            eprintln!("Failed to ensure yt-dlp: {}", e);
+            {
+                let state = app.state::<config::ConfigState>();
+                let mut cfg_guard = state.lock().unwrap();
+                *cfg_guard = Some(cfg.clone());
+            }
+        } else {
+            // If NOT healthy, we still manage the config but maybe we shouldn't?
+            // The user said: "go back to the setup screen with the values of the config file"
+            // So we MUST manage it so get_config returns it.
+            {
+                let state = app.state::<config::ConfigState>();
+                let mut cfg_guard = state.lock().unwrap();
+                *cfg_guard = Some(cfg.clone());
+            }
         }
-
-        app.manage(Mutex::new(Some(cfg)));
     } else {
-        app.manage(Mutex::new(None::<Database>));
-        app.manage(Mutex::new(None::<config::Config>));
-        // Also manage active processes and download manager even if no config yet
-        app.manage(download::ActiveProcesses(Mutex::new(
-            std::collections::HashMap::new(),
-        )));
-        app.manage(download::DownloadManager::new(app.handle().clone()));
+        // If config doesn't exist, we don't restart (infinite loop!)
+        // The frontend will handle redirecting to /setup
+        eprintln!("No config found, waiting for setup.");
     }
 
     Ok(())

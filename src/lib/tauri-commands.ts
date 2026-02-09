@@ -132,3 +132,10 @@ export async function clearHistory(): Promise<void> {
 export async function clearQueue(): Promise<void> {
 	return await invoke("clear_queue");
 }
+
+/**
+ * Checks if all required binaries are present and healthy.
+ */
+export async function checkHealth(): Promise<boolean> {
+	return await invoke<boolean>("check_health");
+}

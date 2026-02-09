@@ -105,6 +105,24 @@ function ConfigPage() {
 		}
 	};
 
+	const handleFactoryReset = async () => {
+		if (
+			!window.confirm(
+				"Are you sure you want to perform a factory reset? This will delete all downloaded binaries and your configuration. The app will restart.",
+			)
+		) {
+			return;
+		}
+
+		try {
+			toast.loading("Performing factory reset...", { id: "factory-reset" });
+			await invoke("factory_reset");
+		} catch (error) {
+			console.error("Factory reset failed:", error);
+			toast.error(`Factory reset failed: ${error}`, { id: "factory-reset" });
+		}
+	};
+
 	if (loading) {
 		return (
 			<div className="min-h-screen bg-background flex items-center justify-center">
@@ -212,6 +230,25 @@ function ConfigPage() {
 									</>
 								)}
 							</Button>
+						</div>
+
+						<div className="pt-8 border-t border-destructive/20 mt-4">
+							<div className="flex flex-col gap-2">
+								<h3 className="text-sm font-medium text-destructive">
+									Danger Zone
+								</h3>
+								<p className="text-xs text-muted-foreground">
+									Factory reset will delete all local configuration and
+									utilities. The application will restart to initial setup.
+								</p>
+								<Button
+									variant="destructive"
+									className="w-full mt-2"
+									onClick={handleFactoryReset}
+								>
+									Factory Reset
+								</Button>
+							</div>
 						</div>
 					</CardContent>
 				</Card>

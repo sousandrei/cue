@@ -9,7 +9,7 @@ import { useEffect, useState } from "react";
 import { Toaster } from "sonner";
 import { FloatingDock } from "@/components/floating-dock";
 import { Updater } from "@/components/Updater";
-import { getConfig } from "@/lib/tauri-commands";
+import { checkHealth, getConfig } from "@/lib/tauri-commands";
 
 const RootLayout = () => {
 	const navigate = useNavigate();
@@ -17,19 +17,25 @@ const RootLayout = () => {
 	const [checked, setChecked] = useState(false);
 
 	useEffect(() => {
-		const checkConfig = async () => {
+		const checkAppStatus = async () => {
 			try {
-				const config = await getConfig();
-				if (!config && location.pathname !== "/setup") {
+				const [config, isHealthy] = await Promise.all([
+					getConfig(),
+					checkHealth(),
+				]);
+
+				const isSetupPage = location.pathname === "/setup";
+
+				if ((!config || !isHealthy) && !isSetupPage) {
 					navigate({ to: "/setup" });
 				}
 			} catch (error) {
-				console.error("Failed to check config:", error);
+				console.error("Failed to check app status:", error);
 			} finally {
 				setChecked(true);
 			}
 		};
-		checkConfig();
+		checkAppStatus();
 	}, [navigate, location.pathname]);
 
 	if (!checked) return null;

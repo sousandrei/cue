@@ -2,7 +2,9 @@ use serde::{Deserialize, Serialize};
 use std::{fs, sync::Mutex};
 use tauri::State;
 
-use crate::download;
+use crate::bundler;
+
+pub type ConfigState = Mutex<Option<Config>>;
 
 #[derive(Debug, Deserialize, Serialize, Clone)]
 pub struct Config {
@@ -10,6 +12,7 @@ pub struct Config {
     pub yt_dlp_version: String,
     pub ffmpeg_version: String,
     pub bun_version: String,
+    pub ejs_version: String,
     #[serde(default = "default_auto_update")]
     pub auto_update: bool,
 }
@@ -32,7 +35,8 @@ impl Default for Config {
             library_path,
             yt_dlp_version: "2026.02.04".to_string(),
             ffmpeg_version: "7.1".to_string(),
-            bun_version: "1.2.2".to_string(),
+            bun_version: "1.3.9".to_string(),
+            ejs_version: "0.4.0".to_string(),
             auto_update: true,
         }
     }
@@ -93,15 +97,19 @@ pub async fn update_config(
     }
 
     // Ensure yt-dlp and ffmpeg
-    download::ensure_ytdlp(&app, &new_config.yt_dlp_version)
+    bundler::ensure_ytdlp(&app, &new_config.yt_dlp_version)
         .await
         .map_err(|e| e.to_string())?;
 
-    download::ensure_ffmpeg(&app, &new_config.ffmpeg_version)
+    bundler::ensure_ffmpeg(&app, &new_config.ffmpeg_version)
         .await
         .map_err(|e| e.to_string())?;
 
-    download::ensure_bun(&app, &new_config.bun_version)
+    bundler::ensure_bun(&app, &new_config.bun_version)
+        .await
+        .map_err(|e| e.to_string())?;
+
+    bundler::ensure_ejs(&app, &new_config.ejs_version)
         .await
         .map_err(|e| e.to_string())?;
 

@@ -11,6 +11,8 @@ pub struct Database {
     pub library_path: String,
 }
 
+pub type DbState = std::sync::Mutex<Option<Database>>;
+
 pub async fn init_db(db_path: &str) -> anyhow::Result<SqlitePool> {
     let opts = SqliteConnectOptions::from_str(db_path)?.create_if_missing(true);
     let pool = SqlitePool::connect_with(opts).await?;
@@ -30,7 +32,7 @@ impl Database {
             .bind(&song.filename)
             .execute(&self.pool)
             .await?;
-        
+
         self.trigger_rekordbox_export().await;
         Ok(())
     }
@@ -151,9 +153,9 @@ mod tests {
         let mut temp_dir = std::env::temp_dir();
         temp_dir.push(format!("cue_test_{}_{}", std::process::id(), suffix));
         std::fs::create_dir_all(&temp_dir).unwrap();
-        Database { 
-            pool, 
-            library_path: temp_dir.to_string_lossy().to_string() 
+        Database {
+            pool,
+            library_path: temp_dir.to_string_lossy().to_string(),
         }
     }
 
