@@ -1,0 +1,27 @@
+{
+    "packages": {
+        ".": {
+            "release-type": "node",
+            "package-name": "cue"
+        },
+        "src-tauri": {
+            "release-type": "rust",
+            "package-name": "cue-backend",
+            "extra-files": [
+                "tauri.conf.json"
+            ]
+        }
+    },
+    "plugins": [
+        {
+            "type": "linked-versions",
+            "groupName": "cue",
+            "packages": [
+                ".",
+                "src-tauri"
+            ]
+        }
+    ],
+    "bump-minor-pre-major": true,
+    "bump-patch-for-minor-pre-major": true
+}
