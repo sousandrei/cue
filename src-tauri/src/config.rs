@@ -8,6 +8,7 @@ use crate::download;
 pub struct Config {
     pub library_path: String,
     pub yt_dlp_version: String,
+    pub ffmpeg_version: String,
     #[serde(default = "default_auto_update")]
     pub auto_update: bool,
 }
@@ -29,6 +30,7 @@ impl Default for Config {
         Self {
             library_path,
             yt_dlp_version: "2026.02.04".to_string(),
+            ffmpeg_version: "7.1".to_string(),
             auto_update: true,
         }
     }
@@ -88,8 +90,12 @@ pub async fn update_config(
         *config = new_config.clone();
     }
 
-    // Ensure yt-dlp version
+    // Ensure yt-dlp and ffmpeg
     download::ensure_ytdlp(&app, &new_config.yt_dlp_version)
+        .await
+        .map_err(|e| e.to_string())?;
+
+    download::ensure_ffmpeg(&app, &new_config.ffmpeg_version)
         .await
         .map_err(|e| e.to_string())?;
 
