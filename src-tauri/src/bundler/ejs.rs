@@ -38,8 +38,6 @@ pub async fn ensure_ejs<R: Runtime>(
         fs::create_dir_all(&components_dir)?;
     }
 
-
-
     let url = format!(
         "https://github.com/yt-dlp/ejs/archive/refs/tags/{}.zip",
         target_version
@@ -54,12 +52,8 @@ async fn download_ejs_zip<R: Runtime>(
     version_path: &PathBuf,
     target_version: &str,
 ) -> Result<(), anyhow::Error> {
-    let bytes = crate::bundler::download_with_progress(
-        app,
-        url,
-        "Downloading yt-dlp-ejs...",
-    )
-    .await?;
+    let bytes =
+        crate::bundler::download_with_progress(app, url, "Downloading yt-dlp-ejs...").await?;
 
     let reader = Cursor::new(bytes);
     let mut archive = zip::ZipArchive::new(reader)?;
@@ -73,7 +67,7 @@ async fn download_ejs_zip<R: Runtime>(
         let mut file = archive.by_index(i)?;
         let name = file.name().to_string();
         let parts: Vec<&str> = name.split('/').collect();
-        
+
         // GitHub zips have a root folder (e.g., ejs-0.4.0/)
         if parts.len() > 1 {
             let relative_path = parts[1..].join("/");
@@ -96,11 +90,14 @@ async fn download_ejs_zip<R: Runtime>(
         }
 
         let op_percent = ((i + 1) as f64 / total_files as f64) * 100.0;
-        
-        let _ = app.emit("setup://progress", SetupProgressPayload {
-            status: "Extracting yt-dlp-ejs...".into(),
-            progress: op_percent,
-        });
+
+        let _ = app.emit(
+            "setup://progress",
+            SetupProgressPayload {
+                status: "Extracting yt-dlp-ejs...".into(),
+                progress: op_percent,
+            },
+        );
     }
 
     tokio::fs::write(version_path, target_version).await?;

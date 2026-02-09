@@ -286,7 +286,10 @@ pub async fn run_download<R: Runtime>(
     if !songs_dir.exists() {
         fs::create_dir_all(&songs_dir)?;
     }
-    let output_template = format!("{}/%(title).150s-%(id).50s.%(ext)s", songs_dir.to_string_lossy());
+    let output_template = format!(
+        "{}/%(title).150s-%(id).50s.%(ext)s",
+        songs_dir.to_string_lossy()
+    );
 
     let mut cmd = Command::new(&ytdlp_path);
 

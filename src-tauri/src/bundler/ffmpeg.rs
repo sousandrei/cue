@@ -55,13 +55,7 @@ pub async fn ensure_ffmpeg<R: Runtime>(
         "https://github.com/BtbN/FFmpeg-Builds/releases/download/latest/ffmpeg-master-latest-linux64-gpl.tar.xz"
     };
 
-
-    let buffer = crate::bundler::download_with_progress(
-        app,
-        url,
-        "Downloading ffmpeg...",
-    )
-    .await?;
+    let buffer = crate::bundler::download_with_progress(app, url, "Downloading ffmpeg...").await?;
 
     if url.ends_with(".zip") || cfg!(target_os = "macos") {
         let reader = Cursor::new(buffer);
@@ -72,21 +66,26 @@ pub async fn ensure_ffmpeg<R: Runtime>(
             if file.name().ends_with(binary_name) {
                 let total_extract = file.size();
                 let mut outfile = fs::File::create(&ffmpeg_path)?;
-                
+
                 // Track extraction progress
                 let mut extracted = 0;
                 let mut chunk_buf = [0u8; 8192];
                 while let Ok(n) = std::io::Read::read(&mut file, &mut chunk_buf) {
-                    if n == 0 { break; }
+                    if n == 0 {
+                        break;
+                    }
                     std::io::Write::write_all(&mut outfile, &chunk_buf[..n])?;
                     extracted += n as u64;
-                    
+
                     let op_percent = (extracted as f64 / total_extract as f64) * 100.0;
-                    
-                    let _ = app.emit("setup://progress", SetupProgressPayload {
-                        status: "Extracting ffmpeg...".into(),
-                        progress: op_percent,
-                    });
+
+                    let _ = app.emit(
+                        "setup://progress",
+                        SetupProgressPayload {
+                            status: "Extracting ffmpeg...".into(),
+                            progress: op_percent,
+                        },
+                    );
                 }
                 break;
             }

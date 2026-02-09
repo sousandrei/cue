@@ -81,12 +81,7 @@ async fn download_bun_zip<R: Runtime>(
     version_path: &PathBuf,
     target_version: &str,
 ) -> Result<PathBuf, anyhow::Error> {
-    let bytes = crate::bundler::download_with_progress(
-        app,
-        url,
-        "Downloading Bun...",
-    )
-    .await?;
+    let bytes = crate::bundler::download_with_progress(app, url, "Downloading Bun...").await?;
 
     let reader = Cursor::new(bytes);
     let mut archive = zip::ZipArchive::new(reader)?;
@@ -96,20 +91,25 @@ async fn download_bun_zip<R: Runtime>(
         if file.name().ends_with("bun") || file.name().ends_with("bun.exe") {
             let total_extract = file.size();
             let mut outfile = fs::File::create(bun_path)?;
-            
+
             let mut extracted = 0;
             let mut chunk_buf = [0u8; 8192];
             while let Ok(n) = std::io::Read::read(&mut file, &mut chunk_buf) {
-                if n == 0 { break; }
+                if n == 0 {
+                    break;
+                }
                 std::io::Write::write_all(&mut outfile, &chunk_buf[..n])?;
                 extracted += n as u64;
-                
+
                 let op_percent = (extracted as f64 / total_extract as f64) * 100.0;
-                
-                let _ = app.emit("setup://progress", SetupProgressPayload {
-                    status: "Extracting Bun...".into(),
-                    progress: op_percent,
-                });
+
+                let _ = app.emit(
+                    "setup://progress",
+                    SetupProgressPayload {
+                        status: "Extracting Bun...".into(),
+                        progress: op_percent,
+                    },
+                );
             }
             break;
         }

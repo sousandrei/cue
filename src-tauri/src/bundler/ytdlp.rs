@@ -63,12 +63,7 @@ pub async fn ensure_ytdlp<R: Runtime>(
         )
     };
 
-    let buffer = crate::bundler::download_with_progress(
-        app,
-        &url,
-        "Downloading yt-dlp...",
-    )
-    .await?;
+    let buffer = crate::bundler::download_with_progress(app, &url, "Downloading yt-dlp...").await?;
 
     let temp_path = ytdlp_path.with_extension("tmp");
     tokio::fs::write(&temp_path, buffer).await?;
