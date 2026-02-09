@@ -30,7 +30,7 @@ export function DownloadInput({
 				<div className="relative flex items-center">
 					<Input
 						type="text"
-						placeholder="Paste URL here..."
+						placeholder={loading ? "Loading..." : "Paste URL here..."}
 						className="h-14 pl-6 pr-14 text-lg bg-background/95 text-foreground backdrop-blur-xl border-muted-foreground/20 shadow-xl rounded-full focus-visible:ring-0 focus-visible:border-primary transition-all"
 						value={url}
 						onChange={(e) => setUrl(e.target.value)}

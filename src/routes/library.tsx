@@ -1,97 +1,20 @@
 import { createFileRoute } from "@tanstack/react-router";
-import type { ColumnDef } from "@tanstack/react-table";
-import { invoke } from "@tauri-apps/api/core";
-import { Loader2, Music, Trash2 } from "lucide-react";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { Loader2, Music } from "lucide-react";
+import { useMemo } from "react";
 import { Header } from "@/components/Header";
-import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { DataTable } from "@/components/ui/data-table";
-
-interface Song {
-	id: string;
-	title: string;
-	artist: string;
-	album?: string;
-	filename: string;
-}
+import { createColumns } from "@/components/library/columns";
+import { useLibrarySongs } from "@/hooks/useLibrarySongs";
 
 export const Route = createFileRoute("/library")({
 	component: Library,
 });
 
 function Library() {
-	const [songs, setSongs] = useState<Song[]>([]);
-	const [loading, setLoading] = useState(true);
+	const { songs, loading, handleDelete } = useLibrarySongs();
 
-	const fetchSongs = useCallback(async () => {
-		try {
-			const data = await invoke<Song[]>("get_songs");
-			setSongs(data);
-		} catch (error) {
-			console.error("Failed to fetch songs:", error);
-		} finally {
-			setLoading(false);
-		}
-	}, []);
-
-	useEffect(() => {
-		fetchSongs();
-	}, [fetchSongs]);
-
-	const handleDelete = useCallback(async (id: string) => {
-		try {
-			await invoke("remove_song", { id });
-			setSongs((prev) => prev.filter((song) => song.id !== id));
-		} catch (error) {
-			console.error("Failed to delete song:", error);
-		}
-	}, []);
-
-	const columns = useMemo<ColumnDef<Song>[]>(
-		() => [
-			{
-				accessorKey: "title",
-				header: "Title",
-				cell: ({ row }) => (
-					<div className="font-medium">{row.getValue("title")}</div>
-				),
-			},
-			{
-				accessorKey: "artist",
-				header: "Artist",
-				cell: ({ row }) => (
-					<div className="text-muted-foreground">{row.getValue("artist")}</div>
-				),
-			},
-			{
-				accessorKey: "album",
-				header: "Album",
-				cell: ({ row }) => (
-					<div className="text-muted-foreground italic">
-						{row.getValue("album") || "Unknown"}
-					</div>
-				),
-			},
-			{
-				id: "actions",
-				header: () => <div className="text-right">Actions</div>,
-				cell: ({ row }) => (
-					<div className="text-right">
-						<Button
-							variant="ghost"
-							size="icon"
-							onClick={() => handleDelete(row.original.id)}
-							className="text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
-						>
-							<Trash2 className="w-4 h-4" />
-						</Button>
-					</div>
-				),
-			},
-		],
-		[handleDelete],
-	);
+	const columns = useMemo(() => createColumns(handleDelete), [handleDelete]);
 
 	return (
 		<div className="min-h-screen bg-background flex flex-col items-center p-4">
