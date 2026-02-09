@@ -2,7 +2,7 @@
     "packages": {
         ".": {
             "release-type": "node",
-            "package-name": "synqed",
+            "package-name": "cue",
             "extra-files": [
                 "src-tauri/tauri.conf.json",
                 "src-tauri/Cargo.toml"

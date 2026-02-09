@@ -13,7 +13,7 @@ export function Updater() {
 				const update = await check();
 				if (update) {
 					toast.info(`Update Available: ${update.version}`, {
-						description: `A new version of synqed is available.\n${update.body}`,
+						description: `A new version of Cue is available.\n${update.body}`,
 						action: {
 							label: "Update Now",
 							onClick: async () => {

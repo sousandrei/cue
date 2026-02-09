@@ -59,7 +59,10 @@ pub async fn initialize_setup(
         .await
         .map_err(|e| format!("Failed to initialize database: {}", e))?;
 
-    let db_instance = Database { pool };
+    let db_instance = Database { 
+        pool, 
+        library_path: library_path.clone() 
+    };
 
     // Update states
     {

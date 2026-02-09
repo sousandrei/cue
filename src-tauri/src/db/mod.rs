@@ -8,6 +8,7 @@ use entities::{Playlist, Song};
 #[derive(Clone)]
 pub struct Database {
     pub pool: SqlitePool,
+    pub library_path: String,
 }
 
 pub async fn init_db(db_path: &str) -> anyhow::Result<SqlitePool> {
@@ -29,6 +30,8 @@ impl Database {
             .bind(&song.filename)
             .execute(&self.pool)
             .await?;
+        
+        self.trigger_rekordbox_export().await;
         Ok(())
     }
 
@@ -37,6 +40,8 @@ impl Database {
             .bind(id)
             .execute(&self.pool)
             .await?;
+
+        self.trigger_rekordbox_export().await;
         Ok(())
     }
 
@@ -57,6 +62,8 @@ impl Database {
             .bind(&song.id)
             .execute(&self.pool)
             .await?;
+
+        self.trigger_rekordbox_export().await;
         Ok(())
     }
 
@@ -118,21 +125,41 @@ impl Database {
                 .await?;
         Ok(playlists)
     }
+
+    async fn trigger_rekordbox_export(&self) {
+        let songs = match self.get_songs().await {
+            Ok(s) => s,
+            Err(e) => {
+                eprintln!("Failed to get songs for Rekordbox export: {}", e);
+                return;
+            }
+        };
+
+        if let Err(e) = crate::rekordbox::export_xml(songs, &self.library_path).await {
+            eprintln!("Failed to export Rekordbox XML: {}", e);
+        }
+    }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
 
-    async fn setup_test_db() -> Database {
+    async fn setup_test_db(suffix: &str) -> Database {
         let pool = SqlitePool::connect("sqlite::memory:").await.unwrap();
         sqlx::migrate!("./migrations").run(&pool).await.unwrap();
-        Database { pool }
+        let mut temp_dir = std::env::temp_dir();
+        temp_dir.push(format!("cue_test_{}_{}", std::process::id(), suffix));
+        std::fs::create_dir_all(&temp_dir).unwrap();
+        Database { 
+            pool, 
+            library_path: temp_dir.to_string_lossy().to_string() 
+        }
     }
 
     #[tokio::test]
     async fn test_add_and_get_songs() {
-        let db = setup_test_db().await;
+        let db = setup_test_db("add_get").await;
         let song = Song {
             id: "1".to_string(),
             title: "Test Song".to_string(),
@@ -149,7 +176,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_search_songs() {
-        let db = setup_test_db().await;
+        let db = setup_test_db("search").await;
         let song1 = Song {
             id: "1".to_string(),
             title: "Apple".to_string(),
@@ -171,5 +198,37 @@ mod tests {
         let results = db.search_songs("App").await.unwrap();
         assert_eq!(results.len(), 1);
         assert_eq!(results[0].title, "Apple");
+    }
+
+    #[tokio::test]
+    async fn test_export_rekordbox_xml() {
+        let db = setup_test_db("export").await;
+        let song = Song {
+            id: "1".to_string(),
+            title: "Test Song".to_string(),
+            artist: "Test Artist".to_string(),
+            album: Some("Test Album".to_string()),
+            filename: "test.mp3".to_string(),
+        };
+
+        // Ensure Songs directory exists
+        let library_path = std::path::Path::new(&db.library_path);
+        std::fs::create_dir_all(library_path.join("Songs")).unwrap();
+
+        // Adding a song should trigger export
+        db.add_song(&song).await.unwrap();
+
+        let xml_path = library_path.join("rekordbox.xml");
+        assert!(xml_path.exists());
+
+        let xml_content = std::fs::read_to_string(xml_path).unwrap();
+        assert!(xml_content.contains("DJ_PLAYLISTS"));
+        assert!(xml_content.contains("COLLECTION"));
+        assert!(xml_content.contains("TRACK"));
+        assert!(xml_content.contains("TrackID=\"1\""));
+        assert!(xml_content.contains("Name=\"Test Song\""));
+        assert!(xml_content.contains("Artist=\"Test Artist\""));
+        assert!(xml_content.contains("Location=\"file://localhost"));
+        assert!(xml_content.contains("test.mp3\""));
     }
 }

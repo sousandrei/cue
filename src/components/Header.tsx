@@ -6,7 +6,7 @@ interface HeaderProps {
 }
 
 export function Header({
-	title = "Synqed",
+	title = "Cue",
 	subtitle = "Paste a link to start downloading",
 }: HeaderProps) {
 	return (

@@ -2,6 +2,7 @@ mod commands;
 mod config;
 mod db;
 mod download;
+mod rekordbox;
 
 use db::Database;
 use std::sync::Mutex;
@@ -14,30 +15,8 @@ pub fn run() {
         .plugin(tauri_plugin_updater::Builder::new().build())
         .setup(|app| {
             tauri::async_runtime::block_on(async {
-                let config = config::load_config().expect("failed to load config");
-
-                if let Some(cfg) = config {
-                    let db_path = format!("sqlite:{}/songs.db", cfg.library_path);
-                    let pool = db::init_db(&db_path)
-                        .await
-                        .expect("failed to initialize database");
-
-                    app.manage(Mutex::new(Some(Database { pool })));
-                    app.manage(download::ActiveProcesses(Mutex::new(
-                        std::collections::HashMap::new(),
-                    )));
-                    app.manage(download::DownloadManager::new(app.handle().clone()));
-
-                    // Initialize yt-dlp
-                    if let Err(e) = download::ensure_ytdlp(app.handle(), &cfg.yt_dlp_version).await
-                    {
-                        eprintln!("Failed to ensure yt-dlp: {}", e);
-                    }
-
-                    app.manage(Mutex::new(Some(cfg)));
-                } else {
-                    app.manage(Mutex::new(None::<Database>));
-                    app.manage(Mutex::new(None::<config::Config>));
+                if let Err(e) = init_app(app).await {
+                    eprintln!("Failed to initialize application: {}", e);
                 }
             });
             Ok(())
@@ -63,4 +42,39 @@ pub fn run() {
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
+}
+
+async fn init_app(app: &mut tauri::App) -> Result<(), Box<dyn std::error::Error>> {
+    let config = config::load_config().map_err(|e| e.to_string())?;
+
+    if let Some(cfg) = config {
+        let db_path = format!("sqlite:{}/songs.db", cfg.library_path);
+        let pool = db::init_db(&db_path).await?;
+
+        app.manage(Mutex::new(Some(Database {
+            pool,
+            library_path: cfg.library_path.clone(),
+        })));
+        app.manage(download::ActiveProcesses(Mutex::new(
+            std::collections::HashMap::new(),
+        )));
+        app.manage(download::DownloadManager::new(app.handle().clone()));
+
+        // Initialize yt-dlp
+        if let Err(e) = download::ensure_ytdlp(app.handle(), &cfg.yt_dlp_version).await {
+            eprintln!("Failed to ensure yt-dlp: {}", e);
+        }
+
+        app.manage(Mutex::new(Some(cfg)));
+    } else {
+        app.manage(Mutex::new(None::<Database>));
+        app.manage(Mutex::new(None::<config::Config>));
+        // Also manage active processes and download manager even if no config yet
+        app.manage(download::ActiveProcesses(Mutex::new(
+            std::collections::HashMap::new(),
+        )));
+        app.manage(download::DownloadManager::new(app.handle().clone()));
+    }
+
+    Ok(())
 }

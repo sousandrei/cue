@@ -37,7 +37,7 @@ impl Default for Config {
 pub fn load_config() -> Result<Option<Config>, String> {
     let config_dir = dirs::config_dir()
         .ok_or("Could not find config directory")?
-        .join("synqed");
+        .join("cue");
     let config_path = config_dir.join("config.yaml");
 
     if !config_path.exists() {
@@ -56,7 +56,7 @@ pub fn load_config() -> Result<Option<Config>, String> {
 pub fn save_config(config: &Config) -> Result<(), String> {
     let config_dir = dirs::config_dir()
         .ok_or("Could not find config directory")?
-        .join("synqed");
+        .join("cue");
     let config_path = config_dir.join("config.yaml");
 
     // Ensuring directory exists is handled by load_config/init but safe to do here if needed

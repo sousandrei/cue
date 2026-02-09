@@ -47,9 +47,7 @@ function SetupWizard() {
 					<div className="mx-auto w-16 h-16 bg-primary/10 rounded-3xl flex items-center justify-center mb-4">
 						<Rocket className="w-8 h-8 text-primary" />
 					</div>
-					<CardTitle className="text-2xl font-bold">
-						Welcome to Synqed
-					</CardTitle>
+					<CardTitle className="text-2xl font-bold">Welcome to Cue</CardTitle>
 					<CardDescription>
 						Let's get you set up. Choose where you want to store your music
 						library.
