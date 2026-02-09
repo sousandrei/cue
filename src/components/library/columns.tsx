@@ -15,9 +15,9 @@ export const createColumns = (
 ): ColumnDef<Song>[] => [
 	{
 		accessorKey: "title",
-		header: "Title",
+		header: "Name",
 		cell: ({ row }) => (
-			<div className="font-medium">{row.getValue("title")}</div>
+			<div className="font-medium text-foreground">{row.getValue("title")}</div>
 		),
 	},
 	{

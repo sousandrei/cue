@@ -1,6 +1,10 @@
 import { Link, useLocation } from "@tanstack/react-router";
-import { motion } from "framer-motion";
-import { Home, type LucideIcon, Settings, Table } from "lucide-react";
+import {
+	ArrowDownToLine,
+	Disc3,
+	type LucideIcon,
+	SlidersHorizontal,
+} from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface DockItem {
@@ -10,22 +14,19 @@ interface DockItem {
 }
 
 const items: DockItem[] = [
-	{ title: "Home", icon: Home, href: "/" },
-	{ title: "Library", icon: Table, href: "/library" },
+	{ title: "Intake", icon: ArrowDownToLine, href: "/" },
+	{ title: "Collection", icon: Disc3, href: "/library" },
 	// TODO: add playlist functionality
 	// { title: "Playlists", icon: Table, href: "/playlists" },
-	{ title: "Config", icon: Settings, href: "/config" },
+	{ title: "Options", icon: SlidersHorizontal, href: "/config" },
 ];
 
 export function FloatingDock() {
 	const location = useLocation();
 
 	return (
-		<div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50">
-			<motion.div
-				layout
-				className="flex items-center gap-2 p-2 rounded-2xl bg-background/80 backdrop-blur-md border shadow-lg ring-1 ring-white/10"
-			>
+		<div className="fixed bottom-8 left-1/2 -translate-x-1/2 z-50">
+			<div className="flex items-center gap-4 px-6 py-3 rounded-full bg-card/90 backdrop-blur-sm border border-border/50">
 				{items.map((item) => {
 					const isActive = location.pathname === item.href;
 
@@ -34,31 +35,26 @@ export function FloatingDock() {
 							key={item.href}
 							to={item.href}
 							className={cn(
-								"relative flex items-center justify-center w-12 h-12 rounded-xl transition-colors",
+								"flex flex-col items-center gap-1 transition-colors duration-200 ease-in-out group",
 								isActive
-									? "text-primary-foreground"
-									: "text-muted-foreground hover:bg-muted hover:text-foreground",
+									? "text-primary"
+									: "text-muted-foreground hover:text-foreground",
 							)}
 						>
+							<item.icon
+								strokeWidth={1.5}
+								className={cn(
+									"w-6 h-6 transition-transform duration-200 ease-in-out group-hover:scale-110",
+								)}
+							/>
+							<span className="sr-only">{item.title}</span>
 							{isActive && (
-								<motion.div
-									layoutId="dock-active"
-									className="absolute inset-0 bg-primary rounded-xl"
-									transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
-								/>
+								<div className="absolute -bottom-1 w-1 h-1 rounded-full bg-primary" />
 							)}
-							<div className="relative z-10 w-full h-full flex items-center justify-center group">
-								<item.icon className="w-6 h-6" />
-
-								{/* Tooltip */}
-								<span className="absolute -top-10 scale-0 transition-all rounded bg-primary px-2 py-1 text-xs text-primary-foreground group-hover:scale-100">
-									{item.title}
-								</span>
-							</div>
 						</Link>
 					);
 				})}
-			</motion.div>
+			</div>
 		</div>
 	);
 }

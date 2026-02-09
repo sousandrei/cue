@@ -1,4 +1,4 @@
-import { ArrowRight, Loader2, Upload } from "lucide-react";
+import { Loader2, Plus, Upload } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 
@@ -24,44 +24,45 @@ export function DownloadInput({
 	};
 
 	return (
-		<div className="flex gap-2 items-center">
-			<div className="relative group flex-1">
-				<div className="absolute -inset-0.5 bg-linear-to-r from-primary/50 to-purple-600/50 rounded-full blur opacity-30"></div>
-				<div className="relative flex items-center">
-					<Input
-						type="text"
-						placeholder={loading ? "Loading..." : "Paste URL here..."}
-						className="h-14 pl-6 pr-14 text-lg bg-background/95 text-foreground backdrop-blur-xl border-muted-foreground/20 shadow-xl rounded-full focus-visible:ring-0 focus-visible:border-primary transition-all"
-						value={url}
-						onChange={(e) => setUrl(e.target.value)}
-						onKeyDown={handleKeyDown}
-						disabled={loading}
-						autoFocus
-					/>
+		<div className="w-full max-w-xl mx-auto relative group">
+			<div className="relative flex items-center">
+				<Input
+					type="text"
+					placeholder="Paste link"
+					className="h-16 pl-6 pr-32 text-lg bg-card/50 text-foreground border-transparent shadow-none rounded-2xl focus-visible:ring-1 focus-visible:ring-primary/20 focus-visible:border-primary/20 transition-all placeholder:text-muted-foreground/50"
+					value={url}
+					onChange={(e) => setUrl(e.target.value)}
+					onKeyDown={handleKeyDown}
+					disabled={loading}
+					autoFocus
+				/>
+				<div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1">
 					<Button
 						size="icon"
-						className="absolute right-2 h-10 w-10 rounded-full transition-transform hover:scale-105 active:scale-95 bg-primary hover:bg-primary/90"
+						variant="ghost"
+						className="h-10 w-10 rounded-xl text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-all"
+						onClick={onUpload}
+						disabled={loading}
+						title="Bulk Import"
+					>
+						<Upload className="h-5 w-5" />
+						<span className="sr-only">Upload</span>
+					</Button>
+					<Button
+						size="icon"
+						className="h-12 w-12 rounded-xl bg-primary text-primary-foreground hover:bg-primary/90 transition-all shadow-none"
 						onClick={onAdd}
 						disabled={!url.trim() || loading}
 					>
 						{loading ? (
-							<Loader2 className="h-5 w-5 animate-spin" />
+							<Loader2 className="h-6 w-6 animate-spin" />
 						) : (
-							<ArrowRight className="h-5 w-5" />
+							<Plus className="h-6 w-6" />
 						)}
+						<span className="sr-only">Add</span>
 					</Button>
 				</div>
 			</div>
-			<Button
-				variant="outline"
-				size="icon"
-				className="h-14 w-14 rounded-full border-muted-foreground/30 bg-background/95 backdrop-blur-xl shadow-xl hover:bg-accent hover:border-primary transition-all shrink-0 text-muted-foreground hover:text-primary"
-				onClick={onUpload}
-				disabled={loading}
-				title="Bulk Import (txt)"
-			>
-				<Upload className="h-6 w-6" />
-			</Button>
 		</div>
 	);
 }

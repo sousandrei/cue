@@ -1,20 +1,14 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { invoke } from "@tauri-apps/api/core";
 import { check } from "@tauri-apps/plugin-updater";
-import { Loader2, Save, Settings } from "lucide-react";
+import { Loader2, Save, SlidersHorizontal } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
 import { FolderPicker } from "@/components/FolderPicker";
 import { Header } from "@/components/Header";
 import { Button } from "@/components/ui/button";
-import {
-	Card,
-	CardContent,
-	CardDescription,
-	CardHeader,
-	CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 
@@ -135,15 +129,12 @@ function ConfigPage() {
 			<div className="w-full max-w-2xl flex flex-col gap-8">
 				<Header />
 
-				<Card className="border-none bg-card/50 backdrop-blur-md shadow-2xl">
+				<Card className="border-none bg-card/50 backdrop-blur-sm shadow-none">
 					<CardHeader>
-						<CardTitle className="flex items-center gap-2 text-2xl">
-							<Settings className="w-6 h-6 text-primary" />
-							Settings
+						<CardTitle className="flex items-center gap-2 text-2xl font-semibold tracking-tight">
+							<SlidersHorizontal className="w-6 h-6 text-primary" />
+							Options
 						</CardTitle>
-						<CardDescription>
-							Configure your music library and download engine.
-						</CardDescription>
 					</CardHeader>
 					<CardContent className="space-y-6">
 						<FolderPicker
