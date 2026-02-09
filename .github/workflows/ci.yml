@@ -1,0 +1,49 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  check-and-build:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Install system dependencies
+        run: |
+          sudo apt update
+          sudo apt install -y libwebkit2gtk-4.1-dev build-essential curl wget file libxdo-dev libssl-dev libayatana-appindicator3-dev librsvg2-dev
+
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Install frontend dependencies
+        run: bun install
+
+      - name: Biome check
+        run: bun run format:check
+
+      - name: Cargo fmt
+        run: cargo fmt --all -- --check
+        working-directory: src-tauri
+
+      - name: Clippy
+        run: cargo clippy --all-targets --all-features -- -D warnings
+        working-directory: src-tauri
+
+      - name: Tauri build check
+        run: bun tauri build --no-bundle
