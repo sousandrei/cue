@@ -9,12 +9,6 @@
             ]
         }
     },
-    "plugins": [
-        {
-            "type": "cargo",
-            "manifest": "src-tauri/Cargo.toml"
-        }
-    ],
     "bump-minor-pre-major": true,
     "bump-patch-for-minor-pre-major": true
 }
