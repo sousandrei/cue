@@ -1,4 +1,5 @@
 import { invoke } from "@tauri-apps/api/core";
+import { listen } from "@tauri-apps/api/event";
 import { useCallback, useEffect, useState } from "react";
 import type { Song } from "@/components/library/columns";
 
@@ -19,6 +20,14 @@ export function useLibrarySongs() {
 
 	useEffect(() => {
 		fetchSongs();
+
+		const unlisten = listen("library://updated", () => {
+			fetchSongs();
+		});
+
+		return () => {
+			unlisten.then((f) => f());
+		};
 	}, [fetchSongs]);
 
 	const handleDelete = useCallback(async (id: string) => {

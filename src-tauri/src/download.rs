@@ -498,5 +498,7 @@ pub async fn run_download<R: Runtime>(
         .await
         .map_err(|e| anyhow::anyhow!("Failed to add song to database: {}", e))?;
 
+    let _ = app.emit("library://updated", ());
+
     Ok(())
 }

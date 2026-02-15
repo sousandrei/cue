@@ -3,7 +3,7 @@ import { invoke } from "@tauri-apps/api/core";
 import { ask } from "@tauri-apps/plugin-dialog";
 import { check } from "@tauri-apps/plugin-updater";
 import { Loader2, Save, SlidersHorizontal } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { toast } from "sonner";
 
 import { FolderPicker } from "@/components/FolderPicker";
@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
+import { useConfig } from "@/hooks/useConfig";
 import { performUpdate } from "@/lib/updater";
 
 interface Config {
@@ -28,24 +29,8 @@ export const Route = createFileRoute("/config")({
 });
 
 function ConfigPage() {
-	const [config, setConfig] = useState<Config | null>(null);
-	const [loading, setLoading] = useState(true);
+	const { config } = useConfig();
 	const [saving, setSaving] = useState(false);
-
-	useEffect(() => {
-		const fetchConfig = async () => {
-			try {
-				const data = await invoke<Config>("get_config");
-				setConfig(data);
-			} catch (error) {
-				console.error("Failed to fetch config:", error);
-				toast.error(`Failed to load config: ${error}`);
-			} finally {
-				setLoading(false);
-			}
-		};
-		fetchConfig();
-	}, []);
 
 	const handleCheckUpdate = async () => {
 		try {
@@ -77,7 +62,6 @@ function ConfigPage() {
 	const saveConfig = async (newConfig: Config) => {
 		try {
 			await invoke("update_config", { newConfig });
-			setConfig(newConfig);
 		} catch (error) {
 			console.error("Failed to update config:", error);
 			toast.error(`Failed to save settings: ${error}`);
@@ -119,14 +103,6 @@ function ConfigPage() {
 			toast.error(`Factory reset failed: ${error}`, { id: "factory-reset" });
 		}
 	};
-
-	if (loading) {
-		return (
-			<div className="min-h-screen bg-background flex items-center justify-center">
-				<Loader2 className="w-8 h-8 animate-spin text-primary" />
-			</div>
-		);
-	}
 
 	if (!config) {
 		return (
