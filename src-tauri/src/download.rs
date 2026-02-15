@@ -19,6 +19,7 @@ pub struct DownloadProgressPayload {
     pub id: String,
     pub progress: f64,
     pub status: String,
+    pub detailed_status: Option<String>,
     pub log: Option<String>,
 }
 
@@ -46,6 +47,7 @@ pub struct DownloadJob {
     pub title: String,
     pub progress: f64,
     pub status: String, // "queued" | "pending" | "downloading" | "completed" | "error"
+    pub detailed_status: Option<String>,
     pub url: String,
     pub metadata: MetadataPayload,
     pub logs: Vec<String>,
@@ -137,13 +139,17 @@ impl DownloadManager {
                     return;
                 }
 
-                jobs_guard
-                    .iter()
-                    .find(|j| j.status == "queued")
-                    .map(|j| (j.id.clone(), j.url.clone(), j.metadata.clone()))
+                jobs_guard.iter().find(|j| j.status == "queued").map(|j| {
+                    (
+                        j.id.clone(),
+                        j.url.clone(),
+                        j.metadata.clone(),
+                        j.detailed_status.clone(),
+                    )
+                })
             };
 
-            if let Some((id, url, metadata)) = next_job_info {
+            if let Some((id, url, metadata, _)) = next_job_info {
                 {
                     let mut jobs_guard = manager.jobs.lock().unwrap();
                     if let Some(job) = jobs_guard.iter_mut().find(|j| j.id == id) {
@@ -328,6 +334,31 @@ pub async fn run_download<R: Runtime>(
         &url,
     ]);
 
+    // Function to parse logs and extract detailed status
+    fn parse_log_status(line: &str) -> Option<String> {
+        if line.contains("Downloading webpage") {
+            return Some("Fetching Info".to_string());
+        } else if line.contains("Downloading android vr player API JSON")
+            || line.contains("Downloading web safari player API JSON")
+            || line.contains("Downloading player")
+            || line.contains("Solving JS challenges")
+            || line.contains("Downloading m3u8 information")
+        {
+            return Some("Preparing Download".to_string());
+        } else if line.contains("Destination:") || line.contains("download-progress:") {
+            return Some("Downloading".to_string());
+        } else if line.contains("[ExtractAudio]") || line.contains("Extracting audio") {
+            return Some("Extracting Audio".to_string());
+        } else if line.contains("[Metadata]") || line.contains("Adding metadata") {
+            return Some("Adding Metadata".to_string());
+        } else if line.contains("[ThumbnailsConvertor]") || line.contains("Converting thumbnail") {
+            return Some("Converting Thumbnail".to_string());
+        } else if line.contains("[EmbedThumbnail]") || line.contains("Adding thumbnail") {
+            return Some("Embedding Thumbnail".to_string());
+        }
+        None
+    }
+
     #[cfg(windows)]
     cmd.creation_flags(0x08000000);
 
@@ -359,10 +390,12 @@ pub async fn run_download<R: Runtime>(
                 match line_res {
                     Ok(Some(line)) => {
                         let line = line.trim();
+                        let detailed_status = parse_log_status(line);
                         let log_payload = DownloadProgressPayload {
                             id: id.clone(),
                             progress: -1.0, // Indicate log update
                             status: "downloading".into(),
+                            detailed_status: detailed_status.clone(),
                             log: Some(line.to_string()),
                         };
                         let _ = app.emit("download://progress", log_payload);
@@ -370,9 +403,12 @@ pub async fn run_download<R: Runtime>(
                         // Store log in manager
                         let manager = app.state::<DownloadManager>();
                         {
-                        let mut jobs = manager.jobs.lock().unwrap();
+                            let mut jobs = manager.jobs.lock().unwrap();
                             if let Some(job) = jobs.iter_mut().find(|j| j.id == id) {
                                 job.logs.push(line.to_string());
+                                if let Some(ds) = detailed_status {
+                                    job.detailed_status = Some(ds);
+                                }
                             }
                         }
 
@@ -383,6 +419,7 @@ pub async fn run_download<R: Runtime>(
                                         id: id.clone(),
                                         progress: percentage,
                                         status: "downloading".into(),
+                                        detailed_status: Some("Downloading".to_string()),
                                         log: None,
                                     };
                                     app.emit("download://progress", progress_payload.clone())?;
@@ -407,10 +444,12 @@ pub async fn run_download<R: Runtime>(
                 match line_res {
                     Ok(Some(line)) => {
                         let line = line.trim();
+                        let detailed_status = parse_log_status(line);
                         let log_payload = DownloadProgressPayload {
                             id: id.clone(),
                             progress: -1.0,
                             status: "downloading".into(),
+                            detailed_status: detailed_status.clone(),
                             log: Some(format!("[stderr] {}", line)),
                         };
 
@@ -421,6 +460,9 @@ pub async fn run_download<R: Runtime>(
                             let mut jobs = manager.jobs.lock().unwrap();
                             if let Some(job) = jobs.iter_mut().find(|j| j.id == id) {
                                 job.logs.push(format!("[stderr] {}", line));
+                                if let Some(ds) = detailed_status {
+                                    job.detailed_status = Some(ds);
+                                }
                             }
                         }
                     }

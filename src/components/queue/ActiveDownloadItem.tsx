@@ -31,6 +31,9 @@ export function ActiveDownloadItem({
 				<StatusIcon status={download.status} className="animate-pulse" />
 				<SongMetadata metadata={download.metadata} />
 				<div className="flex items-center gap-3 ml-auto">
+					<div className="text-[10px] text-muted-foreground uppercase tracking-wider font-semibold mr-2">
+						{download.detailed_status || "Downloading..."}
+					</div>
 					{download.logs && download.logs.length > 0 && (
 						<Button
 							variant="outline"

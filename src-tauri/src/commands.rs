@@ -206,6 +206,7 @@ pub async fn add_to_queue(
         title: format!("{} - {}", metadata.artist, metadata.title),
         progress: 0.0,
         status: "queued".into(),
+        detailed_status: None,
         url,
         metadata,
         logs: Vec::new(),

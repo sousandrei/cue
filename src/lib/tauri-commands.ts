@@ -24,6 +24,7 @@ export interface DownloadJob {
 	title: string;
 	progress: number;
 	status: "queued" | "pending" | "downloading" | "completed" | "error";
+	detailed_status?: string;
 	url: string;
 	metadata: MetadataPayload;
 	logs: string[];
@@ -33,6 +34,7 @@ export interface DownloadProgressPayload {
 	id: string;
 	progress: number;
 	status: "pending" | "downloading" | "completed" | "error";
+	detailed_status?: string;
 	log?: string;
 }
 

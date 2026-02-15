@@ -44,6 +44,7 @@ export function useDownload() {
 								progress:
 									payload.progress === -1 ? d.progress : payload.progress,
 								status: payload.status as DownloadJob["status"],
+								detailed_status: payload.detailed_status || d.detailed_status,
 								logs: newLogs,
 							};
 						}
