@@ -43,7 +43,7 @@ pub async fn ensure_ffmpeg<R: Runtime>(
         "setup://progress",
         SetupProgressPayload {
             status: "Downloading ffmpeg...".into(),
-            progress: 50.0,
+            progress: 0.0,
         },
     );
 
@@ -55,45 +55,16 @@ pub async fn ensure_ffmpeg<R: Runtime>(
         "https://github.com/BtbN/FFmpeg-Builds/releases/download/latest/ffmpeg-master-latest-linux64-gpl.tar.xz"
     };
 
+    fs::create_dir_all(&bin_dir)?;
+
     let buffer = crate::bundler::download_with_progress(app, url, "Downloading ffmpeg...").await?;
 
     if url.ends_with(".zip") || cfg!(target_os = "macos") {
-        let reader = Cursor::new(buffer);
-        let mut archive = zip::ZipArchive::new(reader)?;
-
-        for i in 0..archive.len() {
-            let mut file = archive.by_index(i)?;
-            if file.name().ends_with(binary_name) {
-                let total_extract = file.size();
-                let mut outfile = fs::File::create(&ffmpeg_path)?;
-
-                // Track extraction progress
-                let mut extracted = 0;
-                let mut chunk_buf = [0u8; 8192];
-                while let Ok(n) = std::io::Read::read(&mut file, &mut chunk_buf) {
-                    if n == 0 {
-                        break;
-                    }
-                    std::io::Write::write_all(&mut outfile, &chunk_buf[..n])?;
-                    extracted += n as u64;
-
-                    let op_percent = (extracted as f64 / total_extract as f64) * 100.0;
-
-                    let _ = app.emit(
-                        "setup://progress",
-                        SetupProgressPayload {
-                            status: "Extracting ffmpeg...".into(),
-                            progress: op_percent,
-                        },
-                    );
-                }
-                break;
-            }
-        }
+        extract_zip(app, buffer, &ffmpeg_path, binary_name)?;
+    } else if url.ends_with(".tar.xz") {
+        extract_tar_xz(app, buffer, &ffmpeg_path, binary_name)?;
     } else {
-        return Err(anyhow::anyhow!(
-            "Linux ffmpeg extraction not implemented yet"
-        ));
+        return Err(anyhow::anyhow!("Unsupported FFmpeg archive format or OS"));
     }
 
     tokio::fs::write(&version_path, target_version).await?;
@@ -115,6 +86,70 @@ pub async fn ensure_ffmpeg<R: Runtime>(
     );
 
     Ok(ffmpeg_path)
+}
+
+fn extract_zip<R: Runtime>(
+    app: &AppHandle<R>,
+    buffer: Vec<u8>,
+    ffmpeg_path: &PathBuf,
+    binary_name: &str,
+) -> Result<(), anyhow::Error> {
+    let reader = Cursor::new(buffer);
+    let mut archive = zip::ZipArchive::new(reader)?;
+
+    for i in 0..archive.len() {
+        let mut file = archive.by_index(i)?;
+        if file.name().ends_with(binary_name) {
+            let total_extract = file.size();
+            let mut outfile = fs::File::create(ffmpeg_path)?;
+
+            // Track extraction progress
+            let mut extracted = 0;
+            let mut chunk_buf = [0u8; 8192];
+            while let Ok(n) = std::io::Read::read(&mut file, &mut chunk_buf) {
+                if n == 0 {
+                    break;
+                }
+                std::io::Write::write_all(&mut outfile, &chunk_buf[..n])?;
+                extracted += n as u64;
+
+                let op_percent = (extracted as f64 / total_extract as f64) * 100.0;
+
+                let _ = app.emit(
+                    "setup://progress",
+                    SetupProgressPayload {
+                        status: "Extracting ffmpeg...".into(),
+                        progress: op_percent,
+                    },
+                );
+            }
+            break;
+        }
+    }
+    Ok(())
+}
+
+fn extract_tar_xz<R: Runtime>(
+    app: &AppHandle<R>,
+    buffer: Vec<u8>,
+    ffmpeg_path: &PathBuf,
+    binary_name: &str,
+) -> Result<(), anyhow::Error> {
+    use tar::Archive;
+    use xz2::read::XzDecoder;
+
+    let decoder = XzDecoder::new(Cursor::new(buffer));
+    let mut archive = Archive::new(decoder);
+
+    for entry in archive.entries()? {
+        let mut entry = entry?;
+        let path = entry.path()?;
+        if path.to_string_lossy().ends_with(binary_name) {
+            entry.unpack(ffmpeg_path)?;
+            break;
+        }
+    }
+    Ok(())
 }
 
 pub fn check_health<R: Runtime>(app: &AppHandle<R>, target_version: &str) -> bool {
