@@ -5,6 +5,9 @@ use std::sync::Mutex;
 use tauri::{AppHandle, Emitter, Manager, Runtime, State};
 use tokio::process::Command;
 
+#[cfg(windows)]
+const CREATE_NO_WINDOW: u32 = 0x08000000;
+
 use super::manager::DownloadManager;
 use super::types::{DownloadProgressPayload, MetadataPayload};
 use crate::bundler;
@@ -37,8 +40,13 @@ pub async fn get_metadata<R: Runtime>(
         .await
         .map_err(|e| e.to_string())?;
 
-    let output = Command::new(ytdlp_path)
-        .args(["--dump-json", "--flat-playlist", &url])
+    let mut cmd = Command::new(ytdlp_path);
+    cmd.args(["--dump-json", "--flat-playlist", &url]);
+
+    #[cfg(windows)]
+    cmd.creation_flags(CREATE_NO_WINDOW);
+
+    let output = cmd
         .output()
         .await
         .map_err(|e| format!("Failed to execute yt-dlp: {}", e))?;
@@ -194,7 +202,7 @@ fn construct_download_cmd(
     ]);
 
     #[cfg(windows)]
-    cmd.creation_flags(0x08000000);
+    cmd.creation_flags(CREATE_NO_WINDOW);
 
     cmd
 }
@@ -204,16 +212,19 @@ async fn get_final_filename(
     output_template: &str,
     url: &str,
 ) -> Result<String, anyhow::Error> {
-    let output = Command::new(ytdlp_path)
-        .args([
-            "--restrict-filenames",
-            "-o",
-            output_template,
-            "--get-filename",
-            url,
-        ])
-        .output()
-        .await?;
+    let mut cmd = Command::new(ytdlp_path);
+    cmd.args([
+        "--restrict-filenames",
+        "-o",
+        output_template,
+        "--get-filename",
+        url,
+    ]);
+
+    #[cfg(windows)]
+    cmd.creation_flags(CREATE_NO_WINDOW);
+
+    let output = cmd.output().await?;
 
     let filename = String::from_utf8_lossy(&output.stdout).trim().to_string();
     if filename.is_empty() {
