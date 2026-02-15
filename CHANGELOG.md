@@ -1,5 +1,21 @@
 # Changelog
 
+## [1.3.0](https://github.com/sousandrei/cue/compare/v1.2.0...v1.3.0) (2026-02-15)
+
+
+### Features
+
+* add logs button ([71b177e](https://github.com/sousandrei/cue/commit/71b177e4ea99d2b5e10f2e02ea7639c2e968212b))
+* detailed progress status ([7382b35](https://github.com/sousandrei/cue/commit/7382b35814317e0136c4cd63d2eb12f82c9aac2b))
+
+
+### Bug Fixes
+
+* black terminal windows on windows ([c4185b3](https://github.com/sousandrei/cue/commit/c4185b3b5293e731fae6ba38f7a39b47d41b0198))
+* events for refresh library and config ([286ea7f](https://github.com/sousandrei/cue/commit/286ea7fccb3a68e68d0893898e43d2d0e3ec56e4))
+* linux extract tar.gz on ffmpeg ([cfc071b](https://github.com/sousandrei/cue/commit/cfc071b64f97bf58bbb16f8043537ea9ca3da8ea))
+* non utf-8 output on yt-dlp ([5027708](https://github.com/sousandrei/cue/commit/502770823b9a5427ebab73a3ea06d6efd20fff0f))
+
 ## [1.2.0](https://github.com/sousandrei/cue/compare/v1.1.1...v1.2.0) (2026-02-09)
 
 
