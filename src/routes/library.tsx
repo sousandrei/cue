@@ -17,7 +17,7 @@ function Library() {
 	const columns = useMemo(() => createColumns(handleDelete), [handleDelete]);
 
 	return (
-		<div className="min-h-screen bg-background flex flex-col items-center p-4">
+		<div className="min-h-screen bg-background flex flex-col items-center p-4 pt-28 pb-28">
 			<div className="w-full max-w-4xl flex flex-col gap-8">
 				<Header />
 

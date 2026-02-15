@@ -116,7 +116,7 @@ function ConfigPage() {
 	}
 
 	return (
-		<div className="min-h-screen bg-background flex flex-col items-center p-4 pb-28">
+		<div className="min-h-screen bg-background flex flex-col items-center p-4 pt-28 pb-28">
 			<div className="w-full max-w-2xl flex flex-col gap-8">
 				<Header />
 
