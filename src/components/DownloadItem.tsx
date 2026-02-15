@@ -3,7 +3,6 @@ import { ChevronDown, ChevronUp, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Progress } from "@/components/ui/progress";
 import type { DownloadJob } from "@/hooks/useDownload";
 import { SongMetadata } from "./download/SongMetadata";
 import { StatusIcon } from "./download/StatusIcon";
@@ -37,21 +36,6 @@ export function DownloadItem({ download, removeDownload }: DownloadItemProps) {
 						<StatusIcon status={download.status} size="sm" />
 						<SongMetadata metadata={download.metadata} />
 
-						{download.status === "completed" || download.status === "error" ? (
-							<Button
-								variant="ghost"
-								size="icon"
-								className="h-8 w-8 rounded-full hover:bg-destructive/10"
-								onClick={() => removeDownload(download.id)}
-							>
-								<X className="w-4 h-4 text-muted-foreground" />
-							</Button>
-						) : (
-							<div className="text-xs font-mono font-bold text-foreground">
-								{Math.round(download.progress)}%
-							</div>
-						)}
-
 						{download.logs && download.logs.length > 0 && (
 							<Button
 								variant="outline"
@@ -69,12 +53,16 @@ export function DownloadItem({ download, removeDownload }: DownloadItemProps) {
 								)}
 							</Button>
 						)}
-					</div>
 
-					{(download.status === "pending" ||
-						download.status === "downloading") && (
-						<Progress value={download.progress} className="h-1.5 mt-0.5" />
-					)}
+						<Button
+							variant="ghost"
+							size="icon"
+							className="h-8 w-8 rounded-full hover:bg-destructive/10"
+							onClick={() => removeDownload(download.id)}
+						>
+							<X className="w-4 h-4 text-muted-foreground" />
+						</Button>
+					</div>
 
 					<AnimatePresence>
 						{showLogs && download.logs && download.logs.length > 0 && (

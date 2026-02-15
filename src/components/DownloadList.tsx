@@ -1,6 +1,7 @@
 import { AnimatePresence } from "framer-motion";
 import { History } from "lucide-react";
 
+import { Button } from "@/components/ui/button";
 import type { DownloadJob } from "@/hooks/useDownload";
 import { DownloadItem } from "./DownloadItem";
 import { EmptyState } from "./EmptyState";
@@ -29,13 +30,14 @@ export function DownloadList({
 				<div className="flex items-center gap-3">
 					{history.length > 0 && (
 						<>
-							<button
-								type="button"
+							<Button
+								variant="ghost"
+								size="sm"
 								onClick={onClear}
-								className="text-xs text-muted-foreground/60 hover:text-primary transition-colors font-medium"
+								className="h-8 px-2 text-xs text-muted-foreground/60 hover:text-primary transition-colors font-medium"
 							>
 								Clear history
-							</button>
+							</Button>
 							<span className="text-xs text-muted-foreground/40 font-mono">
 								{history.length}
 							</span>
