@@ -1,7 +1,7 @@
 use std::process::Stdio;
 use std::sync::Mutex;
 use tauri::{AppHandle, Emitter, Manager};
-use tokio::io::{AsyncBufReadExt, BufReader, Lines};
+use tokio::io::BufReader;
 use tokio::process::{Child, ChildStderr, ChildStdout, Command};
 use tokio::sync::oneshot;
 
@@ -31,8 +31,8 @@ impl DownloadManager {
     ) -> Result<
         (
             Child,
-            Lines<BufReader<ChildStdout>>,
-            Lines<BufReader<ChildStderr>>,
+            BufReader<ChildStdout>,
+            BufReader<ChildStderr>,
             oneshot::Receiver<()>,
         ),
         anyhow::Error,
@@ -45,13 +45,13 @@ impl DownloadManager {
             .stdout
             .take()
             .ok_or_else(|| anyhow::anyhow!("Failed to capture stdout"))?;
-        let stdout_reader = BufReader::new(stdout).lines();
+        let stdout_reader = BufReader::new(stdout);
 
         let stderr = child
             .stderr
             .take()
             .ok_or_else(|| anyhow::anyhow!("Failed to capture stderr"))?;
-        let stderr_reader = BufReader::new(stderr).lines();
+        let stderr_reader = BufReader::new(stderr);
 
         {
             let mut jobs = self.jobs.lock().unwrap();

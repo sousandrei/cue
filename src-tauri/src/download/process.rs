@@ -344,19 +344,30 @@ pub async fn run_download(
     let (mut child, mut stdout_reader, mut stderr_reader, mut cancel_rx) =
         manager.create_process(&id, &mut cmd)?;
 
+    use tokio::io::AsyncBufReadExt;
+
     let status = loop {
+        let mut stdout_buf = Vec::new();
+        let mut stderr_buf = Vec::new();
+
         tokio::select! {
-            line_res = stdout_reader.next_line() => {
-                match line_res {
-                    Ok(Some(line)) => process_stdout_line(&app, &manager, &id, line.trim()),
-                    Ok(None) => break child.wait().await?,
+            res = stdout_reader.read_until(b'\n', &mut stdout_buf) => {
+                match res {
+                    Ok(0) => break child.wait().await?,
+                    Ok(_) => {
+                         let line = String::from_utf8_lossy(&stdout_buf);
+                         process_stdout_line(&app, &manager, &id, line.trim());
+                    }
                     Err(e) => return Err(e.into()),
                 }
             }
-            line_res = stderr_reader.next_line() => {
-                match line_res {
-                    Ok(Some(line)) => process_stderr_line(&app, &manager, &id, line.trim()),
-                    Ok(None) => break child.wait().await?,
+            res = stderr_reader.read_until(b'\n', &mut stderr_buf) => {
+                match res {
+                    Ok(0) => break child.wait().await?,
+                    Ok(_) => {
+                        let line = String::from_utf8_lossy(&stderr_buf);
+                        process_stderr_line(&app, &manager, &id, line.trim());
+                    }
                     Err(e) => return Err(e.into()),
                 }
             }
