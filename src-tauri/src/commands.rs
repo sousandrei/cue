@@ -1,4 +1,4 @@
-use tauri::{command, AppHandle, Manager, Runtime, State};
+use tauri::{command, AppHandle, Emitter, Manager, Runtime, State};
 
 use crate::bundler;
 use crate::config::{self, Config, ConfigState};
@@ -45,6 +45,9 @@ pub async fn update_config(
 
     bundler::ensure_ejs(&app, &new_config.ejs_version)
         .await
+        .map_err(|e| e.to_string())?;
+
+    app.emit("config://update", new_config.clone())
         .map_err(|e| e.to_string())?;
 
     Ok(())
@@ -205,6 +208,7 @@ pub async fn add_to_queue(
         status: "queued".into(),
         url,
         metadata,
+        logs: Vec::new(),
     };
     manager.add_job(job);
     Ok(())
@@ -274,8 +278,6 @@ pub async fn factory_reset(app: AppHandle) -> Result<(), String> {
     }
 
     app.restart();
-
-    Ok(())
 }
 
 #[command]

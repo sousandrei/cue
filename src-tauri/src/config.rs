@@ -1,8 +1,5 @@
 use serde::{Deserialize, Serialize};
 use std::{fs, sync::Mutex};
-use tauri::State;
-
-use crate::bundler;
 
 pub type ConfigState = Mutex<Option<Config>>;
 
@@ -78,40 +75,6 @@ pub fn save_config(config: &Config) -> Result<(), String> {
 
     fs::write(&config_path, config_str)
         .map_err(|e| format!("Failed to write config file: {}", e))?;
-
-    Ok(())
-}
-
-pub async fn update_config(
-    state: State<'_, Mutex<Config>>,
-    app: tauri::AppHandle,
-    new_config: Config,
-) -> Result<(), String> {
-    // Save to file
-    save_config(&new_config).map_err(|e| e.to_string())?;
-
-    // Update state
-    {
-        let mut config = state.lock().unwrap();
-        *config = new_config.clone();
-    }
-
-    // Ensure yt-dlp and ffmpeg
-    bundler::ensure_ytdlp(&app, &new_config.yt_dlp_version)
-        .await
-        .map_err(|e| e.to_string())?;
-
-    bundler::ensure_ffmpeg(&app, &new_config.ffmpeg_version)
-        .await
-        .map_err(|e| e.to_string())?;
-
-    bundler::ensure_bun(&app, &new_config.bun_version)
-        .await
-        .map_err(|e| e.to_string())?;
-
-    bundler::ensure_ejs(&app, &new_config.ejs_version)
-        .await
-        .map_err(|e| e.to_string())?;
 
     Ok(())
 }

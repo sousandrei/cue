@@ -19,6 +19,7 @@ pub struct DownloadProgressPayload {
     pub id: String,
     pub progress: f64,
     pub status: String,
+    pub log: Option<String>,
 }
 
 #[derive(Clone, Serialize)]
@@ -47,6 +48,7 @@ pub struct DownloadJob {
     pub status: String, // "queued" | "pending" | "downloading" | "completed" | "error"
     pub url: String,
     pub metadata: MetadataPayload,
+    pub logs: Vec<String>,
 }
 
 // --- Manager ---
@@ -343,14 +345,37 @@ pub async fn run_download<R: Runtime>(
         .stdout
         .take()
         .ok_or_else(|| anyhow::anyhow!("Failed to capture stdout"))?;
-    let mut reader = BufReader::new(stdout).lines();
+    let mut stdout_reader = BufReader::new(stdout).lines();
+
+    let stderr = child
+        .stderr
+        .take()
+        .ok_or_else(|| anyhow::anyhow!("Failed to capture stderr"))?;
+    let mut stderr_reader = BufReader::new(stderr).lines();
 
     let status = loop {
         tokio::select! {
-            line_res = reader.next_line() => {
+            line_res = stdout_reader.next_line() => {
                 match line_res {
                     Ok(Some(line)) => {
                         let line = line.trim();
+                        let log_payload = DownloadProgressPayload {
+                            id: id.clone(),
+                            progress: -1.0, // Indicate log update
+                            status: "downloading".into(),
+                            log: Some(line.to_string()),
+                        };
+                        let _ = app.emit("download://progress", log_payload);
+
+                        // Store log in manager
+                        let manager = app.state::<DownloadManager>();
+                        {
+                        let mut jobs = manager.jobs.lock().unwrap();
+                            if let Some(job) = jobs.iter_mut().find(|j| j.id == id) {
+                                job.logs.push(line.to_string());
+                            }
+                        }
+
                         if let Some(rest) = line.strip_prefix("download-progress:") {
                             if let Some(percentage_str) = rest.strip_suffix('%') {
                                 if let Ok(percentage) = percentage_str.trim().parse::<f64>() {
@@ -358,6 +383,7 @@ pub async fn run_download<R: Runtime>(
                                         id: id.clone(),
                                         progress: percentage,
                                         status: "downloading".into(),
+                                        log: None,
                                     };
                                     app.emit("download://progress", progress_payload.clone())?;
 
@@ -375,6 +401,30 @@ pub async fn run_download<R: Runtime>(
                     }
                     Ok(None) => break child.wait().await?,
                     Err(e) => return Err(e.into()),
+                }
+            }
+            line_res = stderr_reader.next_line() => {
+                match line_res {
+                    Ok(Some(line)) => {
+                        let line = line.trim();
+                        let log_payload = DownloadProgressPayload {
+                            id: id.clone(),
+                            progress: -1.0,
+                            status: "downloading".into(),
+                            log: Some(format!("[stderr] {}", line)),
+                        };
+
+                        let _ = app.emit("download://progress", log_payload);
+
+                        let manager = app.state::<DownloadManager>();
+                        {
+                            let mut jobs = manager.jobs.lock().unwrap();
+                            if let Some(job) = jobs.iter_mut().find(|j| j.id == id) {
+                                job.logs.push(format!("[stderr] {}", line));
+                            }
+                        }
+                    }
+                    _ => {}
                 }
             }
             _ = &mut cancel_rx => {

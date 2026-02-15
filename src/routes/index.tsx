@@ -4,6 +4,7 @@ import { useState } from "react";
 import { toast } from "sonner";
 
 import { DownloadInput } from "@/components/DownloadInput";
+import { DownloadList } from "@/components/DownloadList";
 import { DownloadQueueStatus } from "@/components/DownloadQueueStatus";
 import { Header } from "@/components/Header";
 import { useDownload } from "@/hooks/useDownload";
@@ -16,7 +17,7 @@ export const Route = createFileRoute("/")({
 
 function Index() {
 	const [url, setUrl] = useState("");
-	const { downloads, removeDownload, clearQueue } = useDownload();
+	const { downloads, removeDownload, clearQueue, clearHistory } = useDownload();
 	const { queueUrl, loading } = useSmartQueue();
 
 	const handleAddDownload = async () => {
@@ -132,6 +133,12 @@ function Index() {
 						downloads={downloads}
 						onRemove={removeDownload}
 						onClearQueue={clearQueue}
+					/>
+
+					<DownloadList
+						downloads={downloads}
+						removeDownload={removeDownload}
+						onClear={clearHistory}
 					/>
 				</div>
 			</div>

@@ -3,6 +3,9 @@ import { invoke } from "@tauri-apps/api/core";
 export interface Config {
 	library_path: string;
 	yt_dlp_version: string;
+	ffmpeg_version: string;
+	bun_version: string;
+	ejs_version: string;
 	auto_update: boolean;
 }
 
@@ -23,12 +26,14 @@ export interface DownloadJob {
 	status: "queued" | "pending" | "downloading" | "completed" | "error";
 	url: string;
 	metadata: MetadataPayload;
+	logs: string[];
 }
 
 export interface DownloadProgressPayload {
 	id: string;
 	progress: number;
 	status: "pending" | "downloading" | "completed" | "error";
+	log?: string;
 }
 
 export interface DownloadErrorPayload {

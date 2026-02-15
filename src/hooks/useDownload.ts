@@ -9,6 +9,7 @@ import {
 	clearHistory as clearHistoryBackend,
 	clearQueue as clearQueueBackend,
 	type DownloadErrorPayload,
+	type DownloadProgressPayload,
 	getDownloads,
 	type MetadataPayload,
 	removeDownload as removeDownloadBackend,
@@ -27,28 +28,30 @@ export function useDownload() {
 			setDownloads(event.payload as DownloadJob[]);
 		});
 
-		const unlistenProgress = listen("download://progress", (event) => {
-			// Manual update for smoothness if needed, but list-updated might be enough.
-			// However, list-updated is only emitted on state changes, progress is high freq.
-			// Let's keep a quick local update for the progress specifically.
-			const payload = event.payload as {
-				id: string;
-				progress: number;
-				status: string;
-			};
-			setDownloads((prev) =>
-				prev.map((d) => {
-					if (d.id === payload.id) {
-						return {
-							...d,
-							progress: payload.progress,
-							status: payload.status as DownloadJob["status"],
-						};
-					}
-					return d;
-				}),
-			);
-		});
+		const unlistenProgress = listen<DownloadProgressPayload>(
+			"download://progress",
+			(event) => {
+				const payload = event.payload;
+				setDownloads((prev) =>
+					prev.map((d) => {
+						if (d.id === payload.id) {
+							let newLogs = d.logs || [];
+							if (payload.log) {
+								newLogs = [...newLogs, payload.log];
+							}
+							return {
+								...d,
+								progress:
+									payload.progress === -1 ? d.progress : payload.progress,
+								status: payload.status as DownloadJob["status"],
+								logs: newLogs,
+							};
+						}
+						return d;
+					}),
+				);
+			},
+		);
 
 		const unlistenError = listen("download://error", (event) => {
 			const payload = event.payload as DownloadErrorPayload;

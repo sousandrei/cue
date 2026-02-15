@@ -17,6 +17,9 @@ import { performUpdate } from "@/lib/updater";
 interface Config {
 	library_path: string;
 	yt_dlp_version: string;
+	ffmpeg_version: string;
+	bun_version: string;
+	ejs_version: string;
 	auto_update: boolean;
 }
 
@@ -68,6 +71,16 @@ function ConfigPage() {
 			toast.error(`Failed to check for updates: ${error}`, {
 				id: "manual-check",
 			});
+		}
+	};
+
+	const saveConfig = async (newConfig: Config) => {
+		try {
+			await invoke("update_config", { newConfig });
+			setConfig(newConfig);
+		} catch (error) {
+			console.error("Failed to update config:", error);
+			toast.error(`Failed to save settings: ${error}`);
 		}
 	};
 
@@ -143,7 +156,7 @@ function ConfigPage() {
 							id="library-path"
 							label="Music Library Path"
 							value={config.library_path}
-							onChange={(val) => setConfig({ ...config, library_path: val })}
+							onChange={(val) => saveConfig({ ...config, library_path: val })}
 						/>
 
 						<div className="space-y-4 pt-4 border-t border-border/50">
@@ -164,7 +177,7 @@ function ConfigPage() {
 									id="auto-update"
 									checked={config.auto_update}
 									onCheckedChange={(checked) =>
-										setConfig({ ...config, auto_update: checked })
+										saveConfig({ ...config, auto_update: checked })
 									}
 								/>
 							</div>
@@ -193,7 +206,7 @@ function ConfigPage() {
 								id="ytdlp-version"
 								value={config.yt_dlp_version}
 								onChange={(e) =>
-									setConfig({ ...config, yt_dlp_version: e.target.value })
+									saveConfig({ ...config, yt_dlp_version: e.target.value })
 								}
 								className="bg-background/50 border-border/50"
 								placeholder="e.g. 2024.12.06"
