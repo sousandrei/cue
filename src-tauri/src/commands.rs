@@ -196,6 +196,7 @@ pub async fn get_metadata<R: Runtime>(
 
 #[command]
 pub async fn add_to_queue(
+    app: AppHandle,
     manager: State<'_, download::DownloadManager>,
     url: String,
     id: String,
@@ -211,7 +212,7 @@ pub async fn add_to_queue(
         metadata,
         logs: Vec::new(),
     };
-    manager.add_job(job);
+    manager.add_job(&app, job);
     Ok(())
 }
 
@@ -224,34 +225,38 @@ pub async fn get_downloads(
 
 #[command]
 pub async fn remove_download(
+    app: AppHandle,
     manager: State<'_, download::DownloadManager>,
     id: String,
 ) -> Result<(), String> {
-    manager.remove_job(&id);
+    manager.remove_job(&app, &id);
     Ok(())
 }
 
 #[command]
-pub async fn clear_history(manager: State<'_, download::DownloadManager>) -> Result<(), String> {
-    manager.clear_history();
+pub async fn clear_history(
+    app: AppHandle,
+    manager: State<'_, download::DownloadManager>,
+) -> Result<(), String> {
+    manager.clear_history(&app);
     Ok(())
 }
 
 #[command]
-pub async fn clear_queue(manager: State<'_, download::DownloadManager>) -> Result<(), String> {
-    manager.clear_queue();
+pub async fn clear_queue(
+    app: AppHandle,
+    manager: State<'_, download::DownloadManager>,
+) -> Result<(), String> {
+    manager.clear_queue(&app);
     Ok(())
 }
 
 #[command]
 pub async fn cancel_download(
-    state: State<'_, download::ActiveProcesses>,
+    manager: State<'_, download::DownloadManager>,
     id: String,
 ) -> Result<(), String> {
-    let mut processes = state.0.lock().unwrap();
-    if let Some(cancel_tx) = processes.remove(&id) {
-        let _ = cancel_tx.send(());
-    }
+    manager.cancel_job(&id);
     Ok(())
 }
 

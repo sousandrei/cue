@@ -51,13 +51,11 @@ async fn init_app(app: &mut tauri::App) -> Result<(), Box<dyn std::error::Error>
     // Initializing state as empty
     let cfg_state: config::ConfigState = Mutex::new(None);
     let db_state: db::DbState = Mutex::new(None);
-    let active_processes = download::ActiveProcesses(Mutex::new(std::collections::HashMap::new()));
-    let download_manager = download::DownloadManager::new(app.handle().clone());
+    let download_manager = download::DownloadManager::new();
 
     // Manage states immediately so commands can access them even if loading fails
     app.manage(cfg_state);
     app.manage(db_state);
-    app.manage(active_processes);
     app.manage(download_manager);
 
     // Now try to load config and initialize DB
