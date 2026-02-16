@@ -34,6 +34,9 @@ export function ActiveDownloadItem({
 					<div className="text-[10px] text-muted-foreground uppercase tracking-wider font-semibold mr-2">
 						{download.detailed_status || "Downloading..."}
 					</div>
+					<div className="text-base font-mono font-black text-primary tracking-tighter">
+						{Math.round(download.progress)}%
+					</div>
 					{download.logs && download.logs.length > 0 && (
 						<Button
 							variant="outline"
@@ -51,9 +54,6 @@ export function ActiveDownloadItem({
 							)}
 						</Button>
 					)}
-					<div className="text-base font-mono font-black text-primary tracking-tighter">
-						{Math.round(download.progress)}%
-					</div>
 					<Button
 						variant="ghost"
 						size="icon"
