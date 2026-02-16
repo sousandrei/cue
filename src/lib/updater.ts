@@ -1,11 +1,7 @@
-import { relaunch } from "@tauri-apps/plugin-process";
-import type { Update } from "@tauri-apps/plugin-updater";
 import { toast } from "sonner";
 
-/**
- * Performs the update process: downloading, installing, and relaunching.
- * Handles progress and error toasts.
- */
+import { relaunch, type Update } from "@/lib/tauri/api";
+
 export async function performUpdate(update: Update) {
 	const toastId = "update-download";
 
@@ -16,10 +12,8 @@ export async function performUpdate(update: Update) {
 					toast.loading("Downloading update...", { id: toastId });
 					break;
 				case "Progress":
-					// Progress is handled by Tauri
 					break;
 				case "Finished":
-					// Download is finished, installation is about to begin
 					toast.loading("Installing update...", { id: toastId });
 					break;
 			}

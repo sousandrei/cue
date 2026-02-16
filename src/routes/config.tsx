@@ -1,7 +1,4 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { invoke } from "@tauri-apps/api/core";
-import { ask } from "@tauri-apps/plugin-dialog";
-import { check } from "@tauri-apps/plugin-updater";
 import { Loader2, Save, SlidersHorizontal } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
@@ -13,6 +10,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { useConfig } from "@/hooks/useConfig";
+import { ask, check } from "@/lib/tauri/api";
+import { factoryReset, updateConfig } from "@/lib/tauri/commands";
 import { performUpdate } from "@/lib/updater";
 
 interface Config {
@@ -61,7 +60,7 @@ function ConfigPage() {
 
 	const saveConfig = async (newConfig: Config) => {
 		try {
-			await invoke("update_config", { newConfig });
+			await updateConfig(newConfig);
 		} catch (error) {
 			console.error("Failed to update config:", error);
 			toast.error(`Failed to save settings: ${error}`);
@@ -72,7 +71,7 @@ function ConfigPage() {
 		if (!config) return;
 		setSaving(true);
 		try {
-			await invoke("update_config", { newConfig: config });
+			await updateConfig(config);
 			toast.success("Settings saved successfully!");
 		} catch (error) {
 			console.error("Failed to update config:", error);
@@ -97,7 +96,7 @@ function ConfigPage() {
 
 		try {
 			toast.loading("Performing factory reset...", { id: "factory-reset" });
-			await invoke("factory_reset");
+			await factoryReset();
 		} catch (error) {
 			console.error("Factory reset failed:", error);
 			toast.error(`Factory reset failed: ${error}`, { id: "factory-reset" });

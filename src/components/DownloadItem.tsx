@@ -1,11 +1,11 @@
 import { AnimatePresence, motion } from "framer-motion";
 import { ChevronDown, ChevronUp, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
+import { SongMetadata } from "@/components/download/SongMetadata";
+import { StatusIcon } from "@/components/download/StatusIcon";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import type { DownloadJob } from "@/hooks/useDownload";
-import { SongMetadata } from "./download/SongMetadata";
-import { StatusIcon } from "./download/StatusIcon";
 
 interface DownloadItemProps {
 	download: DownloadJob;

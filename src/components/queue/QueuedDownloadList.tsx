@@ -1,10 +1,9 @@
 import { AnimatePresence, motion } from "framer-motion";
 import { ChevronDown, ChevronUp, X } from "lucide-react";
 import { useState } from "react";
-
+import { SongMetadata } from "@/components/download/SongMetadata";
 import { Button } from "@/components/ui/button";
 import type { DownloadJob } from "@/hooks/useDownload";
-import { SongMetadata } from "../download/SongMetadata";
 
 interface QueuedDownloadListProps {
 	downloads: DownloadJob[];

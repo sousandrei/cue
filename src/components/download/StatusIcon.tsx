@@ -1,4 +1,5 @@
 import { AlertCircle, CheckCircle2, Music } from "lucide-react";
+
 import type { DownloadJob } from "@/hooks/useDownload";
 
 interface StatusIconProps {

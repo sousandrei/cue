@@ -1,6 +1,6 @@
 import { useDownload } from "@/hooks/useDownload";
 import { useMetadata } from "@/hooks/useMetadata";
-import { getSongById, type MetadataPayload } from "@/lib/tauri-commands";
+import { getSongById, type MetadataPayload } from "@/lib/tauri/commands";
 
 export function useSmartQueue() {
 	const { downloads, startDownload } = useDownload();

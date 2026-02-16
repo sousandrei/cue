@@ -1,7 +1,8 @@
-import { check } from "@tauri-apps/plugin-updater";
 import { useEffect } from "react";
 import { toast } from "sonner";
-import { getConfig } from "@/lib/tauri-commands";
+
+import { check } from "@/lib/tauri/api";
+import { getConfig } from "@/lib/tauri/commands";
 import { performUpdate } from "@/lib/updater";
 
 export function Updater() {

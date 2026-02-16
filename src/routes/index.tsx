@@ -1,5 +1,4 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { open } from "@tauri-apps/plugin-dialog";
 import { useState } from "react";
 import { toast } from "sonner";
 
@@ -9,7 +8,8 @@ import { DownloadQueueStatus } from "@/components/DownloadQueueStatus";
 import { Header } from "@/components/Header";
 import { useDownload } from "@/hooks/useDownload";
 import { useSmartQueue } from "@/hooks/useSmartQueue";
-import { readFileContent } from "@/lib/tauri-commands";
+import { open } from "@/lib/tauri/api";
+import { readFileContent } from "@/lib/tauri/commands";
 
 export const Route = createFileRoute("/")({
 	component: Index,

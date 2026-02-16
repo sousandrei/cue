@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { getMetadata, type MetadataPayload } from "@/lib/tauri-commands";
+
+import { getMetadata, type MetadataPayload } from "@/lib/tauri/commands";
 
 export function useMetadata() {
 	const [loading, setLoading] = useState(false);

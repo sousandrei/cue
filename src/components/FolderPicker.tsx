@@ -1,7 +1,8 @@
-import { open } from "@tauri-apps/plugin-dialog";
 import { FolderOpen } from "lucide-react";
+
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { open } from "@/lib/tauri/api";
 
 interface FolderPickerProps {
 	id: string;

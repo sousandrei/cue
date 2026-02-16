@@ -1,8 +1,8 @@
-import { listen } from "@tauri-apps/api/event";
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 
-import type { DownloadJob } from "@/lib/tauri-commands";
+import { listen } from "@/lib/tauri/api";
+import type { DownloadJob } from "@/lib/tauri/commands";
 import {
 	addToQueue,
 	cancelDownload,
@@ -13,7 +13,7 @@ import {
 	getDownloads,
 	type MetadataPayload,
 	removeDownload as removeDownloadBackend,
-} from "@/lib/tauri-commands";
+} from "@/lib/tauri/commands";
 
 export type { DownloadJob };
 

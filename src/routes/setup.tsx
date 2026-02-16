@@ -1,10 +1,9 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { listen } from "@tauri-apps/api/event";
 import { Music, Rocket } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import { FolderPicker } from "@/components/FolderPicker";
 
+import { FolderPicker } from "@/components/FolderPicker";
 import { Button } from "@/components/ui/button";
 import {
 	Card,
@@ -14,7 +13,8 @@ import {
 	CardTitle,
 } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
-import { initializeSetup } from "@/lib/tauri-commands";
+import { listen } from "@/lib/tauri/api";
+import { initializeSetup } from "@/lib/tauri/commands";
 
 export const Route = createFileRoute("/setup")({
 	component: SetupWizard,

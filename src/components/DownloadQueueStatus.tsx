@@ -1,11 +1,9 @@
 import { motion } from "framer-motion";
 import { ListOrdered } from "lucide-react";
-
+import { ActiveDownloadItem } from "@/components/queue/ActiveDownloadItem";
+import { QueuedDownloadList } from "@/components/queue/QueuedDownloadList";
 import { Card, CardContent } from "@/components/ui/card";
 import type { DownloadJob } from "@/hooks/useDownload";
-
-import { ActiveDownloadItem } from "./queue/ActiveDownloadItem";
-import { QueuedDownloadList } from "./queue/QueuedDownloadList";
 
 interface DownloadQueueStatusProps {
 	downloads: DownloadJob[];

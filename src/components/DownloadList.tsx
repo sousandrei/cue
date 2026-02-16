@@ -1,10 +1,9 @@
 import { AnimatePresence } from "framer-motion";
 import { History } from "lucide-react";
-
+import { DownloadItem } from "@/components/DownloadItem";
+import { EmptyState } from "@/components/EmptyState";
 import { Button } from "@/components/ui/button";
 import type { DownloadJob } from "@/hooks/useDownload";
-import { DownloadItem } from "./DownloadItem";
-import { EmptyState } from "./EmptyState";
 
 interface DownloadListProps {
 	downloads: DownloadJob[];

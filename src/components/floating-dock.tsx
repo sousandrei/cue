@@ -5,6 +5,7 @@ import {
 	type LucideIcon,
 	SlidersHorizontal,
 } from "lucide-react";
+
 import { cn } from "@/lib/utils";
 
 interface DockItem {

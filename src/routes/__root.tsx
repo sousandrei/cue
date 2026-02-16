@@ -7,9 +7,10 @@ import {
 import { AnimatePresence, motion } from "framer-motion";
 import { useEffect, useState } from "react";
 import { Toaster } from "sonner";
+
 import { FloatingDock } from "@/components/floating-dock";
 import { Updater } from "@/components/Updater";
-import { checkHealth, getConfig } from "@/lib/tauri-commands";
+import { checkHealth, getConfig } from "@/lib/tauri/commands";
 
 const RootLayout = () => {
 	const navigate = useNavigate();

@@ -1,7 +1,8 @@
-import { invoke } from "@tauri-apps/api/core";
-import { listen } from "@tauri-apps/api/event";
 import { useCallback, useEffect, useState } from "react";
+
 import type { Song } from "@/components/library/columns";
+import { listen } from "@/lib/tauri/api";
+import { getSongs, removeSong } from "@/lib/tauri/commands";
 
 export function useLibrarySongs() {
 	const [songs, setSongs] = useState<Song[]>([]);
@@ -9,7 +10,7 @@ export function useLibrarySongs() {
 
 	const fetchSongs = useCallback(async () => {
 		try {
-			const data = await invoke<Song[]>("get_songs");
+			const data = await getSongs();
 			setSongs(data);
 		} catch (error) {
 			console.error("Failed to fetch songs:", error);
@@ -32,7 +33,7 @@ export function useLibrarySongs() {
 
 	const handleDelete = useCallback(async (id: string) => {
 		try {
-			await invoke("remove_song", { id });
+			await removeSong(id);
 			setSongs((prev) => prev.filter((song) => song.id !== id));
 		} catch (error) {
 			console.error("Failed to delete song:", error);
