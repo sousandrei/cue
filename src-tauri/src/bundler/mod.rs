@@ -1,5 +1,5 @@
 use serde::Serialize;
-use tauri::{AppHandle, Runtime};
+use tauri::AppHandle;
 
 pub mod bun;
 pub mod ejs;
@@ -11,11 +11,16 @@ pub use ejs::ensure_ejs;
 pub use ffmpeg::ensure_ffmpeg;
 pub use ytdlp::ensure_ytdlp;
 
-pub fn check_bundler_health<R: Runtime>(app: &AppHandle<R>, cfg: &crate::config::Config) -> bool {
-    ytdlp::check_health(app, &cfg.yt_dlp_version)
-        && ffmpeg::check_health(app, &cfg.ffmpeg_version)
-        && bun::check_health(app, &cfg.bun_version)
-        && ejs::check_health(app, &cfg.ejs_version)
+const YT_DLP_VERSION: &str = "2026.02.04";
+const FFMPEG_VERSION: &str = "7.1";
+const BUN_VERSION: &str = "1.3.9";
+const EJS_VERSION: &str = "0.4.0";
+
+pub fn check_bundler_health(app: &AppHandle) -> bool {
+    ytdlp::check_health(app)
+        && ffmpeg::check_health(app)
+        && bun::check_health(app)
+        && ejs::check_health(app)
 }
 
 #[derive(Clone, Serialize)]
@@ -24,8 +29,8 @@ pub struct SetupProgressPayload {
     pub progress: f64,
 }
 
-pub async fn download_with_progress<R: Runtime>(
-    app: &AppHandle<R>,
+pub async fn download_with_progress(
+    app: &AppHandle,
     url: &str,
     status_prefix: &str,
 ) -> Result<Vec<u8>, anyhow::Error> {

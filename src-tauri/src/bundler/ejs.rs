@@ -1,14 +1,11 @@
 use std::fs;
 use std::io::Cursor;
 use std::path::PathBuf;
-use tauri::{AppHandle, Emitter, Manager, Runtime};
+use tauri::{AppHandle, Emitter, Manager};
 
-use crate::bundler::SetupProgressPayload;
+use super::{SetupProgressPayload, EJS_VERSION};
 
-pub async fn ensure_ejs<R: Runtime>(
-    app: &AppHandle<R>,
-    target_version: &str,
-) -> Result<(), anyhow::Error> {
+pub async fn ensure_ejs(app: &AppHandle) -> Result<(), anyhow::Error> {
     let app_data_dir = app
         .path()
         .app_data_dir()
@@ -27,7 +24,7 @@ pub async fn ensure_ejs<R: Runtime>(
 
     if ejs_dir.exists() {
         if let Some(v) = current_version {
-            if v.trim() == target_version {
+            if v.trim() == EJS_VERSION {
                 return Ok(());
             }
         }
@@ -40,20 +37,18 @@ pub async fn ensure_ejs<R: Runtime>(
 
     let url = format!(
         "https://github.com/yt-dlp/ejs/archive/refs/tags/{}.zip",
-        target_version
+        EJS_VERSION
     );
-    download_ejs_zip(app, &url, &ejs_dir, &version_path, target_version).await
+    download_ejs_zip(app, &url, &ejs_dir, &version_path).await
 }
 
-async fn download_ejs_zip<R: Runtime>(
-    app: &AppHandle<R>,
+async fn download_ejs_zip(
+    app: &AppHandle,
     url: &str,
     ejs_dir: &PathBuf,
     version_path: &PathBuf,
-    target_version: &str,
 ) -> Result<(), anyhow::Error> {
-    let bytes =
-        crate::bundler::download_with_progress(app, url, "Downloading yt-dlp-ejs...").await?;
+    let bytes = super::download_with_progress(app, url, "Downloading yt-dlp-ejs...").await?;
 
     let reader = Cursor::new(bytes);
     let mut archive = zip::ZipArchive::new(reader)?;
@@ -100,12 +95,12 @@ async fn download_ejs_zip<R: Runtime>(
         );
     }
 
-    tokio::fs::write(version_path, target_version).await?;
+    tokio::fs::write(version_path, EJS_VERSION).await?;
 
     Ok(())
 }
 
-pub fn check_health<R: Runtime>(app: &AppHandle<R>, target_version: &str) -> bool {
+pub fn check_health(app: &AppHandle) -> bool {
     let app_data_dir = match app.path().app_data_dir() {
         Ok(d) => d,
         Err(_) => return false,
@@ -120,7 +115,7 @@ pub fn check_health<R: Runtime>(app: &AppHandle<R>, target_version: &str) -> boo
     }
 
     if let Ok(v) = fs::read_to_string(&version_path) {
-        if v.trim() != target_version {
+        if v.trim() != EJS_VERSION {
             return false;
         }
     } else {

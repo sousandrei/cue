@@ -1,5 +1,5 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { Music, Rocket } from "lucide-react";
+import { Music, RefreshCcw, Rocket } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
@@ -14,7 +14,7 @@ import {
 } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { listen } from "@/lib/tauri/api";
-import { initializeSetup } from "@/lib/tauri/commands";
+import { getConfig, initializeSetup } from "@/lib/tauri/commands";
 
 export const Route = createFileRoute("/setup")({
 	component: SetupWizard,
@@ -25,9 +25,24 @@ function SetupWizard() {
 	const [loading, setLoading] = useState(false);
 	const [setupProgress, setSetupProgress] = useState(0);
 	const [setupStatus, setSetupStatus] = useState("");
+	const [isUpdate, setIsUpdate] = useState(false);
 	const navigate = useNavigate();
 
 	useEffect(() => {
+		const checkEnvironment = async () => {
+			try {
+				// Pre-fill path if config exists
+				const config = await getConfig();
+				if (config?.library_path) {
+					setPath(config.library_path);
+					setIsUpdate(true);
+				}
+			} catch (error) {
+				console.error("Failed to check environment:", error);
+			}
+		};
+		checkEnvironment();
+
 		const unlisten = listen("setup://progress", (event) => {
 			const payload = event.payload as { status: string; progress: number };
 			setSetupStatus(payload.status);
@@ -44,7 +59,11 @@ function SetupWizard() {
 		setLoading(true);
 		try {
 			await initializeSetup(path);
-			toast.success("Setup completed successfully!");
+			toast.success(
+				isUpdate
+					? "Update completed successfully!"
+					: "Setup completed successfully!",
+			);
 			navigate({ to: "/" });
 		} catch (error) {
 			console.error("Failed to initialize setup:", error);
@@ -61,12 +80,19 @@ function SetupWizard() {
 			<Card className="max-w-md w-full border-primary/20 bg-card/50 backdrop-blur-xl shadow-2xl">
 				<CardHeader className="text-center">
 					<div className="mx-auto w-16 h-16 bg-primary/10 rounded-3xl flex items-center justify-center mb-4">
-						<Rocket className="w-8 h-8 text-primary" />
+						{isUpdate ? (
+							<RefreshCcw className="w-8 h-8 text-primary" />
+						) : (
+							<Rocket className="w-8 h-8 text-primary" />
+						)}
 					</div>
-					<CardTitle className="text-2xl font-bold">Welcome to Cue</CardTitle>
+					<CardTitle className="text-2xl font-bold">
+						{isUpdate ? "Finish Update" : "Welcome to Cue"}
+					</CardTitle>
 					<CardDescription>
-						Let's get you set up. Choose where you want to store your music
-						library.
+						{isUpdate
+							? "We need to download the latest components to keep Cue running smoothly. Your library location is preserved."
+							: "Let's get you set up. Choose where you want to store your music library."}
 					</CardDescription>
 				</CardHeader>
 				<CardContent className="space-y-6">
@@ -107,7 +133,7 @@ function SetupWizard() {
 							disabled={!path || loading}
 							onClick={handleFinishSetup}
 						>
-							Finish Setup
+							{isUpdate ? "Finish Update" : "Finish Setup"}
 						</Button>
 					)}
 				</CardContent>

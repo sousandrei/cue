@@ -1,14 +1,11 @@
 use std::fs;
 use std::io::Cursor;
 use std::path::PathBuf;
-use tauri::{AppHandle, Emitter, Manager, Runtime};
+use tauri::{AppHandle, Emitter, Manager};
 
-use crate::bundler::SetupProgressPayload;
+use super::{SetupProgressPayload, BUN_VERSION};
 
-pub async fn ensure_bun<R: Runtime>(
-    app: &AppHandle<R>,
-    target_version: &str,
-) -> Result<PathBuf, anyhow::Error> {
+pub async fn ensure_bun(app: &AppHandle) -> Result<PathBuf, anyhow::Error> {
     let app_data_dir = app
         .path()
         .app_data_dir()
@@ -31,7 +28,7 @@ pub async fn ensure_bun<R: Runtime>(
 
     if bun_path.exists() {
         if let Some(v) = current_version {
-            if v.trim() == target_version {
+            if v.trim() == BUN_VERSION {
                 return Ok(bun_path);
             }
         }
@@ -55,11 +52,10 @@ pub async fn ensure_bun<R: Runtime>(
             app,
             &format!(
                 "https://github.com/oven-sh/bun/releases/download/bun-v{}/bun-darwin-{}.zip",
-                target_version, mac_arch
+                BUN_VERSION, mac_arch
             ),
             &bun_path,
             &version_path,
-            target_version,
         )
         .await;
     } else {
@@ -68,20 +64,19 @@ pub async fn ensure_bun<R: Runtime>(
 
     let url = format!(
         "https://github.com/oven-sh/bun/releases/download/bun-v{}/bun-{}-{}.zip",
-        target_version, platform, arch
+        BUN_VERSION, platform, arch
     );
 
-    download_bun_zip(app, &url, &bun_path, &version_path, target_version).await
+    download_bun_zip(app, &url, &bun_path, &version_path).await
 }
 
-async fn download_bun_zip<R: Runtime>(
-    app: &AppHandle<R>,
+async fn download_bun_zip(
+    app: &AppHandle,
     url: &str,
     bun_path: &PathBuf,
     version_path: &PathBuf,
-    target_version: &str,
 ) -> Result<PathBuf, anyhow::Error> {
-    let bytes = crate::bundler::download_with_progress(app, url, "Downloading Bun...").await?;
+    let bytes = super::download_with_progress(app, url, "Downloading Bun...").await?;
 
     let reader = Cursor::new(bytes);
     let mut archive = zip::ZipArchive::new(reader)?;
@@ -115,7 +110,7 @@ async fn download_bun_zip<R: Runtime>(
         }
     }
 
-    tokio::fs::write(version_path, target_version).await?;
+    tokio::fs::write(version_path, BUN_VERSION).await?;
 
     #[cfg(unix)]
     {
@@ -136,7 +131,7 @@ async fn download_bun_zip<R: Runtime>(
     Ok(bun_path.clone())
 }
 
-pub fn check_health<R: Runtime>(app: &AppHandle<R>, target_version: &str) -> bool {
+pub fn check_health(app: &AppHandle) -> bool {
     let app_data_dir = match app.path().app_data_dir() {
         Ok(d) => d,
         Err(_) => return false,
@@ -155,7 +150,7 @@ pub fn check_health<R: Runtime>(app: &AppHandle<R>, target_version: &str) -> boo
     }
 
     if let Ok(v) = fs::read_to_string(&version_path) {
-        if v.trim() != target_version {
+        if v.trim() != BUN_VERSION {
             return false;
         }
     } else {

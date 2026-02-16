@@ -6,10 +6,6 @@ pub type ConfigState = Mutex<Option<Config>>;
 #[derive(Debug, Deserialize, Serialize, Clone)]
 pub struct Config {
     pub library_path: String,
-    pub yt_dlp_version: String,
-    pub ffmpeg_version: String,
-    pub bun_version: String,
-    pub ejs_version: String,
     #[serde(default = "default_auto_update")]
     pub auto_update: bool,
 }
@@ -30,10 +26,6 @@ impl Default for Config {
 
         Self {
             library_path,
-            yt_dlp_version: "2026.02.04".to_string(),
-            ffmpeg_version: "7.1".to_string(),
-            bun_version: "1.3.9".to_string(),
-            ejs_version: "0.4.0".to_string(),
             auto_update: true,
         }
     }

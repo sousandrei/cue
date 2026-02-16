@@ -1,13 +1,10 @@
 use std::fs;
 use std::path::PathBuf;
-use tauri::{AppHandle, Emitter, Manager, Runtime};
+use tauri::{AppHandle, Emitter, Manager};
 
-use crate::bundler::SetupProgressPayload;
+use super::{SetupProgressPayload, YT_DLP_VERSION};
 
-pub async fn ensure_ytdlp<R: Runtime>(
-    app: &AppHandle<R>,
-    target_version: &str,
-) -> Result<PathBuf, anyhow::Error> {
+pub async fn ensure_ytdlp(app: &AppHandle) -> Result<PathBuf, anyhow::Error> {
     let app_data_dir = app
         .path()
         .app_data_dir()
@@ -40,7 +37,7 @@ pub async fn ensure_ytdlp<R: Runtime>(
 
     if ytdlp_path.exists() {
         if let Some(v) = current_version {
-            if v.trim() == target_version {
+            if v.trim() == YT_DLP_VERSION {
                 return Ok(ytdlp_path);
             }
         }
@@ -49,21 +46,21 @@ pub async fn ensure_ytdlp<R: Runtime>(
     let url = if cfg!(target_os = "windows") {
         format!(
             "https://github.com/yt-dlp/yt-dlp/releases/download/{}/yt-dlp.exe",
-            target_version
+            YT_DLP_VERSION
         )
     } else if cfg!(target_os = "macos") {
         format!(
             "https://github.com/yt-dlp/yt-dlp/releases/download/{}/yt-dlp_macos",
-            target_version
+            YT_DLP_VERSION
         )
     } else {
         format!(
             "https://github.com/yt-dlp/yt-dlp/releases/download/{}/yt-dlp_linux",
-            target_version
+            YT_DLP_VERSION
         )
     };
 
-    let buffer = crate::bundler::download_with_progress(app, &url, "Downloading yt-dlp...").await?;
+    let buffer = super::download_with_progress(app, &url, "Downloading yt-dlp...").await?;
 
     let temp_path = ytdlp_path.with_extension("tmp");
     tokio::fs::write(&temp_path, buffer).await?;
@@ -72,7 +69,7 @@ pub async fn ensure_ytdlp<R: Runtime>(
     tokio::fs::rename(&temp_path, &ytdlp_path).await?;
 
     // Write version file
-    tokio::fs::write(&version_path, target_version).await?;
+    tokio::fs::write(&version_path, YT_DLP_VERSION).await?;
 
     // Make executable on Unix
     #[cfg(unix)]
@@ -94,7 +91,7 @@ pub async fn ensure_ytdlp<R: Runtime>(
     Ok(ytdlp_path)
 }
 
-pub fn check_health<R: Runtime>(app: &AppHandle<R>, target_version: &str) -> bool {
+pub fn check_health(app: &AppHandle) -> bool {
     let app_data_dir = match app.path().app_data_dir() {
         Ok(d) => d,
         Err(_) => return false,
@@ -113,7 +110,7 @@ pub fn check_health<R: Runtime>(app: &AppHandle<R>, target_version: &str) -> boo
     }
 
     if let Ok(v) = fs::read_to_string(&version_path) {
-        if v.trim() != target_version {
+        if v.trim() != YT_DLP_VERSION {
             return false;
         }
     } else {

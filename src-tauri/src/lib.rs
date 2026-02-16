@@ -68,7 +68,7 @@ async fn init_app(app: &mut tauri::App) -> Result<(), Box<dyn std::error::Error>
     };
 
     if let Some(cfg) = config {
-        let is_healthy = bundler::check_bundler_health(app.handle(), &cfg);
+        let is_healthy = bundler::check_bundler_health(app.handle());
 
         if is_healthy {
             let db_path = format!("sqlite:{}/songs.db", cfg.library_path);

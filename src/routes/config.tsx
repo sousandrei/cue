@@ -170,24 +170,6 @@ function ConfigPage() {
 							</div>
 						</div>
 
-						<div className="space-y-2 pt-4 border-t border-border/50">
-							<label
-								htmlFor="ytdlp-version"
-								className="text-sm font-medium text-muted-foreground ml-1"
-							>
-								yt-dlp Version
-							</label>
-							<Input
-								id="ytdlp-version"
-								value={config.yt_dlp_version}
-								onChange={(e) =>
-									saveConfig({ ...config, yt_dlp_version: e.target.value })
-								}
-								className="bg-background/50 border-border/50"
-								placeholder="e.g. 2024.12.06"
-							/>
-						</div>
-
 						<div className="pt-4">
 							<Button className="w-full" onClick={handleSave} disabled={saving}>
 								{saving ? (

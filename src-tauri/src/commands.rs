@@ -1,4 +1,4 @@
-use tauri::{command, AppHandle, Emitter, Manager, Runtime, State};
+use tauri::{command, AppHandle, Emitter, Manager, State};
 
 use crate::bundler;
 use crate::config::{self, Config, ConfigState};
@@ -31,21 +31,17 @@ pub async fn update_config(
     }
 
     // Ensure dependencies
-    bundler::ensure_ytdlp(&app, &new_config.yt_dlp_version)
+    bundler::ensure_ytdlp(&app)
         .await
         .map_err(|e| e.to_string())?;
 
-    bundler::ensure_ffmpeg(&app, &new_config.ffmpeg_version)
+    bundler::ensure_ffmpeg(&app)
         .await
         .map_err(|e| e.to_string())?;
 
-    bundler::ensure_bun(&app, &new_config.bun_version)
-        .await
-        .map_err(|e| e.to_string())?;
+    bundler::ensure_bun(&app).await.map_err(|e| e.to_string())?;
 
-    bundler::ensure_ejs(&app, &new_config.ejs_version)
-        .await
-        .map_err(|e| e.to_string())?;
+    bundler::ensure_ejs(&app).await.map_err(|e| e.to_string())?;
 
     app.emit("config://update", new_config.clone())
         .map_err(|e| e.to_string())?;
@@ -62,10 +58,6 @@ pub async fn initialize_setup(
 ) -> Result<(), String> {
     let config = Config {
         library_path: library_path.clone(),
-        yt_dlp_version: "2026.02.04".to_string(),
-        ffmpeg_version: "7.1".to_string(),
-        bun_version: "1.3.9".to_string(),
-        ejs_version: "0.4.0".to_string(),
         auto_update: true,
     };
 
@@ -94,21 +86,17 @@ pub async fn initialize_setup(
     }
 
     // Ensure dependencies
-    bundler::ensure_ytdlp(&app, &config.yt_dlp_version)
+    bundler::ensure_ytdlp(&app)
         .await
         .map_err(|e| e.to_string())?;
 
-    bundler::ensure_ffmpeg(&app, &config.ffmpeg_version)
+    bundler::ensure_ffmpeg(&app)
         .await
         .map_err(|e| e.to_string())?;
 
-    bundler::ensure_bun(&app, &config.bun_version)
-        .await
-        .map_err(|e| e.to_string())?;
+    bundler::ensure_bun(&app).await.map_err(|e| e.to_string())?;
 
-    bundler::ensure_ejs(&app, &config.ejs_version)
-        .await
-        .map_err(|e| e.to_string())?;
+    bundler::ensure_ejs(&app).await.map_err(|e| e.to_string())?;
 
     Ok(())
 }
@@ -180,18 +168,8 @@ pub async fn get_song_by_id(state: State<'_, DbState>, id: String) -> Result<Opt
 // --- Download Commands ---
 
 #[command]
-pub async fn get_metadata<R: Runtime>(
-    app: AppHandle<R>,
-    cfg_state: State<'_, ConfigState>,
-    url: String,
-) -> Result<Vec<MetadataPayload>, String> {
-    {
-        let config_guard = cfg_state.lock().unwrap();
-        let _config = config_guard.as_ref().ok_or("Config not initialized")?;
-    }
-    // We pass the State to download::get_metadata which might need adjustment if it expects non-option
-    // Let's check download.rs
-    download::get_metadata(app, cfg_state, url).await
+pub async fn get_metadata(app: AppHandle, url: String) -> Result<Vec<MetadataPayload>, String> {
+    download::get_metadata(app, url).await
 }
 
 #[command]
@@ -289,8 +267,8 @@ pub async fn factory_reset(app: AppHandle) -> Result<(), String> {
 #[command]
 pub async fn check_health(app: AppHandle, state: State<'_, ConfigState>) -> Result<bool, String> {
     let config_guard = state.lock().unwrap();
-    if let Some(cfg) = config_guard.as_ref() {
-        Ok(bundler::check_bundler_health(&app, cfg))
+    if let Some(_) = config_guard.as_ref() {
+        Ok(bundler::check_bundler_health(&app))
     } else {
         Ok(false)
     }

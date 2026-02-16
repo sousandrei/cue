@@ -2,7 +2,7 @@ use serde::Deserialize;
 use std::fs;
 use std::path::{Path, PathBuf};
 use std::sync::Mutex;
-use tauri::{AppHandle, Emitter, Manager, Runtime, State};
+use tauri::{AppHandle, Emitter, Manager};
 use tokio::process::Command;
 
 #[cfg(windows)]
@@ -25,18 +25,8 @@ struct YtDlpOutput {
     duration: Option<f64>,
 }
 
-pub async fn get_metadata<R: Runtime>(
-    app: AppHandle<R>,
-    cfg: State<'_, crate::config::ConfigState>,
-    url: String,
-) -> Result<Vec<MetadataPayload>, String> {
-    let target_version = {
-        let config_guard = cfg.lock().unwrap();
-        let config = config_guard.as_ref().ok_or("Config not initialized")?;
-        config.yt_dlp_version.clone()
-    };
-
-    let ytdlp_path = bundler::ensure_ytdlp(&app, &target_version)
+pub async fn get_metadata(app: AppHandle, url: String) -> Result<Vec<MetadataPayload>, String> {
+    let ytdlp_path = bundler::ensure_ytdlp(&app)
         .await
         .map_err(|e| e.to_string())?;
 
@@ -126,7 +116,7 @@ fn parse_log_status(line: &str) -> Option<String> {
     None
 }
 
-fn get_ytdlp_paths<R: Runtime>(app: &AppHandle<R>) -> Result<(PathBuf, PathBuf), anyhow::Error> {
+fn get_ytdlp_paths(app: &AppHandle) -> Result<(PathBuf, PathBuf), anyhow::Error> {
     let app_data_dir = app
         .path()
         .app_data_dir()
@@ -306,12 +296,7 @@ fn process_stdout_line(app: &AppHandle, manager: &DownloadManager, id: &str, lin
     }
 }
 
-fn process_stderr_line<R: Runtime>(
-    app: &AppHandle<R>,
-    manager: &DownloadManager,
-    id: &str,
-    line: &str,
-) {
+fn process_stderr_line(app: &AppHandle, manager: &DownloadManager, id: &str, line: &str) {
     let detailed_status = parse_log_status(line);
     let log_payload = DownloadProgressPayload {
         id: id.to_string(),

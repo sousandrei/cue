@@ -2,10 +2,6 @@ import { invoke, isTauri } from "@tauri-apps/api/core";
 
 export interface Config {
 	library_path: string;
-	yt_dlp_version: string;
-	ffmpeg_version: string;
-	bun_version: string;
-	ejs_version: string;
 	auto_update: boolean;
 }
 
@@ -51,10 +47,6 @@ export async function getConfig(): Promise<Config | null> {
 	if (!isTauri()) {
 		return {
 			library_path: "/mock/library",
-			yt_dlp_version: "2024.04.09",
-			ffmpeg_version: "6.1.1",
-			bun_version: "1.1.3",
-			ejs_version: "3.1.10",
 			auto_update: false,
 		};
 	}

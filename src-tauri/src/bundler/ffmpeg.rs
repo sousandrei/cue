@@ -1,14 +1,11 @@
 use std::fs;
 use std::io::Cursor;
 use std::path::PathBuf;
-use tauri::{AppHandle, Emitter, Manager, Runtime};
+use tauri::{AppHandle, Emitter, Manager};
 
-use crate::bundler::SetupProgressPayload;
+use super::{SetupProgressPayload, FFMPEG_VERSION};
 
-pub async fn ensure_ffmpeg<R: Runtime>(
-    app: &AppHandle<R>,
-    target_version: &str,
-) -> Result<PathBuf, anyhow::Error> {
+pub async fn ensure_ffmpeg(app: &AppHandle) -> Result<PathBuf, anyhow::Error> {
     let app_data_dir = app
         .path()
         .app_data_dir()
@@ -33,7 +30,7 @@ pub async fn ensure_ffmpeg<R: Runtime>(
 
     if ffmpeg_path.exists() {
         if let Some(v) = current_version {
-            if v.trim() == target_version {
+            if v.trim() == FFMPEG_VERSION {
                 return Ok(ffmpeg_path);
             }
         }
@@ -62,12 +59,12 @@ pub async fn ensure_ffmpeg<R: Runtime>(
     if url.ends_with(".zip") || cfg!(target_os = "macos") {
         extract_zip(app, buffer, &ffmpeg_path, binary_name)?;
     } else if url.ends_with(".tar.xz") {
-        extract_tar_xz(app, buffer, &ffmpeg_path, binary_name)?;
+        extract_tar_xz(buffer, &ffmpeg_path, binary_name)?;
     } else {
         return Err(anyhow::anyhow!("Unsupported FFmpeg archive format or OS"));
     }
 
-    tokio::fs::write(&version_path, target_version).await?;
+    tokio::fs::write(&version_path, FFMPEG_VERSION).await?;
 
     #[cfg(unix)]
     {
@@ -88,8 +85,8 @@ pub async fn ensure_ffmpeg<R: Runtime>(
     Ok(ffmpeg_path)
 }
 
-fn extract_zip<R: Runtime>(
-    app: &AppHandle<R>,
+fn extract_zip(
+    app: &AppHandle,
     buffer: Vec<u8>,
     ffmpeg_path: &PathBuf,
     binary_name: &str,
@@ -129,8 +126,7 @@ fn extract_zip<R: Runtime>(
     Ok(())
 }
 
-fn extract_tar_xz<R: Runtime>(
-    app: &AppHandle<R>,
+fn extract_tar_xz(
     buffer: Vec<u8>,
     ffmpeg_path: &PathBuf,
     binary_name: &str,
@@ -152,7 +148,7 @@ fn extract_tar_xz<R: Runtime>(
     Ok(())
 }
 
-pub fn check_health<R: Runtime>(app: &AppHandle<R>, target_version: &str) -> bool {
+pub fn check_health(app: &AppHandle) -> bool {
     let app_data_dir = match app.path().app_data_dir() {
         Ok(d) => d,
         Err(_) => return false,
@@ -171,7 +167,7 @@ pub fn check_health<R: Runtime>(app: &AppHandle<R>, target_version: &str) -> boo
     }
 
     if let Ok(v) = fs::read_to_string(&version_path) {
-        if v.trim() != target_version {
+        if v.trim() != FFMPEG_VERSION {
             return false;
         }
     } else {
