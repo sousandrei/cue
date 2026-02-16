@@ -1,3 +1,4 @@
+import { isTauri } from "@tauri-apps/api/core";
 import {
 	type Event,
 	listen as tauriListen,
@@ -11,8 +12,6 @@ import {
 } from "@tauri-apps/plugin-dialog";
 import { relaunch as tauriRelaunch } from "@tauri-apps/plugin-process";
 import { check as tauriCheck, type Update } from "@tauri-apps/plugin-updater";
-
-import { isTauri } from "./env";
 
 export async function listen<T>(
 	event: string,

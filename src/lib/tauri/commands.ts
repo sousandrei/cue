@@ -1,6 +1,4 @@
-import { invoke } from "@tauri-apps/api/core";
-
-import { isTauri } from "./env";
+import { invoke, isTauri } from "@tauri-apps/api/core";
 
 export interface Config {
 	library_path: string;
