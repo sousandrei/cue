@@ -1,9 +1,9 @@
 use std::process::Stdio;
 use std::sync::Mutex;
 use tauri::{AppHandle, Emitter, Manager};
-use tokio::io::BufReader;
-use tokio::process::{Child, ChildStderr, ChildStdout, Command};
 use tokio::sync::oneshot;
+use tokio::process::{Child, ChildStderr, ChildStdout, Command};
+use tokio::io::BufReader;
 
 use super::types::{DownloadErrorPayload, DownloadJob};
 use crate::download::process::run_download;
@@ -17,6 +17,13 @@ pub struct DownloadManager {
     jobs: Mutex<Vec<JobState>>,
 }
 
+type ProcessOutput = (
+    Child,
+    BufReader<ChildStdout>,
+    BufReader<ChildStderr>,
+    oneshot::Receiver<()>,
+);
+
 impl DownloadManager {
     pub fn new() -> Self {
         Self {
@@ -28,15 +35,7 @@ impl DownloadManager {
         &self,
         id: &str,
         cmd: &mut Command,
-    ) -> Result<
-        (
-            Child,
-            BufReader<ChildStdout>,
-            BufReader<ChildStderr>,
-            oneshot::Receiver<()>,
-        ),
-        anyhow::Error,
-    > {
+    ) -> Result<ProcessOutput, anyhow::Error> {
         let mut child = cmd.stdout(Stdio::piped()).stderr(Stdio::piped()).spawn()?;
 
         let (tx, rx) = oneshot::channel();

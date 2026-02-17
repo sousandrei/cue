@@ -267,7 +267,7 @@ pub async fn factory_reset(app: AppHandle) -> Result<(), String> {
 #[command]
 pub async fn check_health(app: AppHandle, state: State<'_, ConfigState>) -> Result<bool, String> {
     let config_guard = state.lock().unwrap();
-    if let Some(_) = config_guard.as_ref() {
+    if config_guard.as_ref().is_some() {
         Ok(bundler::check_bundler_health(&app))
     } else {
         Ok(false)

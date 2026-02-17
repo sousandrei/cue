@@ -55,6 +55,7 @@ impl Database {
         Ok(song)
     }
 
+    #[allow(dead_code)]
     pub async fn edit_song(&self, song: &Song) -> Result<(), sqlx::Error> {
         sqlx::query(include_str!("../../queries/edit_song.sql"))
             .bind(&song.title)
@@ -85,6 +86,7 @@ impl Database {
         Ok(songs)
     }
 
+    #[allow(dead_code)]
     pub async fn create_playlist(&self, playlist: &Playlist) -> Result<(), sqlx::Error> {
         sqlx::query(include_str!("../../queries/create_playlist.sql"))
             .bind(&playlist.name)
@@ -94,6 +96,7 @@ impl Database {
         Ok(())
     }
 
+    #[allow(dead_code)]
     pub async fn add_song_to_playlist(
         &self,
         song_id: &str,
@@ -107,6 +110,7 @@ impl Database {
         Ok(())
     }
 
+    #[allow(dead_code)]
     pub async fn remove_song_from_playlist(
         &self,
         song_id: &str,
@@ -120,6 +124,7 @@ impl Database {
         Ok(())
     }
 
+    #[allow(dead_code)]
     pub async fn get_playlists(&self) -> Result<Vec<Playlist>, sqlx::Error> {
         let playlists =
             sqlx::query_as::<_, Playlist>(include_str!("../../queries/get_playlists.sql"))

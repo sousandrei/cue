@@ -9,6 +9,7 @@ pub struct Song {
     pub filename: String,
 }
 
+#[allow(dead_code)]
 #[derive(Debug, Serialize, Deserialize, sqlx::FromRow)]
 pub struct Playlist {
     pub id: String,
