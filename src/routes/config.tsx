@@ -7,7 +7,6 @@ import { FolderPicker } from "@/components/FolderPicker";
 import { Header } from "@/components/Header";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { useConfig } from "@/hooks/useConfig";
 import { ask, check } from "@/lib/tauri/api";
@@ -16,10 +15,6 @@ import { performUpdate } from "@/lib/updater";
 
 interface Config {
 	library_path: string;
-	yt_dlp_version: string;
-	ffmpeg_version: string;
-	bun_version: string;
-	ejs_version: string;
 	auto_update: boolean;
 }
 
