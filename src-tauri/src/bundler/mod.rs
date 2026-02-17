@@ -12,7 +12,7 @@ pub use ffmpeg::ensure_ffmpeg;
 pub use ytdlp::ensure_ytdlp;
 
 const YT_DLP_VERSION: &str = "2026.02.04";
-const FFMPEG_VERSION: &str = "7.1";
+const FFMPEG_VERSION: &str = "8.0";
 const BUN_VERSION: &str = "1.3.9";
 const EJS_VERSION: &str = "0.4.0";
 

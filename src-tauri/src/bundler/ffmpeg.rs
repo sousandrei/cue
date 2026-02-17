@@ -45,16 +45,22 @@ pub async fn ensure_ffmpeg(app: &AppHandle) -> Result<PathBuf, anyhow::Error> {
     );
 
     let url = if cfg!(target_os = "windows") {
-        "https://github.com/BtbN/FFmpeg-Builds/releases/download/latest/ffmpeg-master-latest-win64-gpl.zip"
+        "https://github.com/BtbN/FFmpeg-Builds/releases/download/latest/ffmpeg-master-latest-win64-gpl.zip".to_string()
     } else if cfg!(target_os = "macos") {
-        "https://evermeet.cx/ffmpeg/getrelease/zip"
+        let arch_suffix = if cfg!(target_arch = "aarch64") {
+            "arm"
+        } else {
+            "intel"
+        };
+        let ver_suffix = FFMPEG_VERSION.replace(".", "");
+        format!("https://www.osxexperts.net/ffmpeg{}{}.zip", ver_suffix, arch_suffix)
     } else {
-        "https://github.com/BtbN/FFmpeg-Builds/releases/download/latest/ffmpeg-master-latest-linux64-gpl.tar.xz"
+        "https://github.com/BtbN/FFmpeg-Builds/releases/download/latest/ffmpeg-master-latest-linux64-gpl.tar.xz".to_string()
     };
 
     fs::create_dir_all(&bin_dir)?;
 
-    let buffer = crate::bundler::download_with_progress(app, url, "Downloading ffmpeg...").await?;
+    let buffer = crate::bundler::download_with_progress(app, &url, "Downloading ffmpeg...").await?;
 
     if url.ends_with(".zip") || cfg!(target_os = "macos") {
         extract_zip(app, buffer, &ffmpeg_path, binary_name)?;
