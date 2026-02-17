@@ -53,7 +53,10 @@ pub async fn ensure_ffmpeg(app: &AppHandle) -> Result<PathBuf, anyhow::Error> {
             "intel"
         };
         let ver_suffix = FFMPEG_VERSION.replace(".", "");
-        format!("https://www.osxexperts.net/ffmpeg{}{}.zip", ver_suffix, arch_suffix)
+        format!(
+            "https://www.osxexperts.net/ffmpeg{}{}.zip",
+            ver_suffix, arch_suffix
+        )
     } else {
         "https://github.com/BtbN/FFmpeg-Builds/releases/download/latest/ffmpeg-master-latest-linux64-gpl.tar.xz".to_string()
     };

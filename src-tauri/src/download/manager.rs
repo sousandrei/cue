@@ -1,9 +1,9 @@
 use std::process::Stdio;
 use std::sync::Mutex;
 use tauri::{AppHandle, Emitter, Manager};
-use tokio::sync::oneshot;
-use tokio::process::{Child, ChildStderr, ChildStdout, Command};
 use tokio::io::BufReader;
+use tokio::process::{Child, ChildStderr, ChildStdout, Command};
+use tokio::sync::oneshot;
 
 use super::types::{DownloadErrorPayload, DownloadJob};
 use crate::download::process::run_download;
