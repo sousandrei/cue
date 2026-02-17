@@ -1,5 +1,20 @@
 # Changelog
 
+## [1.4.0](https://github.com/sousandrei/cue/compare/v1.3.0...v1.4.0) (2026-02-17)
+
+
+### Features
+
+* lock versions to app release ([1f3f58b](https://github.com/sousandrei/cue/commit/1f3f58b9a5d7a2a1a4f9bd1e1958a47f341457fb))
+* support macos intel as well ([1bfb811](https://github.com/sousandrei/cue/commit/1bfb811467e07b3ef3614c92d46eac8e52086662))
+
+
+### Bug Fixes
+
+* clippy issues ([ecc72ea](https://github.com/sousandrei/cue/commit/ecc72ea0d9db746e6c2ef07e1659052fc0935cce))
+* ts linting ([7aa6709](https://github.com/sousandrei/cue/commit/7aa670994c399fce1cb834165669bf3ae6c0f816))
+* use correct tauri env ([5f82952](https://github.com/sousandrei/cue/commit/5f82952cbeabb36d1f4734c4f33a70d3039441e7))
+
 ## [1.3.0](https://github.com/sousandrei/cue/compare/v1.2.0...v1.3.0) (2026-02-15)
 
 
