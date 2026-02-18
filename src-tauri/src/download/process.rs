@@ -16,6 +16,8 @@ use crate::bundler;
 struct YtDlpOutput {
     id: Option<String>,
     url: Option<String>,
+    webpage_url: Option<String>,
+    original_url: Option<String>,
     title: Option<String>,
     artist: Option<String>,
     creator: Option<String>,
@@ -59,7 +61,11 @@ pub async fn get_metadata(app: AppHandle, url: String) -> Result<Vec<MetadataPay
             .or(yt_data.uploader)
             .unwrap_or_else(|| "Unknown Artist".into());
 
-        let video_url = yt_data.url.unwrap_or_else(|| url.clone());
+        let video_url = yt_data
+            .webpage_url
+            .or(yt_data.original_url)
+            .or(yt_data.url)
+            .unwrap_or_else(|| url.clone());
 
         results.push(MetadataPayload {
             id: yt_data.id.unwrap_or_else(|| "unknown".into()),
