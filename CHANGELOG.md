@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.4.1](https://github.com/sousandrei/cue/compare/v1.4.0...v1.4.1) (2026-02-18)
+
+
+### Bug Fixes
+
+* bulk download urls ([19acd76](https://github.com/sousandrei/cue/commit/19acd76ae8d5bc315dc90463e82b3acd8e48315f))
+
 ## [1.4.0](https://github.com/sousandrei/cue/compare/v1.3.0...v1.4.0) (2026-02-17)
 
 
