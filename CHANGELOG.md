@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.4.1](https://github.com/sousandrei/cue/compare/v1.4.0...v1.4.1) (2026-03-02)
+
+
+### Bug Fixes
+
+* bulk download urls ([19acd76](https://github.com/sousandrei/cue/commit/19acd76ae8d5bc315dc90463e82b3acd8e48315f))
+* ffprobe binary install ([bf45ea3](https://github.com/sousandrei/cue/commit/bf45ea3497b063908b61a626ad0a23d42f0f4836))
+
 ## [1.4.0](https://github.com/sousandrei/cue/compare/v1.3.0...v1.4.0) (2026-02-17)
 
 
