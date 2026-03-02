@@ -10,7 +10,6 @@ const CREATE_NO_WINDOW: u32 = 0x08000000;
 
 use super::manager::DownloadManager;
 use super::types::{DownloadProgressPayload, MetadataPayload};
-use crate::bundler;
 
 #[derive(Deserialize)]
 struct YtDlpOutput {
@@ -28,12 +27,19 @@ struct YtDlpOutput {
 }
 
 pub async fn get_metadata(app: AppHandle, url: String) -> Result<Vec<MetadataPayload>, String> {
-    let ytdlp_path = bundler::ensure_ytdlp(&app)
-        .await
-        .map_err(|e| e.to_string())?;
+    let (bin_dir, ytdlp_path) = match get_ytdlp_paths(&app) {
+        Ok(paths) => paths,
+        Err(e) => return Err(e.to_string()),
+    };
 
     let mut cmd = Command::new(ytdlp_path);
-    cmd.args(["--dump-json", "--flat-playlist", &url]);
+    cmd.args([
+        "--ffmpeg-location",
+        &bin_dir.to_string_lossy(),
+        "--dump-json",
+        "--flat-playlist",
+        &url,
+    ]);
 
     #[cfg(windows)]
     cmd.creation_flags(CREATE_NO_WINDOW);
@@ -205,11 +211,14 @@ fn construct_download_cmd(
 
 async fn get_final_filename(
     ytdlp_path: &Path,
+    bin_dir: &Path,
     output_template: &str,
     url: &str,
 ) -> Result<String, anyhow::Error> {
     let mut cmd = Command::new(ytdlp_path);
     cmd.args([
+        "--ffmpeg-location",
+        &bin_dir.to_string_lossy(),
         "--restrict-filenames",
         "-o",
         output_template,
@@ -382,8 +391,7 @@ pub async fn run_download(
         ));
     }
 
-    let filename = get_final_filename(&ytdlp_path, &output_template, &url).await?;
-
+    let filename = get_final_filename(&ytdlp_path, &bin_dir, &output_template, &url).await?;
     add_song_to_db(&app, id, metadata, filename).await?;
 
     Ok(())
