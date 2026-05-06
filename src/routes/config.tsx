@@ -9,27 +9,23 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
 import { useConfig } from "@/hooks/useConfig";
-import { ask, check } from "@/lib/tauri/api";
-import { factoryReset, updateConfig } from "@/lib/tauri/commands";
+import { useTauri } from "@/lib/tauri/TauriProvider";
+import type { Config } from "@/lib/tauri/core/types";
 import { performUpdate } from "@/lib/updater";
-
-interface Config {
-	library_path: string;
-	auto_update: boolean;
-}
 
 export const Route = createFileRoute("/config")({
 	component: ConfigPage,
 });
 
 function ConfigPage() {
+	const tauri = useTauri();
 	const { config } = useConfig();
 	const [saving, setSaving] = useState(false);
 
 	const handleCheckUpdate = async () => {
 		try {
 			toast.loading("Checking for updates...", { id: "manual-check" });
-			const update = await check();
+			const update = await tauri.checkUpdate();
 			toast.dismiss("manual-check");
 
 			if (!update) {
@@ -41,7 +37,7 @@ function ConfigPage() {
 				description: `A new version is available.\n${update.body}`,
 				action: {
 					label: "Update Now",
-					onClick: () => performUpdate(update),
+					onClick: () => performUpdate(update, tauri),
 				},
 				duration: Infinity,
 			});
@@ -55,7 +51,7 @@ function ConfigPage() {
 
 	const saveConfig = async (newConfig: Config) => {
 		try {
-			await updateConfig(newConfig);
+			await tauri.updateConfig(newConfig);
 		} catch (error) {
 			console.error("Failed to update config:", error);
 			toast.error(`Failed to save settings: ${error}`);
@@ -66,7 +62,7 @@ function ConfigPage() {
 		if (!config) return;
 		setSaving(true);
 		try {
-			await updateConfig(config);
+			await tauri.updateConfig(config);
 			toast.success("Settings saved successfully!");
 		} catch (error) {
 			console.error("Failed to update config:", error);
@@ -77,7 +73,7 @@ function ConfigPage() {
 	};
 
 	const handleFactoryReset = async () => {
-		const confirmed = await ask(
+		const confirmed = await tauri.ask(
 			"Are you sure you want to perform a factory reset? This will delete all downloaded binaries and your configuration. The app will restart.",
 			{
 				title: "Factory Reset",
@@ -91,7 +87,7 @@ function ConfigPage() {
 
 		try {
 			toast.loading("Performing factory reset...", { id: "factory-reset" });
-			await factoryReset();
+			await tauri.factoryReset();
 		} catch (error) {
 			console.error("Factory reset failed:", error);
 			toast.error(`Factory reset failed: ${error}`, { id: "factory-reset" });

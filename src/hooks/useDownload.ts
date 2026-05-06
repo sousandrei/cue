@@ -1,34 +1,28 @@
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
-
-import { listen } from "@/lib/tauri/api";
-import type { DownloadJob } from "@/lib/tauri/commands";
-import {
-	addToQueue,
-	cancelDownload,
-	clearHistory as clearHistoryBackend,
-	clearQueue as clearQueueBackend,
-	type DownloadErrorPayload,
-	type DownloadProgressPayload,
-	getDownloads,
-	type MetadataPayload,
-	removeDownload as removeDownloadBackend,
-} from "@/lib/tauri/commands";
+import { useTauri } from "@/lib/tauri/TauriProvider";
+import type {
+	DownloadErrorPayload,
+	DownloadJob,
+	DownloadProgressPayload,
+	MetadataPayload,
+} from "@/lib/tauri/core/types";
 
 export type { DownloadJob };
 
 export function useDownload() {
+	const tauri = useTauri();
 	const [downloads, setDownloads] = useState<DownloadJob[]>([]);
 
 	useEffect(() => {
 		// Initial fetch
-		getDownloads().then(setDownloads).catch(console.error);
+		tauri.getDownloads().then(setDownloads).catch(console.error);
 
-		const unlistenList = listen("download://list-updated", (event) => {
+		const unlistenList = tauri.listen("download://list-updated", (event) => {
 			setDownloads(event.payload as DownloadJob[]);
 		});
 
-		const unlistenProgress = listen<DownloadProgressPayload>(
+		const unlistenProgress = tauri.listen<DownloadProgressPayload>(
 			"download://progress",
 			(event) => {
 				const payload = event.payload;
@@ -54,7 +48,7 @@ export function useDownload() {
 			},
 		);
 
-		const unlistenError = listen("download://error", (event) => {
+		const unlistenError = tauri.listen("download://error", (event) => {
 			const payload = event.payload as DownloadErrorPayload;
 			if (!payload.is_cancelled) {
 				toast.error(`Download failed: ${payload.error}`);
@@ -66,37 +60,37 @@ export function useDownload() {
 			unlistenProgress.then((f) => f());
 			unlistenError.then((f) => f());
 		};
-	}, []);
+	}, [tauri]);
 
 	const startDownload = useCallback(
 		async (url: string, metadata: MetadataPayload) => {
 			try {
-				await addToQueue(url, metadata.id, metadata);
+				await tauri.addToQueue(url, metadata.id, metadata);
 			} catch (err) {
 				toast.error(`Failed to add to queue: ${err}`);
 			}
 		},
-		[],
+		[tauri],
 	);
 
 	const removeDownload = useCallback(
 		(id: string) => {
 			const job = downloads.find((d) => d.id === id);
 			if (job && (job.status === "downloading" || job.status === "pending")) {
-				cancelDownload(id).catch(console.error);
+				tauri.cancelDownload(id).catch(console.error);
 			}
-			removeDownloadBackend(id).catch(console.error);
+			tauri.removeDownload(id).catch(console.error);
 		},
-		[downloads],
+		[downloads, tauri],
 	);
 
 	const clearHistory = useCallback(() => {
-		clearHistoryBackend().catch(console.error);
-	}, []);
+		tauri.clearHistory().catch(console.error);
+	}, [tauri]);
 
 	const clearQueue = useCallback(() => {
-		clearQueueBackend().catch(console.error);
-	}, []);
+		tauri.clearQueue().catch(console.error);
+	}, [tauri]);
 
 	return {
 		downloads,

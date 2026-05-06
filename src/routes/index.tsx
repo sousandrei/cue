@@ -8,14 +8,14 @@ import { DownloadQueueStatus } from "@/components/DownloadQueueStatus";
 import { Header } from "@/components/Header";
 import { useDownload } from "@/hooks/useDownload";
 import { useSmartQueue } from "@/hooks/useSmartQueue";
-import { open } from "@/lib/tauri/api";
-import { readFileContent } from "@/lib/tauri/commands";
+import { useTauri } from "@/lib/tauri/TauriProvider";
 
 export const Route = createFileRoute("/")({
 	component: Index,
 });
 
 function Index() {
+	const tauri = useTauri();
 	const [url, setUrl] = useState("");
 	const { downloads, removeDownload, clearQueue, clearHistory } = useDownload();
 	const { queueUrl, loading } = useSmartQueue();
@@ -53,7 +53,7 @@ function Index() {
 
 	const handleBulkImport = async () => {
 		try {
-			const selected = await open({
+			const selected = await tauri.open({
 				multiple: false,
 				filters: [
 					{
@@ -65,7 +65,7 @@ function Index() {
 
 			if (!selected) return;
 
-			const content = await readFileContent(selected as string);
+			const content = await tauri.readFileContent(selected as string);
 			const urls = content
 				.split("\n")
 				.map((u) => u.trim())

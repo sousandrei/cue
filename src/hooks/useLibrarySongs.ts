@@ -1,19 +1,12 @@
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
-
-import type { Song } from "@/components/library/columns";
-import { listen } from "@/lib/tauri/api";
-import {
-	checkMissingSongs,
-	getDownloads,
-	getSongs,
-	removeSong,
-	syncSong,
-} from "@/lib/tauri/commands";
+import { useTauri } from "@/lib/tauri/TauriProvider";
+import type { Song } from "@/lib/tauri/core/types";
 
 const ACTIVE_STATUSES = new Set(["queued", "pending", "downloading"]);
 
 export function useLibrarySongs() {
+	const tauri = useTauri();
 	const [songs, setSongs] = useState<Song[]>([]);
 	const [loading, setLoading] = useState(true);
 	const [missingIds, setMissingIds] = useState<Set<string>>(new Set());
@@ -21,9 +14,9 @@ export function useLibrarySongs() {
 	const fetchSongs = useCallback(async () => {
 		try {
 			const [data, missing, downloads] = await Promise.all([
-				getSongs(),
-				checkMissingSongs(),
-				getDownloads(),
+				tauri.getSongs(),
+				tauri.checkMissingSongs(),
+				tauri.getDownloads(),
 			]);
 
 			setSongs(data);
@@ -38,16 +31,16 @@ export function useLibrarySongs() {
 		} finally {
 			setLoading(false);
 		}
-	}, []);
+	}, [tauri]);
 
 	useEffect(() => {
 		fetchSongs();
 
-		const unlistenLibrary = listen("library://updated", () => {
+		const unlistenLibrary = tauri.listen("library://updated", () => {
 			fetchSongs();
 		});
 
-		const unlistenDownloads = listen("download://list-updated", () => {
+		const unlistenDownloads = tauri.listen("download://list-updated", () => {
 			fetchSongs();
 		});
 
@@ -55,16 +48,16 @@ export function useLibrarySongs() {
 			unlistenLibrary.then((f) => f());
 			unlistenDownloads.then((f) => f());
 		};
-	}, [fetchSongs]);
+	}, [fetchSongs, tauri]);
 
 	const handleDelete = useCallback(async (id: string) => {
 		try {
-			await removeSong(id);
+			await tauri.removeSong(id);
 			setSongs((prev) => prev.filter((song) => song.id !== id));
 		} catch (error) {
 			console.error("Failed to delete song:", error);
 		}
-	}, []);
+	}, [tauri]);
 
 	const handleSyncAll = useCallback(async () => {
 		if (missingIds.size === 0) return;
@@ -82,7 +75,7 @@ export function useLibrarySongs() {
 		if (withUrl.length === 0) return;
 
 		try {
-			await Promise.all(withUrl.map((s) => syncSong(s.id)));
+			await Promise.all(withUrl.map((s) => tauri.syncSong(s.id)));
 			toast.success(
 				`${withUrl.length} song${withUrl.length > 1 ? "s" : ""} re-queued for download`,
 			);
@@ -90,7 +83,7 @@ export function useLibrarySongs() {
 			console.error("Failed to sync songs:", error);
 			toast.error("Failed to sync some songs");
 		}
-	}, [missingIds, songs]);
+	}, [missingIds, songs, tauri]);
 
 	return {
 		songs,

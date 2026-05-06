@@ -1,8 +1,9 @@
 import { useState } from "react";
-
-import { getMetadata, type MetadataPayload } from "@/lib/tauri/commands";
+import { useTauri } from "@/lib/tauri/TauriProvider";
+import type { MetadataPayload } from "@/lib/tauri/core/types";
 
 export function useMetadata() {
+	const tauri = useTauri();
 	const [loading, setLoading] = useState(false);
 	const [error, setError] = useState<string | null>(null);
 	const [metadata, setMetadata] = useState<MetadataPayload[] | null>(null);
@@ -15,7 +16,7 @@ export function useMetadata() {
 		setMetadata(null);
 
 		try {
-			const data = await getMetadata(url);
+			const data = await tauri.getMetadata(url);
 			setMetadata(data);
 			return data;
 		} catch (err) {

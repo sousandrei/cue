@@ -13,14 +13,14 @@ import {
 	CardTitle,
 } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
-import { listen } from "@/lib/tauri/api";
-import { getConfig, initializeSetup } from "@/lib/tauri/commands";
+import { useTauri } from "@/lib/tauri/TauriProvider";
 
 export const Route = createFileRoute("/setup")({
 	component: SetupWizard,
 });
 
 function SetupWizard() {
+	const tauri = useTauri();
 	const [path, setPath] = useState("");
 	const [loading, setLoading] = useState(false);
 	const [setupProgress, setSetupProgress] = useState(0);
@@ -32,7 +32,7 @@ function SetupWizard() {
 		const checkEnvironment = async () => {
 			try {
 				// Pre-fill path if config exists
-				const config = await getConfig();
+				const config = await tauri.getConfig();
 				if (config?.library_path) {
 					setPath(config.library_path);
 					setIsUpdate(true);
@@ -43,7 +43,7 @@ function SetupWizard() {
 		};
 		checkEnvironment();
 
-		const unlisten = listen("setup://progress", (event) => {
+		const unlisten = tauri.listen("setup://progress", (event) => {
 			const payload = event.payload as { status: string; progress: number };
 			setSetupStatus(payload.status);
 			setSetupProgress(payload.progress);
@@ -52,13 +52,13 @@ function SetupWizard() {
 		return () => {
 			unlisten.then((f) => f());
 		};
-	}, []);
+	}, [tauri]);
 
 	const handleFinishSetup = async () => {
 		if (!path) return;
 		setLoading(true);
 		try {
-			await initializeSetup(path);
+			await tauri.initializeSetup(path);
 			toast.success(
 				isUpdate
 					? "Update completed successfully!"

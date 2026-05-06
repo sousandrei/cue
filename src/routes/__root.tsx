@@ -10,19 +10,20 @@ import { Toaster } from "sonner";
 
 import { FloatingDock } from "@/components/floating-dock";
 import { Updater } from "@/components/Updater";
-import { checkHealth, getConfig } from "@/lib/tauri/commands";
+import { TauriProvider, useTauri } from "@/lib/tauri/TauriProvider";
 
-const RootLayout = () => {
+const RootLayoutContent = () => {
 	const navigate = useNavigate();
 	const location = useLocation();
+	const tauri = useTauri();
 	const [checked, setChecked] = useState(false);
 
 	useEffect(() => {
 		const checkAppStatus = async () => {
 			try {
 				const [config, isHealthy] = await Promise.all([
-					getConfig(),
-					checkHealth(),
+					tauri.getConfig(),
+					tauri.checkHealth(),
 				]);
 
 				const isSetupPage = location.pathname === "/setup";
@@ -37,7 +38,7 @@ const RootLayout = () => {
 			}
 		};
 		checkAppStatus();
-	}, [navigate, location.pathname]);
+	}, [navigate, location.pathname, tauri]);
 
 	if (!checked) return null;
 
@@ -66,5 +67,11 @@ const RootLayout = () => {
 		</div>
 	);
 };
+
+const RootLayout = () => (
+	<TauriProvider>
+		<RootLayoutContent />
+	</TauriProvider>
+);
 
 export const Route = createRootRoute({ component: RootLayout });

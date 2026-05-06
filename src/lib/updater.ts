@@ -1,12 +1,11 @@
 import { toast } from "sonner";
+import type { TauriService, Update } from "@/lib/tauri/core/types";
 
-import { relaunch, type Update } from "@/lib/tauri/api";
-
-export async function performUpdate(update: Update) {
+export async function performUpdate(update: Update, tauri?: TauriService) {
 	const toastId = "update-download";
 
 	try {
-		await update.downloadAndInstall((event) => {
+		await update.downloadAndInstall((event: any) => {
 			switch (event.event) {
 				case "Started":
 					toast.loading("Downloading update...", { id: toastId });
@@ -24,7 +23,7 @@ export async function performUpdate(update: Update) {
 			description: "Restart the application to apply the changes.",
 			action: {
 				label: "Restart Now",
-				onClick: () => relaunch(),
+				onClick: () => tauri?.relaunch(),
 			},
 			duration: Infinity,
 		});

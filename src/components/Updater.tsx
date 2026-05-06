@@ -1,25 +1,26 @@
 import { useEffect } from "react";
 import { toast } from "sonner";
 
-import { check } from "@/lib/tauri/api";
-import { getConfig } from "@/lib/tauri/commands";
+import { useTauri } from "@/lib/tauri/TauriProvider";
 import { performUpdate } from "@/lib/updater";
 
 export function Updater() {
+	const tauri = useTauri();
+
 	useEffect(() => {
 		const checkUpdate = async () => {
 			try {
-				const config = await getConfig();
+				const config = await tauri.getConfig();
 				if (!config?.auto_update) return;
 
-				const update = await check();
+				const update = await tauri.checkUpdate();
 				if (!update) return;
 
 				toast.info(`Update Available: ${update.version}`, {
 					description: `A new version of Cue is available.\n${update.body}`,
 					action: {
 						label: "Update Now",
-						onClick: () => performUpdate(update),
+						onClick: () => performUpdate(update, tauri),
 					},
 					duration: Infinity,
 				});
@@ -29,7 +30,7 @@ export function Updater() {
 		};
 
 		checkUpdate();
-	}, []);
+	}, [tauri]);
 
 	return null;
 }

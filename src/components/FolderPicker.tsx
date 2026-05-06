@@ -2,7 +2,7 @@ import { FolderOpen } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { open } from "@/lib/tauri/api";
+import { useTauri } from "@/lib/tauri/TauriProvider";
 
 interface FolderPickerProps {
 	id: string;
@@ -19,9 +19,11 @@ export function FolderPicker({
 	label,
 	placeholder = "Select a folder...",
 }: FolderPickerProps) {
+	const tauri = useTauri();
+
 	const handlePick = async () => {
 		try {
-			const selected = await open({
+			const selected = await tauri.open({
 				directory: true,
 				multiple: false,
 				defaultPath: value || undefined,

@@ -1,4 +1,4 @@
-import type { MetadataPayload } from "@/lib/tauri/commands";
+import type { MetadataPayload } from "@/lib/tauri/core/types";
 
 interface SongMetadataProps {
 	metadata: MetadataPayload;
