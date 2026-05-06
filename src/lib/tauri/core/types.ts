@@ -54,6 +54,16 @@ export interface Song {
 	album?: string;
 	filename: string;
 	source_url?: string | null;
+	tags?: string | null;
+}
+
+export interface TauriEventMap {
+	"config://update": Config;
+	"download://list-updated": DownloadJob[];
+	"download://progress": DownloadProgressPayload;
+	"download://error": DownloadErrorPayload;
+	"library://updated": undefined;
+	"setup://progress": { status: string; progress: number };
 }
 
 export interface TauriService {
@@ -76,12 +86,16 @@ export interface TauriService {
 	factoryReset(): Promise<void>;
 	checkMissingSongs(): Promise<string[]>;
 	syncSong(id: string): Promise<void>;
+	updateSongTags(id: string, tags: string): Promise<void>;
 
 	// API / Dialogs / System
-	listen<T>(
-		event: string,
-		handler: (event: Event<T>) => void,
+	listen<K extends keyof TauriEventMap | string>(
+		event: K,
+		handler: (
+			event: Event<K extends keyof TauriEventMap ? TauriEventMap[K] : any>,
+		) => void,
 	): Promise<UnlistenFn>;
+
 	open(options?: OpenDialogOptions): Promise<null | string | string[]>;
 	ask(message: string, options?: MessageDialogOptions): Promise<boolean>;
 	relaunch(): Promise<void>;

@@ -62,6 +62,19 @@ export function useLibrarySongs() {
 		[tauri],
 	);
 
+	const handleUpdateTags = useCallback(
+		async (id: string, tags: string) => {
+			try {
+				await tauri.updateSongTags(id, tags);
+				setSongs((prev) => prev.map((s) => (s.id === id ? { ...s, tags } : s)));
+			} catch (error) {
+				console.error("Failed to update tags:", error);
+				toast.error("Failed to update tags");
+			}
+		},
+		[tauri],
+	);
+
 	const handleSyncAll = useCallback(async () => {
 		if (missingIds.size === 0) return;
 
@@ -93,6 +106,7 @@ export function useLibrarySongs() {
 		loading,
 		missingIds,
 		handleDelete,
+		handleUpdateTags,
 		handleSyncAll,
 		refresh: fetchSongs,
 	};

@@ -9,7 +9,7 @@ export function useConfig() {
 	useEffect(() => {
 		tauri.getConfig().then(setConfig).catch(console.error);
 
-		const unlisten = tauri.listen<Config>("config://update", (event) => {
+		const unlisten = tauri.listen("config://update", (event) => {
 			setConfig(event.payload);
 		});
 

@@ -45,6 +45,10 @@ export function DataTable<TData, TValue>({
 									<TableHead
 										key={header.id}
 										className="font-semibold text-foreground"
+										style={{
+											width: header.getSize(),
+											minWidth: header.column.columnDef.minSize,
+										}}
 									>
 										{header.isPlaceholder
 											? null
@@ -67,7 +71,13 @@ export function DataTable<TData, TValue>({
 								className="border-b border-border/20 hover:bg-muted/50 transition-colors"
 							>
 								{row.getVisibleCells().map((cell) => (
-									<TableCell key={cell.id}>
+									<TableCell
+										key={cell.id}
+										style={{
+											width: cell.column.getSize(),
+											minWidth: cell.column.columnDef.minSize,
+										}}
+									>
 										{flexRender(cell.column.columnDef.cell, cell.getContext())}
 									</TableCell>
 								))}

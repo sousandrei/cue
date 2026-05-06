@@ -31,6 +31,7 @@ impl Database {
             .bind(&song.album)
             .bind(&song.filename)
             .bind(&song.source_url)
+            .bind(&song.tags)
             .execute(&self.pool)
             .await?;
 
@@ -64,7 +65,19 @@ impl Database {
             .bind(&song.album)
             .bind(&song.filename)
             .bind(&song.source_url)
+            .bind(&song.tags)
             .bind(&song.id)
+            .execute(&self.pool)
+            .await?;
+
+        self.trigger_rekordbox_export().await;
+        Ok(())
+    }
+
+    pub async fn update_song_tags(&self, id: &str, tags: &str) -> Result<(), sqlx::Error> {
+        sqlx::query(include_str!("../../queries/update_song_tags.sql"))
+            .bind(tags)
+            .bind(id)
             .execute(&self.pool)
             .await?;
 

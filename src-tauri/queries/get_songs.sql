@@ -4,5 +4,6 @@ SELECT
     artist,
     album,
     filename,
-    source_url
+    source_url,
+    tags
 FROM songs;

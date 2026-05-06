@@ -364,3 +364,21 @@ pub async fn sync_song(
     manager.add_job(&app, job);
     Ok(())
 }
+
+#[command]
+pub async fn update_song_tags(
+    db_state: State<'_, DbState>,
+    id: String,
+    tags: String,
+) -> Result<(), String> {
+    let db = {
+        let db_guard = db_state.lock().unwrap();
+        db_guard.clone().ok_or("Database not initialized")?
+    };
+
+    db.update_song_tags(&id, &tags)
+        .await
+        .map_err(|e| e.to_string())?;
+
+    Ok(())
+}

@@ -14,12 +14,18 @@ export const Route = createFileRoute("/library")({
 });
 
 function Library() {
-	const { songs, loading, missingIds, handleDelete, handleSyncAll } =
-		useLibrarySongs();
+	const {
+		songs,
+		loading,
+		missingIds,
+		handleDelete,
+		handleUpdateTags,
+		handleSyncAll,
+	} = useLibrarySongs();
 
 	const columns = useMemo(
-		() => createColumns(handleDelete, missingIds),
-		[handleDelete, missingIds],
+		() => createColumns(handleDelete, handleUpdateTags, missingIds),
+		[handleDelete, handleUpdateTags, missingIds],
 	);
 
 	return (

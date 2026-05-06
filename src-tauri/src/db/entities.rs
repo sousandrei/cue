@@ -8,6 +8,7 @@ pub struct Song {
     pub album: Option<String>,
     pub filename: String,
     pub source_url: Option<String>,
+    pub tags: Option<String>,
 }
 
 #[allow(dead_code)]

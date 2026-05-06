@@ -17,7 +17,7 @@ This document defines the technical standards and workflows for Synqed. All agen
 
 ## 🏗 Web Development Best Practices
 
-- **Accessibility**: Use **Radix UI** primitives to ensure components meet ARIA standards.
+- **Accessibility**: Use **Base UI** primitives to ensure components meet ARIA standards.
 - **Performance**: Optimize heavy renders. Use `React.memo` or `useMemo` only when empirical evidence suggests a bottleneck.
 - **Type Safety**: No `any`. Define robust interfaces for all data structures, especially those crossing the Tauri bridge.
 

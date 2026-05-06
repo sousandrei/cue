@@ -1,13 +1,16 @@
+import type { Event, UnlistenFn } from "@tauri-apps/api/event";
 import type {
 	Config,
 	DownloadJob,
 	MetadataPayload,
 	Song,
+	TauriEventMap,
 	TauriService,
 } from "./types";
 
 export class MockTauriService implements TauriService {
-	private handlers: Record<string, ((event: any) => void)[]> = {};
+	// biome-ignore lint/suspicious/noExplicitAny: internal handler mapping
+	private handlers: Record<string, ((event: Event<any>) => void)[]> = {};
 
 	async getConfig(): Promise<Config | null> {
 		return {
@@ -128,6 +131,7 @@ export class MockTauriService implements TauriService {
 				artist: "Dynoro",
 				album: "Single",
 				filename: "In My Mind.mp3",
+				tags: "house,banger",
 			},
 			{
 				id: "s2",
@@ -135,12 +139,13 @@ export class MockTauriService implements TauriService {
 				artist: "Mock Artist 2",
 				album: "Mock Album 2",
 				filename: "mock2.mp3",
+				tags: "techno",
 			},
 		];
 	}
 
 	async removeSong(id: string): Promise<void> {
-		console.log("[Mock] removeSong:", id);
+		console.error("[Mock] removeSong:", id);
 	}
 
 	async factoryReset(): Promise<void> {
@@ -155,12 +160,26 @@ export class MockTauriService implements TauriService {
 		console.log("[Mock] syncSong:", id);
 	}
 
-	async listen(_event: string, handler: (event: any) => void) {
-		const event = _event;
-		if (!this.handlers[event]) this.handlers[event] = [];
+	async updateSongTags(id: string, tags: string): Promise<void> {
+		console.log("[Mock] updateSongTags:", { id, tags });
+	}
+
+	async listen<K extends keyof TauriEventMap | string>(
+		event: K,
+		handler: (
+			event: Event<K extends keyof TauriEventMap ? TauriEventMap[K] : any>,
+		) => void,
+	): Promise<UnlistenFn> {
+		if (!this.handlers[event]) {
+			this.handlers[event] = [];
+		}
 		this.handlers[event].push(handler);
 		return () => {
-			this.handlers[event] = this.handlers[event].filter((h) => h !== handler);
+			if (this.handlers[event]) {
+				this.handlers[event] = this.handlers[event].filter(
+					(h) => h !== handler,
+				);
+			}
 		};
 	}
 
@@ -180,11 +199,12 @@ export class MockTauriService implements TauriService {
 		return null;
 	}
 
+	// biome-ignore lint/suspicious/noExplicitAny: internal event emission
 	private emit(event: string, payload: any) {
-		const eventHandlers = this.handlers[event];
-		if (eventHandlers) {
-			for (const handler of eventHandlers) {
-				handler({ payload, event });
+		const handlers = this.handlers[event];
+		if (handlers) {
+			for (const handler of handlers) {
+				handler({ payload, event, id: 0 });
 			}
 		}
 	}

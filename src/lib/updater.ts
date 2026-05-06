@@ -5,6 +5,7 @@ export async function performUpdate(update: Update, tauri?: TauriService) {
 	const toastId = "update-download";
 
 	try {
+		// biome-ignore lint/suspicious/noExplicitAny: external plugin API
 		await update.downloadAndInstall((event: any) => {
 			switch (event.event) {
 				case "Started":

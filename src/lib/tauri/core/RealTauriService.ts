@@ -1,6 +1,11 @@
 import { invoke } from "@tauri-apps/api/core";
-import { listen } from "@tauri-apps/api/event";
-import { ask, open } from "@tauri-apps/plugin-dialog";
+import { type Event, listen, type UnlistenFn } from "@tauri-apps/api/event";
+import {
+	ask,
+	type MessageDialogOptions,
+	type OpenDialogOptions,
+	open,
+} from "@tauri-apps/plugin-dialog";
 import { relaunch } from "@tauri-apps/plugin-process";
 import { check } from "@tauri-apps/plugin-updater";
 import type {
@@ -8,6 +13,7 @@ import type {
 	DownloadJob,
 	MetadataPayload,
 	Song,
+	TauriEventMap,
 	TauriService,
 } from "./types";
 
@@ -88,15 +94,24 @@ export class RealTauriService implements TauriService {
 		return await invoke("sync_song", { id });
 	}
 
-	async listen<T>(event: string, handler: (event: any) => void) {
-		return await listen<T>(event, handler);
+	async updateSongTags(id: string, tags: string): Promise<void> {
+		return await invoke("update_song_tags", { id, tags });
 	}
 
-	async open(options: any) {
+	async listen<K extends keyof TauriEventMap | string>(
+		event: K,
+		handler: (
+			event: Event<K extends keyof TauriEventMap ? TauriEventMap[K] : any>,
+		) => void,
+	): Promise<UnlistenFn> {
+		return await listen<any>(event, handler);
+	}
+
+	async open(options?: OpenDialogOptions) {
 		return await open(options);
 	}
 
-	async ask(message: string, options: any) {
+	async ask(message: string, options?: MessageDialogOptions) {
 		return await ask(message, options);
 	}
 
