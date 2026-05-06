@@ -9,7 +9,10 @@ const TauriContext = createContext<TauriService | null>(null);
 export function TauriProvider({
 	children,
 	service,
-}: { children: React.ReactNode; service?: TauriService }) {
+}: {
+	children: React.ReactNode;
+	service?: TauriService;
+}) {
 	const tauriService = useMemo(() => {
 		if (service) return service;
 		return isTauri() ? new RealTauriService() : new MockTauriService();

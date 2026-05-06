@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
-import { useTauri } from "@/lib/tauri/TauriProvider";
 import type { Song } from "@/lib/tauri/core/types";
+import { useTauri } from "@/lib/tauri/TauriProvider";
 
 const ACTIVE_STATUSES = new Set(["queued", "pending", "downloading"]);
 
@@ -50,14 +50,17 @@ export function useLibrarySongs() {
 		};
 	}, [fetchSongs, tauri]);
 
-	const handleDelete = useCallback(async (id: string) => {
-		try {
-			await tauri.removeSong(id);
-			setSongs((prev) => prev.filter((song) => song.id !== id));
-		} catch (error) {
-			console.error("Failed to delete song:", error);
-		}
-	}, [tauri]);
+	const handleDelete = useCallback(
+		async (id: string) => {
+			try {
+				await tauri.removeSong(id);
+				setSongs((prev) => prev.filter((song) => song.id !== id));
+			} catch (error) {
+				console.error("Failed to delete song:", error);
+			}
+		},
+		[tauri],
+	);
 
 	const handleSyncAll = useCallback(async () => {
 		if (missingIds.size === 0) return;

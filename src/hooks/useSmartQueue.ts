@@ -1,7 +1,7 @@
 import { useDownload } from "@/hooks/useDownload";
 import { useMetadata } from "@/hooks/useMetadata";
-import { useTauri } from "@/lib/tauri/TauriProvider";
 import type { MetadataPayload } from "@/lib/tauri/core/types";
+import { useTauri } from "@/lib/tauri/TauriProvider";
 
 export function useSmartQueue() {
 	const tauri = useTauri();

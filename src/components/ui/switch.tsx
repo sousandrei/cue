@@ -1,10 +1,10 @@
-import * as SwitchPrimitive from "@radix-ui/react-switch";
+import { Switch as SwitchPrimitive } from "@base-ui/react";
 import * as React from "react";
 
 import { cn } from "@/lib/utils";
 
 const Switch = React.forwardRef<
-	React.ComponentRef<typeof SwitchPrimitive.Root>,
+	HTMLButtonElement,
 	React.ComponentPropsWithoutRef<typeof SwitchPrimitive.Root>
 >(({ className, ...props }, ref) => (
 	<SwitchPrimitive.Root
@@ -22,6 +22,6 @@ const Switch = React.forwardRef<
 		/>
 	</SwitchPrimitive.Root>
 ));
-Switch.displayName = SwitchPrimitive.Root.displayName;
+Switch.displayName = "Switch";
 
 export { Switch };

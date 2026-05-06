@@ -1,12 +1,12 @@
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
-import { useTauri } from "@/lib/tauri/TauriProvider";
 import type {
 	DownloadErrorPayload,
 	DownloadJob,
 	DownloadProgressPayload,
 	MetadataPayload,
 } from "@/lib/tauri/core/types";
+import { useTauri } from "@/lib/tauri/TauriProvider";
 
 export type { DownloadJob };
 

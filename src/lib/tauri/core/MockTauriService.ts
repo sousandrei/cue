@@ -32,7 +32,8 @@ export class MockTauriService implements TauriService {
 				title: "Mock Song Title",
 				artist: "Mock Artist",
 				album: "Mock Album",
-				thumbnail: "https://images.unsplash.com/photo-1614613535308-eb5fbd3d2c17?w=300&h=300&fit=crop",
+				thumbnail:
+					"https://images.unsplash.com/photo-1614613535308-eb5fbd3d2c17?w=300&h=300&fit=crop",
 				duration: 180,
 			},
 		];
@@ -61,7 +62,7 @@ export class MockTauriService implements TauriService {
 		metadata: MetadataPayload,
 	): Promise<void> {
 		console.log("[Mock] addToQueue:", { url, id, metadata });
-		
+
 		// Simulate download progress
 		let progress = 0;
 		const interval = setInterval(() => {
@@ -94,7 +95,8 @@ export class MockTauriService implements TauriService {
 					title: "Mock Active Download",
 					artist: "Mock Artist",
 					album: "Mock Album",
-					thumbnail: "https://images.unsplash.com/photo-1614613535308-eb5fbd3d2c17?w=300&h=300&fit=crop",
+					thumbnail:
+						"https://images.unsplash.com/photo-1614613535308-eb5fbd3d2c17?w=300&h=300&fit=crop",
 					duration: 210,
 				},
 				logs: ["Starting..."],
@@ -181,7 +183,9 @@ export class MockTauriService implements TauriService {
 	private emit(event: string, payload: any) {
 		const eventHandlers = this.handlers[event];
 		if (eventHandlers) {
-			eventHandlers.forEach((handler) => handler({ payload, event }));
+			for (const handler of eventHandlers) {
+				handler({ payload, event });
+			}
 		}
 	}
 }

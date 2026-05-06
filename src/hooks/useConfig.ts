@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
-import { useTauri } from "@/lib/tauri/TauriProvider";
 import type { Config } from "@/lib/tauri/core/types";
+import { useTauri } from "@/lib/tauri/TauriProvider";
 
 export function useConfig() {
 	const tauri = useTauri();

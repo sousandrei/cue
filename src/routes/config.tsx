@@ -9,8 +9,8 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
 import { useConfig } from "@/hooks/useConfig";
-import { useTauri } from "@/lib/tauri/TauriProvider";
 import type { Config } from "@/lib/tauri/core/types";
+import { useTauri } from "@/lib/tauri/TauriProvider";
 import { performUpdate } from "@/lib/updater";
 
 export const Route = createFileRoute("/config")({

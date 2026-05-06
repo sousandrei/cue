@@ -1,6 +1,6 @@
 import { useState } from "react";
-import { useTauri } from "@/lib/tauri/TauriProvider";
 import type { MetadataPayload } from "@/lib/tauri/core/types";
+import { useTauri } from "@/lib/tauri/TauriProvider";
 
 export function useMetadata() {
 	const tauri = useTauri();
