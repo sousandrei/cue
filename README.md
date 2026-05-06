@@ -40,7 +40,7 @@ Stable versions of Cue are available for macOS, Windows, and Linux.
 
 ## Development
 
-Cue is built with [Tauri](https://tauri.app/) and [Vite](https://vitejs.dev/) using React and Tailwind CSS.
+Cue is built with [Tauri](https://tauri.app/) and [Rsbuild](https://rsbuild.dev/) using React and Tailwind CSS.
 
 ### Prerequisites
 
