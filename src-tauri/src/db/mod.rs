@@ -30,6 +30,7 @@ impl Database {
             .bind(&song.artist)
             .bind(&song.album)
             .bind(&song.filename)
+            .bind(&song.source_url)
             .execute(&self.pool)
             .await?;
 
@@ -62,6 +63,7 @@ impl Database {
             .bind(&song.artist)
             .bind(&song.album)
             .bind(&song.filename)
+            .bind(&song.source_url)
             .bind(&song.id)
             .execute(&self.pool)
             .await?;
@@ -173,12 +175,14 @@ mod tests {
             artist: "Test Artist".to_string(),
             album: Some("Test Album".to_string()),
             filename: "test.mp3".to_string(),
+            source_url: Some("https://example.com".to_string()),
         };
 
         db.add_song(&song).await.unwrap();
         let songs = db.get_songs().await.unwrap();
         assert_eq!(songs.len(), 1);
         assert_eq!(songs[0].title, "Test Song");
+        assert_eq!(songs[0].source_url, Some("https://example.com".to_string()));
     }
 
     #[tokio::test]
@@ -190,6 +194,7 @@ mod tests {
             artist: "Artist A".to_string(),
             album: None,
             filename: "path1".to_string(),
+            source_url: None,
         };
         let song2 = Song {
             id: "2".to_string(),
@@ -197,6 +202,7 @@ mod tests {
             artist: "Artist B".to_string(),
             album: None,
             filename: "path2".to_string(),
+            source_url: None,
         };
 
         db.add_song(&song1).await.unwrap();
@@ -216,6 +222,7 @@ mod tests {
             artist: "Test Artist".to_string(),
             album: Some("Test Album".to_string()),
             filename: "test.mp3".to_string(),
+            source_url: None,
         };
 
         // Ensure Songs directory exists

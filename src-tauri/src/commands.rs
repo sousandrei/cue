@@ -273,3 +273,94 @@ pub async fn check_health(app: AppHandle, state: State<'_, ConfigState>) -> Resu
         Ok(false)
     }
 }
+
+#[command]
+pub async fn check_missing_songs(
+    db_state: State<'_, DbState>,
+    cfg_state: State<'_, ConfigState>,
+) -> Result<Vec<String>, String> {
+    let db = {
+        let db_guard = db_state.lock().unwrap();
+        db_guard.clone().ok_or("Database not initialized")?
+    };
+
+    let library_path = {
+        let config_guard = cfg_state.lock().unwrap();
+        let config = config_guard.as_ref().ok_or("Config not initialized")?;
+        config.library_path.clone()
+    };
+
+    let songs = db.get_songs().await.map_err(|e| e.to_string())?;
+
+    let missing = songs
+        .into_iter()
+        .filter(|song| {
+            let file_path = std::path::Path::new(&library_path)
+                .join("Songs")
+                .join(&song.filename);
+            !file_path.exists()
+        })
+        .map(|song| song.id)
+        .collect();
+
+    Ok(missing)
+}
+
+#[command]
+pub async fn sync_song(
+    app: AppHandle,
+    db_state: State<'_, DbState>,
+    manager: State<'_, download::DownloadManager>,
+    id: String,
+) -> Result<(), String> {
+    // Guard: don't re-queue if already active
+    let active_statuses = ["queued", "pending", "downloading"];
+    {
+        let jobs = manager.get_jobs();
+        if jobs
+            .iter()
+            .any(|j| j.id == id && active_statuses.contains(&j.status.as_str()))
+        {
+            return Err("Song is already queued for download".into());
+        }
+    }
+
+    let db = {
+        let db_guard = db_state.lock().unwrap();
+        db_guard.clone().ok_or("Database not initialized")?
+    };
+
+    let song = db
+        .get_song_by_id(&id)
+        .await
+        .map_err(|e| e.to_string())?
+        .ok_or_else(|| "Song not found".to_string())?;
+
+    let url = song.source_url.ok_or_else(|| {
+        "Source URL is missing for this song. It cannot be re-synced automatically.".to_string()
+    })?;
+
+    let metadata = download::MetadataPayload {
+        id: id.clone(),
+        url: url.clone(),
+        title: song.title.clone(),
+        artist: song.artist.clone(),
+        album: song.album.clone(),
+        thumbnail: None,
+        duration: None,
+    };
+
+    let job = DownloadJob {
+        id: id.clone(),
+        title: format!("{} - {}", metadata.artist, metadata.title),
+        progress: 0.0,
+        status: "queued".into(),
+        detailed_status: None,
+        url,
+        metadata,
+        logs: Vec::new(),
+    };
+
+    manager.add_job(&app, job);
+    Ok(())
+}

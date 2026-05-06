@@ -3,5 +3,6 @@ SELECT
     title,
     artist,
     album,
-    filename
+    filename,
+    source_url
 FROM songs;

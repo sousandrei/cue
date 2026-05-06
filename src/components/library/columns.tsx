@@ -1,5 +1,5 @@
 import type { ColumnDef } from "@tanstack/react-table";
-import { Trash2 } from "lucide-react";
+import { AlertCircle, Trash2 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 
@@ -9,17 +9,32 @@ export interface Song {
 	artist: string;
 	album?: string;
 	filename: string;
+	source_url?: string | null;
 }
 
 export const createColumns = (
 	handleDelete: (id: string) => void,
+	missingIds: Set<string>,
 ): ColumnDef<Song>[] => [
 	{
 		accessorKey: "title",
 		header: "Name",
-		cell: ({ row }) => (
-			<div className="font-medium text-foreground">{row.getValue("title")}</div>
-		),
+		cell: ({ row }) => {
+			const isMissing = missingIds.has(row.original.id);
+			return (
+				<div
+					className={`flex items-center gap-2 font-medium ${
+						isMissing ? "text-destructive/70" : "text-foreground"
+					}`}
+					title={
+						isMissing ? "File missing locally. Use Sync to re-download." : ""
+					}
+				>
+					{isMissing && <AlertCircle className="w-4 h-4 text-destructive" />}
+					{row.getValue("title")}
+				</div>
+			);
+		},
 	},
 	{
 		accessorKey: "artist",

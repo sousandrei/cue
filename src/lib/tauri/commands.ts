@@ -101,6 +101,7 @@ export interface Song {
 	artist: string;
 	album?: string;
 	filename: string;
+	source_url?: string | null;
 }
 
 /**
@@ -305,4 +306,25 @@ export async function factoryReset(): Promise<void> {
 		return;
 	}
 	return await invoke("factory_reset");
+}
+
+/**
+ * Returns the IDs of songs whose file is missing from the library folder.
+ */
+export async function checkMissingSongs(): Promise<string[]> {
+	if (!isTauri()) {
+		return [];
+	}
+	return await invoke<string[]>("check_missing_songs");
+}
+
+/**
+ * Re-queues a song for download using its stored YouTube Music ID.
+ */
+export async function syncSong(id: string): Promise<void> {
+	if (!isTauri()) {
+		console.log("Mock syncSong:", id);
+		return;
+	}
+	return await invoke("sync_song", { id });
 }

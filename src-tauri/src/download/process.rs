@@ -244,6 +244,7 @@ async fn add_song_to_db(
     id: String,
     metadata: MetadataPayload,
     filename: String,
+    url: String,
 ) -> Result<(), anyhow::Error> {
     let path = PathBuf::from(filename);
     let final_path = path.with_extension("mp3");
@@ -269,6 +270,7 @@ async fn add_song_to_db(
             .unwrap()
             .to_string_lossy()
             .to_string(),
+        source_url: Some(url),
     };
 
     db.add_song(&song)
@@ -392,7 +394,7 @@ pub async fn run_download(
     }
 
     let filename = get_final_filename(&ytdlp_path, &bin_dir, &output_template, &url).await?;
-    add_song_to_db(&app, id, metadata, filename).await?;
+    add_song_to_db(&app, id, metadata, filename, url).await?;
 
     Ok(())
 }
