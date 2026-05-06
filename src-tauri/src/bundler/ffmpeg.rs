@@ -1,6 +1,6 @@
 use std::fs;
 use std::io::Cursor;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use tauri::{AppHandle, Emitter, Manager};
 
 use super::{SetupProgressPayload, FFMPEG_VERSION};
@@ -115,7 +115,7 @@ pub async fn ensure_ffmpeg(app: &AppHandle) -> Result<PathBuf, anyhow::Error> {
 fn extract_zip(
     app: &AppHandle,
     buffer: Vec<u8>,
-    bin_dir: &PathBuf,
+    bin_dir: &Path,
     ffmpeg_name: &str,
     ffprobe_name: &str,
 ) -> Result<(), anyhow::Error> {
@@ -165,7 +165,7 @@ fn extract_zip(
 
 fn extract_tar_xz(
     buffer: Vec<u8>,
-    bin_dir: &PathBuf,
+    bin_dir: &Path,
     ffmpeg_name: &str,
     ffprobe_name: &str,
 ) -> Result<(), anyhow::Error> {

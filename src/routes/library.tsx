@@ -1,9 +1,10 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { Disc3, Loader2, Music } from "lucide-react";
+import { Disc3, Loader2, Music, RefreshCw } from "lucide-react";
 import { useMemo } from "react";
 
 import { Header } from "@/components/Header";
 import { createColumns } from "@/components/library/columns";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { DataTable } from "@/components/ui/data-table";
 import { useLibrarySongs } from "@/hooks/useLibrarySongs";
@@ -13,9 +14,13 @@ export const Route = createFileRoute("/library")({
 });
 
 function Library() {
-	const { songs, loading, handleDelete } = useLibrarySongs();
+	const { songs, loading, missingIds, handleDelete, handleSyncAll } =
+		useLibrarySongs();
 
-	const columns = useMemo(() => createColumns(handleDelete), [handleDelete]);
+	const columns = useMemo(
+		() => createColumns(handleDelete, missingIds),
+		[handleDelete, missingIds],
+	);
 
 	return (
 		<div className="min-h-screen bg-background flex flex-col items-center p-4 pt-28 pb-28">
@@ -24,10 +29,26 @@ function Library() {
 
 				<Card className="border-none bg-card/50 backdrop-blur-sm shadow-none">
 					<CardHeader>
-						<CardTitle className="flex items-center gap-2 text-2xl font-semibold tracking-tight">
-							<Disc3 className="w-6 h-6 text-primary" />
-							Collection
-						</CardTitle>
+						<div className="flex items-center justify-between">
+							<CardTitle className="flex items-center gap-2 text-2xl font-semibold tracking-tight">
+								<Disc3 className="w-6 h-6 text-primary" />
+								Collection
+							</CardTitle>
+							{missingIds.size > 0 && (
+								<Button
+									variant="outline"
+									size="sm"
+									onClick={handleSyncAll}
+									className="flex items-center gap-2"
+								>
+									<RefreshCw className="w-4 h-4" />
+									Sync
+									<span className="ml-1 rounded-full bg-destructive text-destructive-foreground text-xs font-semibold px-1.5 py-0.5">
+										{missingIds.size}
+									</span>
+								</Button>
+							)}
+						</div>
 					</CardHeader>
 					<CardContent>
 						{loading ? (

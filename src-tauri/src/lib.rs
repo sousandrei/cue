@@ -42,6 +42,8 @@ pub fn run() {
             commands::cancel_download,
             commands::factory_reset,
             commands::check_health,
+            commands::check_missing_songs,
+            commands::sync_song,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
