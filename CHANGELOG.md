@@ -1,5 +1,16 @@
 # Changelog
 
+## [1.5.0](https://github.com/sousandrei/cue/compare/v1.4.1...v1.5.0) (2026-05-06)
+
+
+### Features
+
+* abstract tauri calls ([1a4d1f3](https://github.com/sousandrei/cue/commit/1a4d1f300b505cac66bf16a29bca9d1fb154be8d))
+* implement tagging and migrate to rsbuild ([8edf2f8](https://github.com/sousandrei/cue/commit/8edf2f8ffd5d262bfa308510f4d7cec78a1b2466))
+* move to rsbuild ([e923523](https://github.com/sousandrei/cue/commit/e92352362ff175096dfea1d8b13c3af3c53210ab))
+* sync missing songs ([7e807ac](https://github.com/sousandrei/cue/commit/7e807ac165f358f3026b6e01cfb57d498b155d92))
+* use baseui and create tauri provider ([6108a0f](https://github.com/sousandrei/cue/commit/6108a0fd6c6096934cc25bf18d2beda15f1348ff))
+
 ## [1.4.1](https://github.com/sousandrei/cue/compare/v1.4.0...v1.4.1) (2026-03-02)
 
 
