@@ -4,7 +4,8 @@ SELECT
     artist, 
     album, 
     filename,
-    source_url
+    source_url,
+    tags
 FROM songs 
 WHERE 
     title LIKE ?1 

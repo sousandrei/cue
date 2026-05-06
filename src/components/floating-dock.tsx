@@ -17,8 +17,6 @@ interface DockItem {
 const items: DockItem[] = [
 	{ title: "Intake", icon: ArrowDownToLine, href: "/" },
 	{ title: "Collection", icon: Disc3, href: "/library" },
-	// TODO: add playlist functionality
-	// { title: "Playlists", icon: Table, href: "/playlists" },
 	{ title: "Options", icon: SlidersHorizontal, href: "/config" },
 ];
 

@@ -10,10 +10,3 @@ pub struct Song {
     pub source_url: Option<String>,
     pub tags: Option<String>,
 }
-
-#[allow(dead_code)]
-#[derive(Debug, Serialize, Deserialize, sqlx::FromRow)]
-pub struct Playlist {
-    pub id: String,
-    pub name: String,
-}

@@ -3,7 +3,7 @@ use std::str::FromStr;
 
 pub mod entities;
 
-use entities::{Playlist, Song};
+use entities::Song;
 
 #[derive(Clone)]
 pub struct Database {
@@ -101,53 +101,6 @@ impl Database {
         Ok(songs)
     }
 
-    #[allow(dead_code)]
-    pub async fn create_playlist(&self, playlist: &Playlist) -> Result<(), sqlx::Error> {
-        sqlx::query(include_str!("../../queries/create_playlist.sql"))
-            .bind(&playlist.name)
-            .bind(&playlist.id)
-            .execute(&self.pool)
-            .await?;
-        Ok(())
-    }
-
-    #[allow(dead_code)]
-    pub async fn add_song_to_playlist(
-        &self,
-        song_id: &str,
-        playlist_id: &str,
-    ) -> Result<(), sqlx::Error> {
-        sqlx::query(include_str!("../../queries/add_song_to_playlist.sql"))
-            .bind(playlist_id)
-            .bind(song_id)
-            .execute(&self.pool)
-            .await?;
-        Ok(())
-    }
-
-    #[allow(dead_code)]
-    pub async fn remove_song_from_playlist(
-        &self,
-        song_id: &str,
-        playlist_id: &str,
-    ) -> Result<(), sqlx::Error> {
-        sqlx::query(include_str!("../../queries/remove_song_from_playlist.sql"))
-            .bind(playlist_id)
-            .bind(song_id)
-            .execute(&self.pool)
-            .await?;
-        Ok(())
-    }
-
-    #[allow(dead_code)]
-    pub async fn get_playlists(&self) -> Result<Vec<Playlist>, sqlx::Error> {
-        let playlists =
-            sqlx::query_as::<_, Playlist>(include_str!("../../queries/get_playlists.sql"))
-                .fetch_all(&self.pool)
-                .await?;
-        Ok(playlists)
-    }
-
     async fn trigger_rekordbox_export(&self) {
         let songs = match self.get_songs().await {
             Ok(s) => s,
@@ -189,6 +142,7 @@ mod tests {
             album: Some("Test Album".to_string()),
             filename: "test.mp3".to_string(),
             source_url: Some("https://example.com".to_string()),
+            tags: None,
         };
 
         db.add_song(&song).await.unwrap();
@@ -208,6 +162,7 @@ mod tests {
             album: None,
             filename: "path1".to_string(),
             source_url: None,
+            tags: None,
         };
         let song2 = Song {
             id: "2".to_string(),
@@ -216,6 +171,7 @@ mod tests {
             album: None,
             filename: "path2".to_string(),
             source_url: None,
+            tags: None,
         };
 
         db.add_song(&song1).await.unwrap();
@@ -236,6 +192,7 @@ mod tests {
             album: Some("Test Album".to_string()),
             filename: "test.mp3".to_string(),
             source_url: None,
+            tags: None,
         };
 
         // Ensure Songs directory exists

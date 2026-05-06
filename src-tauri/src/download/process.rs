@@ -271,6 +271,7 @@ async fn add_song_to_db(
             .to_string_lossy()
             .to_string(),
         source_url: Some(url),
+        tags: None,
     };
 
     db.add_song(&song)
