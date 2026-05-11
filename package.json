@@ -33,7 +33,7 @@
 		"tailwindcss": "^4.1.18"
 	},
 	"devDependencies": {
-		"@biomejs/biome": "2.4.4",
+		"@biomejs/biome": "2.4.15",
 		"@rsbuild/core": "^2.0.3",
 		"@rsbuild/plugin-react": "^2.0.0",
 		"@tailwindcss/postcss": "^4.2.4",
