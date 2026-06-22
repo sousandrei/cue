@@ -33,13 +33,13 @@
 		"tailwindcss": "^4.1.18"
 	},
 	"devDependencies": {
-		"@biomejs/biome": "2.4.4",
+		"@biomejs/biome": "2.5.0",
 		"@rsbuild/core": "^2.0.3",
 		"@rsbuild/plugin-react": "^2.0.0",
 		"@tailwindcss/postcss": "^4.2.4",
 		"@tanstack/router-plugin": "^1.158.4",
 		"@tauri-apps/cli": "^2",
-		"@types/node": "^25.2.2",
+		"@types/node": "^26.0.0",
 		"@types/react": "^19.1.8",
 		"@types/react-dom": "^19.1.6",
 		"shadcn": "^4.7.0",
