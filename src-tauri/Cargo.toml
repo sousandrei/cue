@@ -1,9 +1,9 @@
 [package]
+authors = ["you"]
+description = "A Tauri App"
+edition = "2021"
 name = "cue"
 version = "0.0.0"
-description = "A Tauri App"
-authors = ["you"]
-edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
@@ -11,35 +11,35 @@ edition = "2021"
 # The `_lib` suffix may seem redundant but it is necessary
 # to make the lib name unique and wouldn't conflict with the bin name.
 # This seems to be only an issue on Windows, see https://github.com/rust-lang/cargo/issues/8519
-name = "cue_lib"
 crate-type = ["staticlib", "cdylib", "rlib"]
+name = "cue_lib"
 
 [build-dependencies]
-tauri-build = { version = "2.6.0", features = [] }
+tauri-build = { version = "2.6.3", features = [] }
 
 [dependencies]
-anyhow = "1.0.101"
+anyhow = "1.0.103"
 dirs = "6.0.0"
-reqwest = { version = "0.13.3", features = ["stream"] }
+quick-xml = { version = "0.41.0", features = ["serialize"] }
+reqwest = { version = "0.13.4", features = ["stream"] }
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 serde_yaml = "0.9.33"
-sqlx = { version = "0.8", features = [
+sqlx = { version = "0.9.0", features = [
     "sqlite",
     "runtime-tokio",
     "macros",
     "migrate",
 ] }
-tauri = { version = "2.11.1", features = [] }
-tauri-plugin-dialog = "2.7.1"
+tar = "0.4.46"
+tauri = { version = "2.11.5", features = [] }
+tauri-plugin-dialog = "2.7.2"
 tauri-plugin-opener = "2.5.4"
 tauri-plugin-process = "2.3.1"
-tokio = { version = "1.52.2", features = ["full"] }
-quick-xml = { version = "0.39.3", features = ["serialize"] }
-zip = { version = "8.6.0", default-features = false, features = ["deflate"] }
-tar = "0.4.45"
-xz2 = "0.1.7"
 tempfile = "3.27.0"
+tokio = { version = "1.53.0", features = ["full"] }
+xz2 = "0.1.7"
+zip = { version = "8.6.0", default-features = false, features = ["deflate"] }
 
 [dev-dependencies]
 
