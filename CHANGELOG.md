@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.5.1](https://github.com/sousandrei/cue/compare/v1.5.0...v1.5.1) (2026-07-18)
+
+
+### Bug Fixes
+
+* bump bundled tools versions ([3a62d7f](https://github.com/sousandrei/cue/commit/3a62d7f479e6438952bc808e4f557ea613e36ee0))
+
 ## [1.5.0](https://github.com/sousandrei/cue/compare/v1.4.1...v1.5.0) (2026-05-06)
 
 
