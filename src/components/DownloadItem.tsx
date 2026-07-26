@@ -6,6 +6,7 @@ import { StatusIcon } from "@/components/download/StatusIcon";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import type { DownloadJob } from "@/hooks/useDownload";
+import { scaleIn } from "@/lib/motion";
 
 interface DownloadItemProps {
 	download: DownloadJob;
@@ -25,12 +26,12 @@ export function DownloadItem({ download, removeDownload }: DownloadItemProps) {
 	return (
 		<motion.div
 			layout
-			initial={{ opacity: 0, y: 20, scale: 0.95 }}
-			animate={{ opacity: 1, y: 0, scale: 1 }}
-			exit={{ opacity: 0, scale: 0.9 }}
-			transition={{ type: "spring", stiffness: 500, damping: 30 }}
+			variants={scaleIn}
+			initial="hidden"
+			animate="visible"
+			exit="hidden"
 		>
-			<Card className="overflow-hidden border-muted-foreground/5 bg-card/30 backdrop-blur-sm">
+			<Card className="overflow-hidden">
 				<CardContent className="py-1 px-2.5">
 					<div className="flex items-center gap-2">
 						<StatusIcon status={download.status} size="sm" />
@@ -40,7 +41,7 @@ export function DownloadItem({ download, removeDownload }: DownloadItemProps) {
 							<Button
 								variant="outline"
 								size="sm"
-								className="h-6 px-2 gap-1 rounded-md bg-white/5 border-white/10 hover:border-primary/50 hover:bg-primary/5 transition-all"
+								className="h-6 px-2 gap-1 rounded-md bg-glass-bg backdrop-blur-[16px] border-glass-border hover:border-primary/50 hover:bg-primary/5 transition-all"
 								onClick={() => setShowLogs(!showLogs)}
 							>
 								<span className="text-[10px] uppercase tracking-wider font-bold opacity-70">
@@ -72,7 +73,7 @@ export function DownloadItem({ download, removeDownload }: DownloadItemProps) {
 								exit={{ height: 0, opacity: 0 }}
 								className="mt-2 overflow-hidden"
 							>
-								<div className="bg-black/40 rounded-md p-2 font-mono text-[10px] leading-relaxed max-h-40 overflow-y-auto border border-white/5 scrollbar-thin scrollbar-thumb-white/10">
+								<div className="bg-card/60 rounded-md p-2 font-mono text-[10px] leading-relaxed max-h-40 overflow-y-auto border border-glass-border scrollbar-thin scrollbar-thumb-border/30">
 									{download.logs.map((log, i) => (
 										<div
 											key={`${download.id}-log-${i}`}

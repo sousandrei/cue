@@ -4,6 +4,7 @@ import { useState } from "react";
 import { SongMetadata } from "@/components/download/SongMetadata";
 import { Button } from "@/components/ui/button";
 import type { DownloadJob } from "@/hooks/useDownload";
+import { slideUp } from "@/lib/motion";
 
 interface QueuedDownloadListProps {
 	downloads: DownloadJob[];
@@ -59,9 +60,12 @@ export function QueuedDownloadList({
 						className="overflow-hidden mt-2 space-y-2"
 					>
 						{downloads.map((job) => (
-							<div
+							<motion.div
 								key={job.id}
-								className="flex items-center gap-3 p-2 rounded-lg bg-background/50 border border-muted-foreground/5"
+								variants={slideUp}
+								initial="hidden"
+								animate="visible"
+								className="flex items-center gap-3 p-2 rounded-lg bg-glass-bg border border-glass-border"
 							>
 								<SongMetadata metadata={job.metadata} size="sm" />
 								<Button
@@ -72,7 +76,7 @@ export function QueuedDownloadList({
 								>
 									<X className="w-3 h-3" />
 								</Button>
-							</div>
+							</motion.div>
 						))}
 					</motion.div>
 				)}

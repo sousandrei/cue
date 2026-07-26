@@ -75,7 +75,7 @@ function SetupWizard() {
 
 	return (
 		<div className="min-h-screen bg-background flex items-center justify-center p-4">
-			<div className="absolute inset-0 bg-linear-to-tr from-primary/10 via-background to-purple-600/10 -z-10" />
+			<div className="absolute inset-0 bg-linear-to-tr from-primary/10 via-background to-primary/10 -z-10" />
 
 			<Card className="max-w-md w-full border-primary/20 bg-card/50 backdrop-blur-xl shadow-2xl">
 				<CardHeader className="text-center">

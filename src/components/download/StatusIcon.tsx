@@ -19,11 +19,14 @@ export function StatusIcon({
 	const getStatusStyles = () => {
 		switch (status) {
 			case "completed":
-				return "bg-green-500/20 text-green-500";
+				return "bg-accent-cool/20 text-accent-cool";
 			case "error":
 				return "bg-destructive/20 text-destructive";
+			case "queued":
+			case "pending":
+				return "bg-muted/30 text-muted-foreground";
 			default:
-				return "bg-primary/10 text-primary";
+				return "bg-accent-warm/20 text-accent-warm";
 		}
 	};
 

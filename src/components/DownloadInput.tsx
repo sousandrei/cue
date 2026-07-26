@@ -30,7 +30,7 @@ export function DownloadInput({
 				<Input
 					type="text"
 					placeholder="Paste link"
-					className="h-16 pl-6 pr-32 text-lg bg-card/50 text-foreground border-transparent shadow-none rounded-2xl focus-visible:ring-1 focus-visible:ring-primary/20 focus-visible:border-primary/20 transition-all placeholder:text-muted-foreground/50"
+					className="h-16 pl-6 pr-32 text-lg bg-glass-bg backdrop-blur-[16px] border border-glass-border text-foreground rounded-2xl shadow-none focus-visible:border-primary focus-visible:ring-0 transition-all placeholder:text-muted-foreground/50"
 					value={url}
 					onChange={(e) => setUrl(e.target.value)}
 					onKeyDown={handleKeyDown}

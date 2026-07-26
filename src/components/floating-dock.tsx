@@ -25,7 +25,7 @@ export function FloatingDock() {
 
 	return (
 		<div className="fixed bottom-8 left-1/2 -translate-x-1/2 z-50">
-			<div className="flex items-center gap-4 px-6 py-3 rounded-full bg-card/90 backdrop-blur-sm border border-border/50">
+			<div className="flex items-center gap-4 px-6 py-3 rounded-full bg-glass-bg-strong backdrop-blur-[16px] border border-glass-border shadow-[0_8px_30px_-10px] shadow-black/50">
 				{items.map((item) => {
 					const isActive = location.pathname === item.href;
 
@@ -34,21 +34,21 @@ export function FloatingDock() {
 							key={item.href}
 							to={item.href}
 							className={cn(
-								"flex flex-col items-center gap-1 transition-colors duration-200 ease-in-out group",
+								"relative flex flex-col items-center gap-1 transition-colors duration-200 ease-in-out group",
 								isActive
 									? "text-primary"
 									: "text-muted-foreground hover:text-foreground",
 							)}
 						>
 							<item.icon
-								strokeWidth={1.5}
+								strokeWidth={1.25}
 								className={cn(
 									"w-6 h-6 transition-transform duration-200 ease-in-out group-hover:scale-110",
 								)}
 							/>
 							<span className="sr-only">{item.title}</span>
 							{isActive && (
-								<div className="absolute -bottom-1 w-1 h-1 rounded-full bg-primary" />
+								<div className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-6 h-0.5 rounded-full bg-primary" />
 							)}
 						</Link>
 					);

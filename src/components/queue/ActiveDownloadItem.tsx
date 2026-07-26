@@ -6,6 +6,7 @@ import { StatusIcon } from "@/components/download/StatusIcon";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import type { DownloadJob } from "@/hooks/useDownload";
+import { fade } from "@/lib/motion";
 
 interface ActiveDownloadItemProps {
 	download: DownloadJob;
@@ -26,7 +27,12 @@ export function ActiveDownloadItem({
 	}, [showLogs]);
 
 	return (
-		<div className="space-y-4">
+		<motion.div
+			variants={fade}
+			initial="hidden"
+			animate="visible"
+			className="space-y-4"
+		>
 			<div className="flex items-center gap-3">
 				<StatusIcon status={download.status} className="animate-pulse" />
 				<SongMetadata metadata={download.metadata} />
@@ -41,7 +47,7 @@ export function ActiveDownloadItem({
 						<Button
 							variant="outline"
 							size="sm"
-							className="h-8 px-2 gap-1 rounded-md bg-white/5 border-white/10 hover:border-primary/50 hover:bg-primary/5 transition-all"
+							className="h-8 px-2 gap-1 rounded-md bg-glass-bg backdrop-blur-[16px] border-glass-border hover:border-primary/50 hover:bg-primary/5 transition-all"
 							onClick={() => setShowLogs(!showLogs)}
 						>
 							<span className="text-[10px] uppercase tracking-wider font-bold opacity-70">
@@ -74,7 +80,7 @@ export function ActiveDownloadItem({
 							exit={{ height: 0, opacity: 0 }}
 							className="overflow-hidden"
 						>
-							<div className="bg-black/40 rounded-md p-2 font-mono text-[10px] leading-relaxed max-h-40 overflow-y-auto border border-white/5 scrollbar-thin scrollbar-thumb-white/10 mt-2">
+							<div className="bg-card/60 rounded-md p-2 font-mono text-[10px] leading-relaxed max-h-40 overflow-y-auto border border-glass-border scrollbar-thin scrollbar-thumb-border/30 mt-2">
 								{download.logs.map((log, i) => (
 									<div
 										key={`${download.id}-log-${i}`}
@@ -90,6 +96,6 @@ export function ActiveDownloadItem({
 					)}
 				</AnimatePresence>
 			</div>
-		</div>
+		</motion.div>
 	);
 }

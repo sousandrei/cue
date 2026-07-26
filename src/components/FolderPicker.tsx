@@ -47,18 +47,12 @@ export function FolderPicker({
 				</label>
 			)}
 			<div className="flex gap-2">
-				<Input
-					id={id}
-					value={value}
-					readOnly
-					placeholder={placeholder}
-					className="bg-background/50 border-border/50"
-				/>
+				<Input id={id} value={value} readOnly placeholder={placeholder} />
 				<Button
 					variant="outline"
 					size="icon"
 					onClick={handlePick}
-					className="shrink-0 border-border/50 hover:bg-accent hover:border-primary transition-all"
+					className="shrink-0"
 				>
 					<FolderOpen className="w-4 h-4" />
 				</Button>

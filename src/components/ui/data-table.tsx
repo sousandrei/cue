@@ -1,5 +1,3 @@
-"use client";
-
 import {
 	type ColumnDef,
 	flexRender,
@@ -21,7 +19,7 @@ interface DataTableProps<TData, TValue> {
 	data: TData[];
 }
 
-export function DataTable<TData, TValue>({
+function DataTable<TData, TValue>({
 	columns,
 	data,
 }: DataTableProps<TData, TValue>) {
@@ -32,33 +30,21 @@ export function DataTable<TData, TValue>({
 	});
 
 	return (
-		<div className="rounded-md border border-border/50">
+		<div className="rounded-lg border border-glass-border">
 			<Table>
 				<TableHeader>
 					{table.getHeaderGroups().map((headerGroup) => (
-						<TableRow
-							key={headerGroup.id}
-							className="hover:bg-transparent border-b border-border/50"
-						>
-							{headerGroup.headers.map((header) => {
-								return (
-									<TableHead
-										key={header.id}
-										className="font-semibold text-foreground"
-										style={{
-											width: header.getSize(),
-											minWidth: header.column.columnDef.minSize,
-										}}
-									>
-										{header.isPlaceholder
-											? null
-											: flexRender(
-													header.column.columnDef.header,
-													header.getContext(),
-												)}
-									</TableHead>
-								);
-							})}
+						<TableRow key={headerGroup.id}>
+							{headerGroup.headers.map((header) => (
+								<TableHead key={header.id}>
+									{header.isPlaceholder
+										? null
+										: flexRender(
+												header.column.columnDef.header,
+												header.getContext(),
+											)}
+								</TableHead>
+							))}
 						</TableRow>
 					))}
 				</TableHeader>
@@ -68,16 +54,9 @@ export function DataTable<TData, TValue>({
 							<TableRow
 								key={row.id}
 								data-state={row.getIsSelected() && "selected"}
-								className="border-b border-border/20 hover:bg-muted/50 transition-colors"
 							>
 								{row.getVisibleCells().map((cell) => (
-									<TableCell
-										key={cell.id}
-										style={{
-											width: cell.column.getSize(),
-											minWidth: cell.column.columnDef.minSize,
-										}}
-									>
+									<TableCell key={cell.id}>
 										{flexRender(cell.column.columnDef.cell, cell.getContext())}
 									</TableCell>
 								))}
@@ -85,7 +64,10 @@ export function DataTable<TData, TValue>({
 						))
 					) : (
 						<TableRow>
-							<TableCell colSpan={columns.length} className="h-24 text-center">
+							<TableCell
+								colSpan={columns.length}
+								className="h-24 text-center text-muted-foreground"
+							>
 								No results.
 							</TableCell>
 						</TableRow>
@@ -95,3 +77,5 @@ export function DataTable<TData, TValue>({
 		</div>
 	);
 }
+
+export { DataTable };
