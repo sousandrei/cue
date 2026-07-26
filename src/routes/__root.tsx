@@ -4,12 +4,10 @@ import {
 	useLocation,
 	useNavigate,
 } from "@tanstack/react-router";
-import { AnimatePresence, motion } from "framer-motion";
 import { useEffect, useState } from "react";
 import { Toaster } from "sonner";
 import { FloatingDock } from "@/components/floating-dock";
 import { Updater } from "@/components/Updater";
-import { fade } from "@/lib/motion";
 import { TauriProvider, useTauri } from "@/lib/tauri/TauriProvider";
 
 const RootLayoutContent = () => {
@@ -43,22 +41,11 @@ const RootLayoutContent = () => {
 	if (!checked) return null;
 
 	return (
-		<div className="min-h-screen w-full relative overflow-x-hidden bg-background text-foreground">
+		<div className="min-h-screen w-full relative overflow-x-hidden text-foreground">
 			<Updater />
 			<Toaster position="bottom-right" richColors closeButton />
-			<main className="relative grid grid-cols-1 w-full min-h-screen">
-				<AnimatePresence initial={false} mode="wait">
-					<motion.div
-						key={location.pathname}
-						variants={fade}
-						initial="hidden"
-						animate="visible"
-						exit="hidden"
-						className="row-start-1 col-start-1 w-full min-h-screen"
-					>
-						<Outlet />
-					</motion.div>
-				</AnimatePresence>
+			<main className="relative w-full min-h-screen">
+				<Outlet />
 			</main>
 			<FloatingDock />
 		</div>

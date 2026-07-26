@@ -1,4 +1,5 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { motion } from "framer-motion";
 import { Music, RefreshCcw, Rocket } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
@@ -13,6 +14,7 @@ import {
 	CardTitle,
 } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
+import { fade } from "@/lib/motion";
 import { useTauri } from "@/lib/tauri/TauriProvider";
 
 export const Route = createFileRoute("/setup")({
@@ -74,21 +76,22 @@ function SetupWizard() {
 	};
 
 	return (
-		<div className="min-h-screen bg-background flex items-center justify-center p-4">
-			<div className="absolute inset-0 bg-linear-to-tr from-primary/10 via-background to-primary/10 -z-10" />
-
-			<Card className="max-w-md w-full border-primary/20 bg-card/50 backdrop-blur-xl shadow-2xl">
+		<motion.div
+			variants={fade}
+			initial="hidden"
+			animate="visible"
+			className="min-h-screen flex items-center justify-center p-4"
+		>
+			<Card className="max-w-md w-full">
 				<CardHeader className="text-center">
-					<div className="mx-auto w-16 h-16 bg-primary/10 rounded-3xl flex items-center justify-center mb-4">
+					<div className="mx-auto w-16 h-16 bg-primary/10 rounded-2xl flex items-center justify-center mb-4">
 						{isUpdate ? (
 							<RefreshCcw className="w-8 h-8 text-primary" />
 						) : (
 							<Rocket className="w-8 h-8 text-primary" />
 						)}
 					</div>
-					<CardTitle className="text-2xl font-bold">
-						{isUpdate ? "Finish Update" : "Welcome to Cue"}
-					</CardTitle>
+					<CardTitle>{isUpdate ? "Finish Update" : "Welcome to Cue"}</CardTitle>
 					<CardDescription>
 						{isUpdate
 							? "We need to download the latest components to keep Cue running smoothly. Your library location is preserved."
@@ -129,7 +132,7 @@ function SetupWizard() {
 						</div>
 					) : (
 						<Button
-							className="w-full h-12 text-lg font-semibold rounded-xl transition-all hover:scale-[1.02] active:scale-[0.98]"
+							className="w-full h-12 text-lg font-semibold rounded-lg transition-all"
 							disabled={!path || loading}
 							onClick={handleFinishSetup}
 						>
@@ -138,6 +141,6 @@ function SetupWizard() {
 					)}
 				</CardContent>
 			</Card>
-		</div>
+		</motion.div>
 	);
 }

@@ -4,6 +4,7 @@ import { ActiveDownloadItem } from "@/components/queue/ActiveDownloadItem";
 import { QueuedDownloadList } from "@/components/queue/QueuedDownloadList";
 import { Card, CardContent } from "@/components/ui/card";
 import type { DownloadJob } from "@/hooks/useDownload";
+import { slideUp } from "@/lib/motion";
 
 interface DownloadQueueStatusProps {
 	downloads: DownloadJob[];
@@ -27,12 +28,13 @@ export function DownloadQueueStatus({
 
 	return (
 		<motion.div
-			initial={{ opacity: 0, y: -20 }}
-			animate={{ opacity: 1, y: 0 }}
-			exit={{ opacity: 0, y: -20 }}
+			variants={slideUp}
+			initial="hidden"
+			animate="visible"
+			exit="hidden"
 			className="w-full"
 		>
-			<Card className="border-primary/20 bg-primary/5 backdrop-blur-xl shadow-2xl overflow-hidden">
+			<Card variant="active" className="overflow-hidden">
 				<CardContent className="p-4">
 					{activeDownload ? (
 						<ActiveDownloadItem download={activeDownload} onRemove={onRemove} />

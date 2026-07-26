@@ -6,6 +6,7 @@ import { DownloadInput } from "@/components/DownloadInput";
 import { DownloadList } from "@/components/DownloadList";
 import { DownloadQueueStatus } from "@/components/DownloadQueueStatus";
 import { Header } from "@/components/Header";
+import { Page } from "@/components/ui/page";
 import { useDownload } from "@/hooks/useDownload";
 import { useSmartQueue } from "@/hooks/useSmartQueue";
 import { useTauri } from "@/lib/tauri/TauriProvider";
@@ -116,32 +117,30 @@ function Index() {
 	};
 
 	return (
-		<div className="min-h-screen bg-background flex flex-col items-center justify-center p-4 pt-28 pb-28">
-			<div className="w-full max-w-2xl flex flex-col gap-12 -mt-20">
-				<Header />
+		<Page maxWidth="sm">
+			<Header />
 
-				<div className="flex flex-col gap-8">
-					<DownloadInput
-						url={url}
-						setUrl={setUrl}
-						onAdd={handleAddDownload}
-						onUpload={handleBulkImport}
-						loading={loading}
-					/>
+			<div className="flex flex-col gap-8">
+				<DownloadInput
+					url={url}
+					setUrl={setUrl}
+					onAdd={handleAddDownload}
+					onUpload={handleBulkImport}
+					loading={loading}
+				/>
 
-					<DownloadQueueStatus
-						downloads={downloads}
-						onRemove={removeDownload}
-						onClearQueue={clearQueue}
-					/>
+				<DownloadQueueStatus
+					downloads={downloads}
+					onRemove={removeDownload}
+					onClearQueue={clearQueue}
+				/>
 
-					<DownloadList
-						downloads={downloads}
-						removeDownload={removeDownload}
-						onClear={clearHistory}
-					/>
-				</div>
+				<DownloadList
+					downloads={downloads}
+					removeDownload={removeDownload}
+					onClear={clearHistory}
+				/>
 			</div>
-		</div>
+		</Page>
 	);
 }

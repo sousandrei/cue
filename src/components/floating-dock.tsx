@@ -25,7 +25,7 @@ export function FloatingDock() {
 
 	return (
 		<div className="fixed bottom-8 left-1/2 -translate-x-1/2 z-50">
-			<div className="flex items-center gap-4 px-6 py-3 rounded-full bg-glass-bg-strong backdrop-blur-[16px] border border-glass-border shadow-[0_8px_30px_-10px] shadow-black/50">
+			<div className="flex items-center gap-4 px-6 py-3 rounded-full bg-glass-bg-strong backdrop-blur-[16px] border border-glass-border shadow-[0_8px_30px_-10px] shadow-black/30">
 				{items.map((item) => {
 					const isActive = location.pathname === item.href;
 

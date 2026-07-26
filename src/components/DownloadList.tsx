@@ -23,7 +23,7 @@ export function DownloadList({
 	return (
 		<div className="space-y-4 w-full">
 			<div className="flex items-center justify-between px-1">
-				<h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">
+				<h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
 					Recent Activity
 				</h2>
 				<div className="flex items-center gap-3">
@@ -33,11 +33,11 @@ export function DownloadList({
 								variant="ghost"
 								size="sm"
 								onClick={onClear}
-								className="h-8 px-2 text-xs text-muted-foreground/60 hover:text-primary transition-colors font-medium"
+								className="h-8 px-2 text-xs text-muted-foreground hover:text-primary transition-colors font-medium"
 							>
 								Clear history
 							</Button>
-							<span className="text-xs text-muted-foreground/40 font-mono">
+							<span className="text-xs text-muted-foreground font-mono">
 								{history.length}
 							</span>
 						</>

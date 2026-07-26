@@ -116,7 +116,7 @@ export function TagInput({ tags, onChange, onBlur, autoFocus }: TagInputProps) {
 		<button
 			ref={containerRef}
 			type="button"
-			className="flex flex-wrap gap-1.5 p-1 items-center border border-input bg-background/50 rounded-md w-full focus-within:ring-1 focus-within:ring-primary/20 focus-within:border-primary/20 transition-all cursor-text text-left min-h-[36px]"
+			className="flex flex-wrap gap-1.5 p-1 items-center border border-glass-border bg-glass-bg backdrop-blur-[16px] rounded-md w-full focus-within:border-primary focus-within:ring-0 transition-all cursor-text text-left min-h-[36px]"
 			onClick={() => {
 				if (selectedIndex === null) inputRef.current?.focus();
 			}}
