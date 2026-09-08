@@ -11,9 +11,9 @@ pub use ejs::ensure_ejs;
 pub use ffmpeg::ensure_ffmpeg;
 pub use ytdlp::ensure_ytdlp;
 
-const YT_DLP_VERSION: &str = "2026.02.04";
-const FFMPEG_VERSION: &str = "8.1.2";
-const BUN_VERSION: &str = "1.3.14";
+const YT_DLP_VERSION: &str = "2026.08.19";
+const FFMPEG_VERSION: &str = "9.0.1";
+const BUN_VERSION: &str = "1.4.2";
 const EJS_VERSION: &str = "0.8.0";
 
 pub fn check_bundler_health(app: &AppHandle) -> bool {
