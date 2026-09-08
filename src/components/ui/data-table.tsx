@@ -1,9 +1,11 @@
 import {
 	type ColumnDef,
+	columnSizingFeature,
 	flexRender,
-	getCoreRowModel,
-	useReactTable,
+	tableFeatures,
+	useTable,
 } from "@tanstack/react-table";
+import type { RowData } from "@tanstack/table-core";
 
 import {
 	Table,
@@ -14,19 +16,21 @@ import {
 	TableRow,
 } from "@/components/ui/table";
 
-interface DataTableProps<TData, TValue> {
-	columns: ColumnDef<TData, TValue>[];
+const features = tableFeatures({ columnSizingFeature });
+
+interface DataTableProps<TData extends RowData> {
+	columns: ColumnDef<typeof features, TData>[];
 	data: TData[];
 }
 
-function DataTable<TData, TValue>({
+function DataTable<TData extends RowData>({
 	columns,
 	data,
-}: DataTableProps<TData, TValue>) {
-	const table = useReactTable({
+}: DataTableProps<TData>) {
+	const table = useTable({
+		features,
 		data,
 		columns,
-		getCoreRowModel: getCoreRowModel(),
 	});
 
 	return (
@@ -51,11 +55,8 @@ function DataTable<TData, TValue>({
 				<TableBody>
 					{table.getRowModel().rows?.length ? (
 						table.getRowModel().rows.map((row) => (
-							<TableRow
-								key={row.id}
-								data-state={row.getIsSelected() && "selected"}
-							>
-								{row.getVisibleCells().map((cell) => (
+							<TableRow key={row.id}>
+								{row.getAllCells().map((cell) => (
 									<TableCell key={cell.id}>
 										{flexRender(cell.column.columnDef.cell, cell.getContext())}
 									</TableCell>

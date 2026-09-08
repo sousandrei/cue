@@ -1,4 +1,8 @@
-import type { ColumnDef } from "@tanstack/react-table";
+import {
+	type ColumnDef,
+	columnSizingFeature,
+	tableFeatures,
+} from "@tanstack/react-table";
 import { AlertCircle, Plus, Trash2 } from "lucide-react";
 import { useState } from "react";
 
@@ -8,6 +12,8 @@ import { Button } from "@/components/ui/button";
 import type { Song } from "@/lib/tauri/core/types";
 
 export type { Song };
+
+const features = tableFeatures({ columnSizingFeature });
 
 const TagsCell = ({
 	song,
@@ -63,7 +69,7 @@ export const createColumns = (
 	handleDelete: (id: string) => void,
 	handleUpdateTags: (id: string, tags: string) => void,
 	missingIds: Set<string>,
-): ColumnDef<Song>[] => [
+): ColumnDef<typeof features, Song>[] => [
 	{
 		accessorKey: "title",
 		header: "Name",
