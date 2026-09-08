@@ -1,5 +1,17 @@
 # Changelog
 
+## [1.6.0](https://github.com/sousandrei/cue/compare/v1.5.1...v1.6.0) (2026-09-08)
+
+
+### Features
+
+* ui polish ([89cfa22](https://github.com/sousandrei/cue/commit/89cfa223f14e96d640191dc06370b532ef27dfd9))
+
+
+### Bug Fixes
+
+* resolve Biome checks for dependency updates ([99f5053](https://github.com/sousandrei/cue/commit/99f50530c621c53c1d8256491448caf886aa328a))
+
 ## [1.5.1](https://github.com/sousandrei/cue/compare/v1.5.0...v1.5.1) (2026-07-18)
 
 
