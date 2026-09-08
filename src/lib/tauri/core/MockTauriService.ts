@@ -167,7 +167,7 @@ export class MockTauriService implements TauriService {
 	async listen<K extends keyof TauriEventMap | string>(
 		event: K,
 		handler: (
-			event: Event<K extends keyof TauriEventMap ? TauriEventMap[K] : any>,
+			event: Event<K extends keyof TauriEventMap ? TauriEventMap[K] : unknown>,
 		) => void,
 	): Promise<UnlistenFn> {
 		if (!this.handlers[event]) {

@@ -101,10 +101,12 @@ export class RealTauriService implements TauriService {
 	async listen<K extends keyof TauriEventMap | string>(
 		event: K,
 		handler: (
-			event: Event<K extends keyof TauriEventMap ? TauriEventMap[K] : any>,
+			event: Event<K extends keyof TauriEventMap ? TauriEventMap[K] : unknown>,
 		) => void,
 	): Promise<UnlistenFn> {
-		return await listen<any>(event, handler);
+		return await listen<
+			K extends keyof TauriEventMap ? TauriEventMap[K] : unknown
+		>(event, handler);
 	}
 
 	async open(options?: OpenDialogOptions) {

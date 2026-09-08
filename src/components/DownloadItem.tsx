@@ -76,6 +76,7 @@ export function DownloadItem({ download, removeDownload }: DownloadItemProps) {
 								<div className="bg-card/60 rounded-md p-2 font-mono text-[10px] leading-relaxed max-h-40 overflow-y-auto border border-glass-border scrollbar-thin scrollbar-thumb-border/30">
 									{download.logs.map((log, i) => (
 										<div
+											// biome-ignore lint/suspicious/noArrayIndexKey: logs are an append-only stream without stable IDs
 											key={`${download.id}-log-${i}`}
 											className="text-muted-foreground break-all"
 										>
