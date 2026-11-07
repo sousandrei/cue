@@ -10,7 +10,7 @@ export function Header({
 	subtitle = "Paste a link to start downloading",
 }: HeaderProps) {
 	return (
-		<header className="flex min-w-0 items-center gap-4">
+		<header className="flex min-w-0 shrink-0 items-center gap-4">
 			<Logo />
 			<div className="min-w-0 space-y-1">
 				<h1 className="text-2xl font-semibold tracking-tight text-foreground">

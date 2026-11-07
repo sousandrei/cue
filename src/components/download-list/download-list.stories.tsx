@@ -30,3 +30,29 @@ export const History: StoryObj<typeof meta> = {
 	},
 };
 export const Empty: StoryObj<typeof meta> = { args: { downloads: [] } };
+export const ScrollableHistory: StoryObj<typeof meta> = {
+	render: (args) => (
+		<div className="flex h-[420px] flex-col">
+			<DownloadList {...args} />
+		</div>
+	),
+	args: {
+		fill: true,
+		downloads: Array.from({ length: 80 }, (_, index) => ({
+			...completedDownload,
+			id: `history-${index}`,
+		})),
+	},
+	play: async ({ canvasElement }) => {
+		const canvas = within(canvasElement);
+		const region = canvas.getByRole("region", {
+			name: "Recent activity history",
+		});
+		const heading = canvas.getByRole("heading", { name: "Recent Activity" });
+		await expect(region.scrollHeight).toBeGreaterThan(region.clientHeight);
+		const headingTop = heading.getBoundingClientRect().top;
+		region.scrollTop = 300;
+		await expect(region.scrollTop).toBe(300);
+		await expect(heading.getBoundingClientRect().top).toBe(headingTop);
+	},
+};

@@ -4,9 +4,17 @@ import { cn } from "@/lib/utils";
 
 const Table = forwardRef<
 	HTMLTableElement,
-	React.HTMLAttributes<HTMLTableElement>
->(({ className, ...props }, ref) => (
-	<div className="relative w-full overflow-auto">
+	React.HTMLAttributes<HTMLTableElement> & {
+		containerClassName?: string;
+		scrollLabel?: string;
+	}
+>(({ className, containerClassName, scrollLabel, ...props }, ref) => (
+	<div
+		className={cn("relative w-full overflow-auto", containerClassName)}
+		{...(scrollLabel
+			? { role: "region", "aria-label": scrollLabel, tabIndex: 0 }
+			: {})}
+	>
 		<table
 			ref={ref}
 			className={cn("w-full caption-bottom text-sm tabular-nums", className)}

@@ -116,25 +116,28 @@ function Index() {
 	};
 
 	return (
-		<Page maxWidth="sm">
+		<Page maxWidth="sm" scrollMode="contained">
 			<Header />
 
-			<div className="flex flex-col gap-8">
-				<DownloadInput
-					url={url}
-					setUrl={setUrl}
-					onAdd={handleAddDownload}
-					onUpload={handleBulkImport}
-					loading={loading}
-				/>
+			<div className="flex min-h-0 flex-1 flex-col gap-6">
+				<div className="max-h-[65%] shrink-0 space-y-6 overflow-y-auto overscroll-contain">
+					<DownloadInput
+						url={url}
+						setUrl={setUrl}
+						onAdd={handleAddDownload}
+						onUpload={handleBulkImport}
+						loading={loading}
+					/>
 
-				<DownloadQueueStatus
-					downloads={downloads}
-					onRemove={removeDownload}
-					onClearQueue={clearQueue}
-				/>
+					<DownloadQueueStatus
+						downloads={downloads}
+						onRemove={removeDownload}
+						onClearQueue={clearQueue}
+					/>
+				</div>
 
 				<DownloadList
+					fill
 					downloads={downloads}
 					removeDownload={removeDownload}
 					onClear={clearHistory}

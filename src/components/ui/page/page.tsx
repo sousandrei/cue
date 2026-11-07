@@ -13,18 +13,34 @@ const maxWidths = {
 interface PageProps extends React.HTMLAttributes<HTMLDivElement> {
 	maxWidth?: keyof typeof maxWidths;
 	mode?: "default" | "centered";
+	scrollMode?: "page" | "contained";
 }
 
 const Page = forwardRef<HTMLDivElement, PageProps>(
 	(
-		{ className, maxWidth = "sm", mode = "default", children, ...props },
+		{
+			className,
+			maxWidth = "sm",
+			mode = "default",
+			scrollMode = "page",
+			children,
+			...props
+		},
 		ref,
 	) => (
-		<motion.div variants={fade} initial="hidden" animate="visible">
+		<motion.div
+			className={
+				scrollMode === "contained" ? "h-dvh overflow-hidden" : undefined
+			}
+			variants={fade}
+			initial="hidden"
+			animate="visible"
+		>
 			<div
 				ref={ref}
 				className={cn(
-					"min-h-screen flex min-w-0 flex-col items-center px-5 pt-10 pb-28 sm:px-8 sm:pt-14",
+					"flex min-w-0 flex-col items-center px-5 pt-10 pb-28 sm:px-8 sm:pt-14",
+					scrollMode === "contained" ? "h-full min-h-0" : "min-h-screen",
 					mode === "centered" && "justify-center",
 					className,
 				)}
@@ -33,6 +49,7 @@ const Page = forwardRef<HTMLDivElement, PageProps>(
 				<div
 					className={cn(
 						"flex w-full min-w-0 flex-col gap-7",
+						scrollMode === "contained" && "min-h-0 flex-1",
 						maxWidths[maxWidth],
 					)}
 				>

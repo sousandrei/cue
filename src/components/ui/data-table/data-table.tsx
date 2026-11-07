@@ -11,7 +11,6 @@ import {
 import type { RowData } from "@tanstack/table-core";
 import { ArrowDown, ArrowUp, ArrowUpDown, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-
 import {
 	Table,
 	TableBody,
@@ -20,6 +19,7 @@ import {
 	TableHeader,
 	TableRow,
 } from "@/components/ui/table";
+import { cn } from "@/lib/utils";
 
 export const dataTableFeatures = tableFeatures({
 	columnSizingFeature,
@@ -35,6 +35,7 @@ interface DataTableProps<TData extends RowData> {
 	loading?: boolean;
 	emptyMessage?: string;
 	getRowId?: (row: TData) => string;
+	fill?: boolean;
 }
 
 function DataTable<TData extends RowData>({
@@ -44,6 +45,7 @@ function DataTable<TData extends RowData>({
 	loading = false,
 	emptyMessage = "No results found.",
 	getRowId,
+	fill = false,
 }: DataTableProps<TData>) {
 	const table = useTable({
 		features: dataTableFeatures,
@@ -56,12 +58,23 @@ function DataTable<TData extends RowData>({
 
 	return (
 		<div
-			className="min-w-0 overflow-hidden rounded-xl border border-border bg-card"
+			className={cn(
+				"min-w-0 overflow-hidden rounded-xl border border-border bg-card",
+				fill && "min-h-0 flex-1",
+			)}
 			aria-busy={loading}
 		>
-			<Table style={{ minWidth: table.getTotalSize(), tableLayout: "fixed" }}>
+			<Table
+				containerClassName={
+					fill
+						? "h-full overscroll-contain focus-visible:outline-2 focus-visible:outline-inset focus-visible:outline-ring"
+						: undefined
+				}
+				scrollLabel={fill ? caption : undefined}
+				style={{ minWidth: table.getTotalSize(), tableLayout: "fixed" }}
+			>
 				<caption className="sr-only">{caption}</caption>
-				<TableHeader>
+				<TableHeader className={fill ? "sticky top-0 z-10 bg-card" : undefined}>
 					{table.getHeaderGroups().map((headerGroup) => (
 						<TableRow key={headerGroup.id}>
 							{headerGroup.headers.map((header) => (

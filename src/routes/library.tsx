@@ -38,13 +38,16 @@ function Library() {
 	);
 
 	return (
-		<Page maxWidth="lg">
+		<Page maxWidth="lg" scrollMode="contained">
 			<Header
 				title="Collection"
 				subtitle="Your tracks, ready for the next set."
 			/>
-			<section aria-label="Music collection" className="min-w-0 space-y-4">
-				<div className="flex flex-wrap items-center justify-between gap-3">
+			<section
+				aria-label="Music collection"
+				className="flex min-h-0 min-w-0 flex-1 flex-col gap-4"
+			>
+				<div className="flex shrink-0 flex-wrap items-center justify-between gap-3">
 					<div className="relative w-full sm:max-w-sm">
 						<Search
 							className="pointer-events-none absolute left-3 top-3 size-4 text-muted-foreground"
@@ -88,6 +91,7 @@ function Library() {
 					/>
 				) : (
 					<DataTable
+						fill
 						caption="Music collection"
 						columns={columns}
 						data={filteredSongs}

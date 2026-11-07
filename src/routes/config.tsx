@@ -95,7 +95,7 @@ function ConfigPage() {
 
 	if (!config) {
 		return (
-			<Page maxWidth="sm">
+			<Page maxWidth="sm" scrollMode="contained">
 				<Header />
 				<div className="mt-12 text-destructive">
 					Failed to load configuration.
@@ -105,20 +105,25 @@ function ConfigPage() {
 	}
 
 	return (
-		<Page maxWidth="sm">
+		<Page maxWidth="sm" scrollMode="contained">
 			<Header
 				title="Options"
 				subtitle="Make Cue feel at home in your workflow."
 			/>
 
-			<Card>
-				<CardHeader>
+			<Card className="flex min-h-0 flex-1 flex-col overflow-hidden p-0">
+				<CardHeader className="shrink-0 px-6 pt-6">
 					<CardTitle className="flex items-center gap-2">
 						<SlidersHorizontal className="w-5 h-5 text-primary" />
 						Preferences
 					</CardTitle>
 				</CardHeader>
-				<CardContent className="space-y-6">
+				<CardContent
+					className="min-h-0 flex-1 space-y-6 overflow-y-auto overscroll-contain px-6 pb-6 focus-visible:outline-2 focus-visible:outline-inset focus-visible:outline-ring"
+					role="region"
+					aria-label="Preferences settings"
+					tabIndex={0}
+				>
 					<FolderPicker
 						id="library-path"
 						label="Music Library Path"
