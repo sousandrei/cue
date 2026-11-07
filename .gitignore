@@ -27,3 +27,6 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Local agent skills (not shared with the repository)
+/.agents/skills/

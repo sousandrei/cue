@@ -83,7 +83,8 @@ async fn download_bun_zip(
 
     for i in 0..archive.len() {
         let mut file = archive.by_index(i)?;
-        if file.name().ends_with("bun") || file.name().ends_with("bun.exe") {
+        let name = file.name()?;
+        if name.ends_with("bun") || name.ends_with("bun.exe") {
             let total_extract = file.size();
             let mut outfile = fs::File::create(bun_path)?;
 

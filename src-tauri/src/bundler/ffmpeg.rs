@@ -124,7 +124,7 @@ fn extract_zip(
 
     for i in 0..archive.len() {
         let mut file = archive.by_index(i)?;
-        let file_name = match std::path::Path::new(file.name()).file_name() {
+        let file_name = match Path::new(file.name()?.as_ref()).file_name() {
             Some(n) => n.to_string_lossy().to_string(),
             None => continue,
         };

@@ -60,7 +60,7 @@ async fn download_ejs_zip(
     let total_files = archive.len();
     for i in 0..total_files {
         let mut file = archive.by_index(i)?;
-        let name = file.name().to_string();
+        let name = file.name()?.into_owned();
         let parts: Vec<&str> = name.split('/').collect();
 
         // GitHub zips have a root folder (e.g., ejs-0.4.0/)

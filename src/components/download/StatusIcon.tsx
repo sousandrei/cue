@@ -30,7 +30,7 @@ export function StatusIcon({
 		}
 	};
 
-	const Icon = () => {
+	const getIcon = () => {
 		switch (status) {
 			case "completed":
 				return <CheckCircle2 className={iconSize} />;
@@ -45,7 +45,7 @@ export function StatusIcon({
 		<div
 			className={`${containerPadding} rounded-full shrink-0 ${getStatusStyles()} ${className}`}
 		>
-			<Icon />
+			{getIcon()}
 		</div>
 	);
 }
