@@ -2,9 +2,8 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 import { DownloadList } from "@/components/download-list";
 import { DownloadQueueStatus } from "@/components/download-queue-status";
-import { Header } from "@/components/header";
+import { IntakeLayout } from "@/components/intake-layout";
 import { DownloadInput } from "@/components/ui/download-input";
-import { Page } from "@/components/ui/page";
 import { toast } from "@/components/ui/toast";
 import { useDownload } from "@/hooks/useDownload";
 import { useSmartQueue } from "@/hooks/useSmartQueue";
@@ -116,33 +115,31 @@ function Index() {
 	};
 
 	return (
-		<Page maxWidth="sm" scrollMode="contained">
-			<Header />
-
-			<div className="flex min-h-0 flex-1 flex-col gap-6">
-				<div className="max-h-[65%] shrink-0 space-y-6 overflow-y-auto overscroll-contain">
-					<DownloadInput
-						url={url}
-						setUrl={setUrl}
-						onAdd={handleAddDownload}
-						onUpload={handleBulkImport}
-						loading={loading}
-					/>
-
-					<DownloadQueueStatus
-						downloads={downloads}
-						onRemove={removeDownload}
-						onClearQueue={clearQueue}
-					/>
-				</div>
-
+		<IntakeLayout
+			input={
+				<DownloadInput
+					url={url}
+					setUrl={setUrl}
+					onAdd={handleAddDownload}
+					onUpload={handleBulkImport}
+					loading={loading}
+				/>
+			}
+			queue={
+				<DownloadQueueStatus
+					downloads={downloads}
+					onRemove={removeDownload}
+					onClearQueue={clearQueue}
+				/>
+			}
+			history={
 				<DownloadList
 					fill
 					downloads={downloads}
 					removeDownload={removeDownload}
 					onClear={clearHistory}
 				/>
-			</div>
-		</Page>
+			}
+		/>
 	);
 }

@@ -8,8 +8,10 @@
 ---
 
 <p align="center">
-  <img alt="Cue main interface" src="assets/main.png" width="800">
+  <img alt="Cue walkthrough: add a track, browse and search the collection, and scroll through preferences" src="assets/demo.gif" width="960">
 </p>
+
+<p align="center"><em>A quick tour of Cue with sample library data and simulated download progress.</em></p>
 
 ## How to use Cue
 
@@ -24,11 +26,7 @@ Cue is designed to be invisible. Just focus on your music.
 
 *   **Zero-Config:** No bitrate sliders or technical jargon. Cue defaults to 320kbps MP3.
 *   **Automatic Setup:** On first launch, Cue automatically downloads its required dependencies (`yt-dlp`, `ffmpeg`, `bun`, and `yt-dlp-ejs`) to ensure everything works out of the box.
-*   **Minimalist Design:** A pure black canvas optimized for focus.
-
-<p align="center">
-  <img alt="Cue Collection view" src="assets/library.png" width="800">
-</p>
+*   **Focused Design:** Charcoal surfaces, violet accents, and expressive motion, with dedicated scrolling for your collection, recent activity, and preferences.
 
 ## Downloads & Releases
 

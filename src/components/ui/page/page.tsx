@@ -13,7 +13,7 @@ const maxWidths = {
 interface PageProps extends React.HTMLAttributes<HTMLDivElement> {
 	maxWidth?: keyof typeof maxWidths;
 	mode?: "default" | "centered";
-	scrollMode?: "page" | "contained";
+	scrollMode?: "page" | "contained" | "adaptive";
 }
 
 const Page = forwardRef<HTMLDivElement, PageProps>(
@@ -40,7 +40,11 @@ const Page = forwardRef<HTMLDivElement, PageProps>(
 				ref={ref}
 				className={cn(
 					"flex min-w-0 flex-col items-center px-5 pt-10 pb-28 sm:px-8 sm:pt-14",
-					scrollMode === "contained" ? "h-full min-h-0" : "min-h-screen",
+					scrollMode === "contained"
+						? "h-full min-h-0"
+						: scrollMode === "adaptive"
+							? "h-dvh min-h-fit"
+							: "min-h-screen",
 					mode === "centered" && "justify-center",
 					className,
 				)}
@@ -50,6 +54,7 @@ const Page = forwardRef<HTMLDivElement, PageProps>(
 					className={cn(
 						"flex w-full min-w-0 flex-col gap-7",
 						scrollMode === "contained" && "min-h-0 flex-1",
+						scrollMode === "adaptive" && "flex-1",
 						maxWidths[maxWidth],
 					)}
 				>
