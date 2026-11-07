@@ -3,7 +3,7 @@ import { CheckCircle2, Info, Loader2, TriangleAlert, X } from "lucide-react";
 import type { ReactNode } from "react";
 import { Button, buttonVariants } from "../button";
 
-export const toastManager = Toast.createToastManager();
+export const toastManager = Toast.createToastManager<Record<string, never>>();
 
 type ToastType = "success" | "error" | "warning" | "info" | "loading";
 interface ToastOptions {
@@ -13,8 +13,10 @@ interface ToastOptions {
 	action?: { label: string; onClick: () => void };
 }
 function notify(type: ToastType, title: ReactNode, options: ToastOptions = {}) {
+	const id = options.id ?? crypto.randomUUID();
+	let actionUsed = false;
 	return toastManager.add({
-		id: options.id,
+		id,
 		title,
 		type,
 		description: options.description,
@@ -24,7 +26,15 @@ function notify(type: ToastType, title: ReactNode, options: ToastOptions = {}) {
 				: (options.duration ?? 5000),
 		priority: type === "error" ? "high" : "low",
 		actionProps: options.action
-			? { children: options.action.label, onClick: options.action.onClick }
+			? {
+					children: options.action.label,
+					onClick: () => {
+						if (actionUsed) return;
+						actionUsed = true;
+						toastManager.close(id);
+						options.action?.onClick();
+					},
+				}
 			: undefined,
 	});
 }
@@ -43,7 +53,7 @@ export const toast = {
 };
 
 function ToastList() {
-	const { toasts } = Toast.useToastManager();
+	const { toasts } = Toast.useToastManager<Record<string, never>>();
 	return toasts.map((notification) => {
 		const Icon =
 			notification.type === "loading"
@@ -62,7 +72,7 @@ function ToastList() {
 				<Toast.Content className="flex items-start gap-3">
 					<Icon
 						aria-hidden="true"
-						className={`mt-0.5 size-4 shrink-0 ${notification.type === "loading" ? "animate-spin text-primary" : notification.type === "success" ? "text-accent-cool" : notification.type === "error" ? "text-destructive" : "text-primary"}`}
+						className={`mt-0.5 size-4 shrink-0 ${notification.type === "loading" ? "animate-spin text-primary" : notification.type === "success" ? "text-accent-cool" : notification.type === "error" ? "text-destructive" : notification.type === "warning" ? "text-accent-warm" : "text-primary"}`}
 					/>
 					<div className="min-w-0 flex-1 space-y-1 pr-5">
 						<Toast.Title className="break-words text-sm font-semibold" />

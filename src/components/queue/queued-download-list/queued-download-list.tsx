@@ -1,0 +1,92 @@
+import { AnimatePresence, motion } from "framer-motion";
+import { ChevronDown, ChevronUp, X } from "lucide-react";
+import { useId, useState } from "react";
+import { SongMetadata } from "@/components/download/song-metadata";
+import { Button } from "@/components/ui/button";
+import type { DownloadJob } from "@/hooks/useDownload";
+import { queueItem } from "@/lib/motion";
+
+interface QueuedDownloadListProps {
+	downloads: DownloadJob[];
+	onRemove: (id: string) => void;
+	onClearQueue: () => void;
+}
+
+export function QueuedDownloadList({
+	downloads,
+	onRemove,
+	onClearQueue,
+}: QueuedDownloadListProps) {
+	const [isExpanded, setIsExpanded] = useState(false);
+	const queueId = useId();
+
+	if (downloads.length === 0) return null;
+
+	return (
+		<div className="flex flex-col">
+			<div className="flex items-center gap-2 mt-4 pt-4 border-t border-primary/10">
+				<Button
+					variant="ghost"
+					size="sm"
+					className="flex-1 flex justify-between h-8 hover:bg-primary/10"
+					onClick={() => setIsExpanded(!isExpanded)}
+					aria-expanded={isExpanded}
+					aria-controls={isExpanded ? queueId : undefined}
+				>
+					<span className="text-xs font-semibold">
+						Queue ({downloads.length})
+					</span>
+					{isExpanded ? (
+						<ChevronUp className="w-4 h-4 ml-2" />
+					) : (
+						<ChevronDown className="w-4 h-4 ml-2" />
+					)}
+				</Button>
+				{isExpanded && (
+					<Button
+						variant="ghost"
+						size="sm"
+						className="h-8 px-3 text-xs font-medium hover:text-destructive hover:bg-destructive/10"
+						onClick={onClearQueue}
+					>
+						Clear Queue
+					</Button>
+				)}
+			</div>
+
+			<AnimatePresence>
+				{isExpanded && (
+					<motion.div
+						id={queueId}
+						initial={{ height: 0, opacity: 0 }}
+						animate={{ height: "auto", opacity: 1 }}
+						exit={{ height: 0, opacity: 0 }}
+						className="overflow-hidden mt-2 space-y-2"
+					>
+						{downloads.map((job, index) => (
+							<motion.div
+								key={job.id}
+								variants={queueItem}
+								initial="hidden"
+								animate="visible"
+								custom={index}
+								className="flex items-center gap-3 p-2 rounded-lg bg-glass-bg border border-glass-border"
+							>
+								<SongMetadata metadata={job.metadata} size="sm" />
+								<Button
+									variant="ghost"
+									size="icon"
+									className="h-6 w-6 rounded-full hover:bg-destructive/10 hover:text-destructive"
+									onClick={() => onRemove(job.id)}
+									aria-label={`Remove ${job.metadata.title} from queue`}
+								>
+									<X className="w-3 h-3" />
+								</Button>
+							</motion.div>
+						))}
+					</motion.div>
+				)}
+			</AnimatePresence>
+		</div>
+	);
+}

@@ -2,9 +2,7 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { motion } from "framer-motion";
 import { Music, RefreshCcw, Rocket } from "lucide-react";
 import { useEffect, useState } from "react";
-import { toast } from "sonner";
-
-import { FolderPicker } from "@/components/FolderPicker";
+import { FolderPicker } from "@/components/folder-picker";
 import { Button } from "@/components/ui/button";
 import {
 	Card,
@@ -14,6 +12,7 @@ import {
 	CardTitle,
 } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
+import { toast } from "@/components/ui/toast";
 import { fade } from "@/lib/motion";
 import { useTauri } from "@/lib/tauri/TauriProvider";
 
@@ -128,7 +127,11 @@ function SetupWizard() {
 									{Math.round(setupProgress)}%
 								</span>
 							</div>
-							<Progress value={setupProgress} className="h-2" />
+							<Progress
+								value={setupProgress}
+								className="h-2"
+								aria-label="Setup progress"
+							/>
 						</div>
 					) : (
 						<Button

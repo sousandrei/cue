@@ -22,3 +22,18 @@ export const scaleIn: Variants = {
 		transition: { type: "spring", stiffness: 400, damping: 25 },
 	},
 };
+
+export const queueItem: Variants = {
+	hidden: { opacity: 0, y: 8, filter: "blur(2px)" },
+	visible: (index: number) => ({
+		opacity: 1,
+		y: 0,
+		filter: "blur(0px)",
+		transition: {
+			type: "spring",
+			stiffness: 360,
+			damping: 30,
+			delay: Math.min(index, 8) * 0.055,
+		},
+	}),
+};

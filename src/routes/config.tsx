@@ -1,14 +1,14 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { Loader2, Save, SlidersHorizontal } from "lucide-react";
 import { useState } from "react";
-import { toast } from "sonner";
-
-import { FolderPicker } from "@/components/FolderPicker";
-import { Header } from "@/components/Header";
+import { FolderPicker } from "@/components/folder-picker";
+import { Header } from "@/components/header";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { ConfirmationDialog } from "@/components/ui/confirmation-dialog";
 import { Page } from "@/components/ui/page";
 import { Switch } from "@/components/ui/switch";
+import { toast } from "@/components/ui/toast";
 import { useConfig } from "@/hooks/useConfig";
 import type { Config } from "@/lib/tauri/core/types";
 import { useTauri } from "@/lib/tauri/TauriProvider";
@@ -22,6 +22,8 @@ function ConfigPage() {
 	const tauri = useTauri();
 	const { config } = useConfig();
 	const [saving, setSaving] = useState(false);
+	const [resetOpen, setResetOpen] = useState(false);
+	const [resetting, setResetting] = useState(false);
 
 	const handleCheckUpdate = async () => {
 		try {
@@ -74,24 +76,16 @@ function ConfigPage() {
 	};
 
 	const handleFactoryReset = async () => {
-		const confirmed = await tauri.ask(
-			"Are you sure you want to perform a factory reset? This will delete all downloaded binaries and your configuration. The app will restart.",
-			{
-				title: "Factory Reset",
-				kind: "warning",
-			},
-		);
-
-		if (!confirmed) {
-			return;
-		}
-
+		setResetting(true);
 		try {
 			toast.loading("Performing factory reset...", { id: "factory-reset" });
 			await tauri.factoryReset();
+			setResetOpen(false);
 		} catch (error) {
 			console.error("Factory reset failed:", error);
 			toast.error(`Factory reset failed: ${error}`, { id: "factory-reset" });
+		} finally {
+			setResetting(false);
 		}
 	};
 
@@ -108,13 +102,16 @@ function ConfigPage() {
 
 	return (
 		<Page maxWidth="sm">
-			<Header />
+			<Header
+				title="Options"
+				subtitle="Make Cue feel at home in your workflow."
+			/>
 
 			<Card>
 				<CardHeader>
 					<CardTitle className="flex items-center gap-2">
 						<SlidersHorizontal className="w-5 h-5 text-primary" />
-						Options
+						Preferences
 					</CardTitle>
 				</CardHeader>
 				<CardContent className="space-y-6">
@@ -191,7 +188,7 @@ function ConfigPage() {
 							<Button
 								variant="destructive"
 								className="w-full mt-2"
-								onClick={handleFactoryReset}
+								onClick={() => setResetOpen(true)}
 							>
 								Factory Reset
 							</Button>
@@ -199,6 +196,15 @@ function ConfigPage() {
 					</div>
 				</CardContent>
 			</Card>
+			<ConfirmationDialog
+				open={resetOpen}
+				onOpenChange={setResetOpen}
+				title="Reset Cue?"
+				description="This deletes all downloaded utilities and your configuration. The application will restart."
+				confirmLabel="Factory Reset"
+				onConfirm={handleFactoryReset}
+				busy={resetting}
+			/>
 		</Page>
 	);
 }

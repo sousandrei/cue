@@ -1,12 +1,11 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
-import { toast } from "sonner";
-
-import { DownloadInput } from "@/components/DownloadInput";
-import { DownloadList } from "@/components/DownloadList";
-import { DownloadQueueStatus } from "@/components/DownloadQueueStatus";
-import { Header } from "@/components/Header";
+import { DownloadList } from "@/components/download-list";
+import { DownloadQueueStatus } from "@/components/download-queue-status";
+import { Header } from "@/components/header";
+import { DownloadInput } from "@/components/ui/download-input";
 import { Page } from "@/components/ui/page";
+import { toast } from "@/components/ui/toast";
 import { useDownload } from "@/hooks/useDownload";
 import { useSmartQueue } from "@/hooks/useSmartQueue";
 import { useTauri } from "@/lib/tauri/TauriProvider";

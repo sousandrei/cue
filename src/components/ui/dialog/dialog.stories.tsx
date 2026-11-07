@@ -11,9 +11,9 @@ import {
 	DialogTrigger,
 } from "./dialog";
 
-function Example() {
+function Example({ defaultOpen = false }: { defaultOpen?: boolean }) {
 	return (
-		<Dialog>
+		<Dialog defaultOpen={defaultOpen}>
 			<DialogTrigger render={<Button variant="outline" />}>
 				Remove track
 			</DialogTrigger>
@@ -39,6 +39,14 @@ const meta = { title: "UI/Dialog", component: Example } satisfies Meta<
 	typeof Example
 >;
 export default meta;
+export const Open: StoryObj<typeof meta> = {
+	args: { defaultOpen: true },
+	play: async () => {
+		await waitFor(() =>
+			expect(within(document.body).getByRole("dialog")).toBeVisible(),
+		);
+	},
+};
 export const Confirmation: StoryObj<typeof meta> = {
 	play: async ({ canvasElement }) => {
 		const trigger = within(canvasElement).getByRole("button", {

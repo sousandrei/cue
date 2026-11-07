@@ -1,4 +1,4 @@
-import { toast } from "sonner";
+import { toast } from "@/components/ui/toast";
 import type { TauriService, Update } from "@/lib/tauri/core/types";
 
 export async function performUpdate(update: Update, tauri?: TauriService) {

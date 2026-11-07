@@ -1,19 +1,14 @@
-import {
-	type ColumnDef,
-	columnSizingFeature,
-	tableFeatures,
-} from "@tanstack/react-table";
+import type { ColumnDef } from "@tanstack/react-table";
 import { AlertCircle, Plus, Trash2 } from "lucide-react";
 import { useState } from "react";
 
-import { TagBadge } from "@/components/library/TagBadge";
-import { TagInput } from "@/components/library/TagInput";
+import { TagBadge } from "@/components/library/tag-badge";
+import { TagInput } from "@/components/library/tag-input";
 import { Button } from "@/components/ui/button";
+import type { dataTableFeatures } from "@/components/ui/data-table";
 import type { Song } from "@/lib/tauri/core/types";
 
 export type { Song };
-
-const features = tableFeatures({ columnSizingFeature });
 
 const TagsCell = ({
 	song,
@@ -45,23 +40,22 @@ const TagsCell = ({
 	}
 
 	return (
-		<button
+		<Button
+			variant="ghost"
 			type="button"
-			className="flex flex-wrap gap-1.5 items-center w-full min-h-[36px] group cursor-pointer focus:outline-none focus:ring-1 focus:ring-primary/20 rounded-md text-left transition-all hover:bg-muted/30 px-1"
+			className="group h-auto min-h-9 w-full flex-wrap justify-start gap-1.5 whitespace-normal px-1 text-left"
 			onClick={() => setIsEditing(true)}
-			aria-label="Edit tags"
+			aria-label={`Edit tags for ${song.title}`}
 		>
 			{tags.length > 0 ? (
 				tags.map((tag) => <TagBadge key={tag} tag={tag} />)
 			) : (
-				<span className="text-[10px] text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity ml-1">
-					Add tags...
-				</span>
+				<span className="ml-1 text-xs text-muted-foreground">Add tags...</span>
 			)}
 			<div className="opacity-0 group-hover:opacity-100 transition-opacity ml-auto mr-1">
 				<Plus className="h-3 w-3 text-muted-foreground" />
 			</div>
-		</button>
+		</Button>
 	);
 };
 
@@ -69,7 +63,7 @@ export const createColumns = (
 	handleDelete: (id: string) => void,
 	handleUpdateTags: (id: string, tags: string) => void,
 	missingIds: Set<string>,
-): ColumnDef<typeof features, Song>[] => [
+): ColumnDef<typeof dataTableFeatures, Song>[] => [
 	{
 		accessorKey: "title",
 		header: "Name",
@@ -125,6 +119,7 @@ export const createColumns = (
 	},
 	{
 		id: "actions",
+		enableSorting: false,
 		header: () => <div className="text-right">Actions</div>,
 		size: 80,
 		cell: ({ row }) => (
@@ -132,6 +127,7 @@ export const createColumns = (
 				<Button
 					variant="ghost"
 					size="icon"
+					aria-label={`Remove ${row.original.title}`}
 					onClick={() => handleDelete(row.original.id)}
 					className="text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
 				>

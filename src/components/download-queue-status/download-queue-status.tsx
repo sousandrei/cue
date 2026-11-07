@@ -1,0 +1,59 @@
+import { motion } from "framer-motion";
+import { ListOrdered } from "lucide-react";
+import { ActiveDownloadItem } from "@/components/queue/active-download-item";
+import { QueuedDownloadList } from "@/components/queue/queued-download-list";
+import { Card, CardContent } from "@/components/ui/card";
+import type { DownloadJob } from "@/hooks/useDownload";
+import { slideUp } from "@/lib/motion";
+
+interface DownloadQueueStatusProps {
+	downloads: DownloadJob[];
+	onRemove: (id: string) => void;
+	onClearQueue: () => void;
+}
+
+export function DownloadQueueStatus({
+	downloads,
+	onRemove,
+	onClearQueue,
+}: DownloadQueueStatusProps) {
+	const activeDownload = downloads.find(
+		(d) => d.status === "pending" || d.status === "downloading",
+	);
+	const queuedDownloads = downloads.filter((d) => d.status === "queued");
+
+	if (!activeDownload && queuedDownloads.length === 0) {
+		return null;
+	}
+
+	return (
+		<motion.div
+			variants={slideUp}
+			initial="hidden"
+			animate="visible"
+			exit="hidden"
+			className="w-full"
+		>
+			<Card variant="active" className="overflow-hidden p-0">
+				<CardContent className="p-5">
+					{activeDownload ? (
+						<ActiveDownloadItem download={activeDownload} onRemove={onRemove} />
+					) : (
+						<div className="flex items-center gap-3 text-muted-foreground">
+							<div className="bg-muted p-2 rounded-full">
+								<ListOrdered className="w-5 h-5" />
+							</div>
+							<div className="text-sm font-medium">Next in queue...</div>
+						</div>
+					)}
+
+					<QueuedDownloadList
+						downloads={queuedDownloads}
+						onRemove={onRemove}
+						onClearQueue={onClearQueue}
+					/>
+				</CardContent>
+			</Card>
+		</motion.div>
+	);
+}

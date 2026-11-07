@@ -5,9 +5,10 @@ import {
 	useNavigate,
 } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { Toaster } from "sonner";
-import { FloatingDock } from "@/components/floating-dock";
-import { Updater } from "@/components/Updater";
+import { FloatingDock } from "@/components/navigation";
+import { ToastProvider } from "@/components/ui/toast";
+import { TooltipProvider } from "@/components/ui/tooltip";
+import { Updater } from "@/components/updater";
 import { TauriProvider, useTauri } from "@/lib/tauri/TauriProvider";
 
 const RootLayoutContent = () => {
@@ -43,7 +44,6 @@ const RootLayoutContent = () => {
 	return (
 		<div className="min-h-screen w-full relative overflow-x-hidden text-foreground">
 			<Updater />
-			<Toaster position="bottom-right" richColors closeButton />
 			<main className="relative w-full min-h-screen">
 				<Outlet />
 			</main>
@@ -54,7 +54,11 @@ const RootLayoutContent = () => {
 
 const RootLayout = () => (
 	<TauriProvider>
-		<RootLayoutContent />
+		<ToastProvider>
+			<TooltipProvider>
+				<RootLayoutContent />
+			</TooltipProvider>
+		</ToastProvider>
 	</TauriProvider>
 );
 
