@@ -45,28 +45,7 @@ pub async fn ensure_ffmpeg(app: &AppHandle) -> Result<PathBuf, anyhow::Error> {
         },
     );
 
-    let urls = if cfg!(target_os = "windows") {
-        vec!["https://github.com/BtbN/FFmpeg-Builds/releases/download/latest/ffmpeg-master-latest-win64-gpl.zip".to_string()]
-    } else if cfg!(target_os = "macos") {
-        let arch_suffix = if cfg!(target_arch = "aarch64") {
-            "arm"
-        } else {
-            "intel"
-        };
-        let ver_suffix = FFMPEG_VERSION.replace(".", "");
-        vec![
-            format!(
-                "https://www.osxexperts.net/ffmpeg{}{}.zip",
-                ver_suffix, arch_suffix
-            ),
-            format!(
-                "https://www.osxexperts.net/ffprobe{}{}.zip",
-                ver_suffix, arch_suffix
-            ),
-        ]
-    } else {
-        vec!["https://github.com/BtbN/FFmpeg-Builds/releases/download/latest/ffmpeg-master-latest-linux64-gpl.tar.xz".to_string()]
-    };
+    let urls = download_urls(std::env::consts::OS, std::env::consts::ARCH)?;
 
     fs::create_dir_all(&bin_dir)?;
 
@@ -110,6 +89,40 @@ pub async fn ensure_ffmpeg(app: &AppHandle) -> Result<PathBuf, anyhow::Error> {
     );
 
     Ok(ffmpeg_path)
+}
+
+fn download_urls(os: &str, arch: &str) -> anyhow::Result<Vec<String>> {
+    if !matches!(arch, "x86_64" | "aarch64") {
+        anyhow::bail!("Unsupported FFmpeg architecture: {arch}");
+    }
+
+    match os {
+        "macos" => Ok(["ffmpeg", "ffprobe"]
+            .into_iter()
+            .map(|binary| {
+                if arch == "aarch64" {
+                    let version = FFMPEG_VERSION.replace('.', "");
+                    format!("https://www.osxexperts.net/{binary}{version}arm.zip")
+                } else {
+                    // OSXExperts' Intel builds are still on FFmpeg 8.
+                    format!("https://evermeet.cx/ffmpeg/{binary}-{FFMPEG_VERSION}.zip")
+                }
+            })
+            .collect()),
+        "windows" | "linux" => {
+            let (series, _) = FFMPEG_VERSION
+                .rsplit_once('.')
+                .ok_or_else(|| anyhow::anyhow!("Invalid FFmpeg version: {FFMPEG_VERSION}"))?;
+            let platform = if os == "windows" { "win" } else { "linux" };
+            let architecture = if arch == "aarch64" { "arm64" } else { "64" };
+            let extension = if os == "windows" { "zip" } else { "tar.xz" };
+            // Use the stable release series rather than rolling master builds.
+            Ok(vec![format!(
+                "https://github.com/BtbN/FFmpeg-Builds/releases/download/latest/ffmpeg-n{series}-latest-{platform}{architecture}-gpl-{series}.{extension}"
+            )])
+        }
+        _ => anyhow::bail!("Unsupported FFmpeg operating system: {os}"),
+    }
 }
 
 fn extract_zip(
@@ -219,4 +232,62 @@ pub fn check_health(app: &AppHandle) -> bool {
     }
 
     true
+}
+
+#[cfg(test)]
+mod tests {
+    use super::download_urls;
+
+    #[test]
+    fn macos_downloads_match_each_architecture() {
+        assert_eq!(
+            download_urls("macos", "aarch64").unwrap(),
+            [
+                "https://www.osxexperts.net/ffmpeg902arm.zip",
+                "https://www.osxexperts.net/ffprobe902arm.zip",
+            ]
+        );
+        assert_eq!(
+            download_urls("macos", "x86_64").unwrap(),
+            [
+                "https://evermeet.cx/ffmpeg/ffmpeg-9.0.2.zip",
+                "https://evermeet.cx/ffmpeg/ffprobe-9.0.2.zip",
+            ]
+        );
+    }
+
+    #[test]
+    fn windows_and_linux_use_stable_archives() {
+        for (os, arch, filename) in [
+            ("windows", "x86_64", "ffmpeg-n9.0-latest-win64-gpl-9.0.zip"),
+            (
+                "windows",
+                "aarch64",
+                "ffmpeg-n9.0-latest-winarm64-gpl-9.0.zip",
+            ),
+            (
+                "linux",
+                "x86_64",
+                "ffmpeg-n9.0-latest-linux64-gpl-9.0.tar.xz",
+            ),
+            (
+                "linux",
+                "aarch64",
+                "ffmpeg-n9.0-latest-linuxarm64-gpl-9.0.tar.xz",
+            ),
+        ] {
+            assert_eq!(
+                download_urls(os, arch).unwrap(),
+                [format!(
+                    "https://github.com/BtbN/FFmpeg-Builds/releases/download/latest/{filename}"
+                )]
+            );
+        }
+    }
+
+    #[test]
+    fn unsupported_platforms_do_not_download_incompatible_binaries() {
+        assert!(download_urls("macos", "x86").is_err());
+        assert!(download_urls("freebsd", "x86_64").is_err());
+    }
 }
