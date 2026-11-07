@@ -30,3 +30,10 @@ dist-ssr
 
 # Local agent skills (not shared with the repository)
 /.agents/skills/
+
+# Component documentation and browser-test output
+/storybook-static/
+/test-results/
+/coverage/
+/artifacts/
+/.rstest/

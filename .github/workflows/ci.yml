@@ -29,10 +29,19 @@ jobs:
           bun-version: latest
 
       - name: Install frontend dependencies
-        run: bun install
+        run: bun install --frozen-lockfile
 
       - name: Biome check
         run: bun run format:check
+
+      - name: Install component-test browser
+        run: bunx --no-install playwright install --with-deps chromium
+
+      - name: Component stories and accessibility tests (Rstest)
+        run: bun run test:storybook
+
+      - name: Build component documentation
+        run: bun run storybook:build
 
       - name: Cargo fmt
         run: cargo fmt --all -- --check

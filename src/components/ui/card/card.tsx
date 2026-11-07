@@ -6,10 +6,9 @@ import { cn } from "@/lib/utils";
 const cardVariants = cva("rounded-xl p-6", {
 	variants: {
 		variant: {
-			default: "border border-glass-border bg-glass-bg backdrop-blur-[16px]",
+			default: "border border-border bg-card text-card-foreground",
 			flat: "border border-glass-border bg-transparent",
-			active:
-				"border border-primary/30 bg-primary/10 backdrop-blur-[16px] shadow-[0_0_30px_-10px] shadow-primary/30",
+			active: "border border-primary/35 bg-primary-subtle",
 		},
 	},
 	defaultVariants: {
