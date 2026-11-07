@@ -7,7 +7,7 @@ const cardVariants = cva("rounded-xl p-6", {
 	variants: {
 		variant: {
 			default: "border border-border bg-card text-card-foreground",
-			flat: "border border-glass-border bg-transparent",
+			flat: "border border-border bg-transparent",
 			active: "border border-primary/35 bg-primary-subtle",
 		},
 	},
@@ -43,19 +43,21 @@ const CardHeader = forwardRef<
 ));
 CardHeader.displayName = "CardHeader";
 
-const CardTitle = forwardRef<
-	HTMLDivElement,
-	React.HTMLAttributes<HTMLDivElement>
->(({ className, ...props }, ref) => (
-	<div
-		ref={ref}
-		className={cn(
-			"font-semibold text-xl tracking-tight text-foreground",
-			className,
-		)}
-		{...props}
-	/>
-));
+interface CardTitleProps extends React.HTMLAttributes<HTMLHeadingElement> {
+	as?: "h1" | "h2" | "h3";
+}
+const CardTitle = forwardRef<HTMLHeadingElement, CardTitleProps>(
+	({ as: Heading = "h2", className, ...props }, ref) => (
+		<Heading
+			ref={ref}
+			className={cn(
+				"font-semibold text-xl tracking-tight text-foreground",
+				className,
+			)}
+			{...props}
+		/>
+	),
+);
 CardTitle.displayName = "CardTitle";
 
 const CardDescription = forwardRef<

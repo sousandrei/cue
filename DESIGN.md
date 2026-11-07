@@ -44,3 +44,13 @@ Each component folder contains its implementation, public `index.ts`, CSF storie
 and a colocated `.test.ts` entry. Add `testStories(stories)` to that entry to run
 all its examples through the shared harness. Rstest discovers these entries
 automatically. A component-specific test can use the same runner alongside them.
+
+`bun run test` first checks that every rendered component folder has both stories
+and a colocated test. Headless `Updater` is excluded because it renders no UI.
+The same command then runs every story in Chromium, including open overlay states,
+keyboard editing, destructive-action cancellation, and notification lifecycles.
+Rust logic continues to use Cargo's native test runner.
+
+The app, Storybook, and Rstest all use Rsbuild/Rspack. Storybook automatically
+inherits `rsbuild.config.ts`, including React, path aliases, and Tailwind PostCSS;
+do not introduce a parallel Vite configuration.

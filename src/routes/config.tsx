@@ -22,10 +22,12 @@ function ConfigPage() {
 	const tauri = useTauri();
 	const { config } = useConfig();
 	const [saving, setSaving] = useState(false);
+	const [checking, setChecking] = useState(false);
 	const [resetOpen, setResetOpen] = useState(false);
 	const [resetting, setResetting] = useState(false);
 
 	const handleCheckUpdate = async () => {
+		setChecking(true);
 		try {
 			toast.loading("Checking for updates...", { id: "manual-check" });
 			const update = await tauri.checkUpdate();
@@ -49,6 +51,8 @@ function ConfigPage() {
 			toast.error(`Failed to check for updates: ${error}`, {
 				id: "manual-check",
 			});
+		} finally {
+			setChecking(false);
 		}
 	};
 
@@ -122,11 +126,9 @@ function ConfigPage() {
 						onChange={(val) => saveConfig({ ...config, library_path: val })}
 					/>
 
-					<div className="space-y-4 pt-4 border-t border-glass-border">
-						<h3 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
-							Updates
-						</h3>
-						<div className="flex items-center justify-between rounded-lg border border-glass-border bg-glass-bg backdrop-blur-[16px] p-4">
+					<div className="space-y-4 pt-4 border-t border-border">
+						<h3 className="text-sm font-semibold text-foreground">Updates</h3>
+						<div className="flex flex-wrap items-center justify-between gap-4 border-b border-border py-4 last:border-b-0">
 							<div className="space-y-0.5">
 								<label
 									htmlFor="auto-update"
@@ -147,14 +149,18 @@ function ConfigPage() {
 							/>
 						</div>
 
-						<div className="flex items-center justify-between rounded-lg border border-glass-border bg-glass-bg backdrop-blur-[16px] p-4">
+						<div className="flex flex-wrap items-center justify-between gap-4 border-b border-border py-4 last:border-b-0">
 							<div className="space-y-0.5">
 								<div className="text-sm font-medium">Check for Updates</div>
 								<div className="text-sm text-muted-foreground">
 									Manually check for new versions
 								</div>
 							</div>
-							<Button variant="outline" onClick={handleCheckUpdate}>
+							<Button
+								variant="outline"
+								onClick={handleCheckUpdate}
+								loading={checking}
+							>
 								Check Now
 							</Button>
 						</div>
@@ -178,7 +184,7 @@ function ConfigPage() {
 
 					<div className="pt-8 border-t border-destructive/20 mt-4">
 						<div className="flex flex-col gap-2">
-							<h3 className="text-sm font-semibold uppercase tracking-wider text-destructive">
+							<h3 className="text-sm font-semibold text-destructive">
 								Danger Zone
 							</h3>
 							<p className="text-xs text-muted-foreground">

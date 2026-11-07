@@ -11,6 +11,7 @@
 			"src/**/*",
 			".storybook/**/*",
 			"tests/**/*",
+			"scripts/**/*.mjs",
 			"rstest.config.ts",
 			"!src/routeTree.gen.ts"
 		]

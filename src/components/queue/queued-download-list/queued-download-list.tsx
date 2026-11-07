@@ -70,7 +70,7 @@ export function QueuedDownloadList({
 								initial="hidden"
 								animate="visible"
 								custom={index}
-								className="flex items-center gap-3 p-2 rounded-lg bg-glass-bg border border-glass-border"
+								className="flex items-center gap-3 p-2 rounded-lg bg-card border border-border"
 							>
 								<SongMetadata metadata={job.metadata} size="sm" />
 								<Button

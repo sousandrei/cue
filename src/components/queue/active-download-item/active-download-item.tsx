@@ -48,7 +48,7 @@ export function ActiveDownloadItem({
 						<Button
 							variant="outline"
 							size="sm"
-							className="h-8 px-2 gap-1 rounded-md bg-glass-bg backdrop-blur-[16px] border-glass-border hover:border-primary/50 hover:bg-primary/5 transition-all"
+							className="h-8 px-2 gap-1 rounded-md bg-card border-border hover:border-primary/50 hover:bg-primary/5 transition-all"
 							onClick={() => setShowLogs(!showLogs)}
 							aria-expanded={showLogs}
 							aria-controls={showLogs ? logsId : undefined}
@@ -87,14 +87,14 @@ export function ActiveDownloadItem({
 							exit={{ height: 0, opacity: 0 }}
 							className="overflow-hidden"
 						>
-							<div className="bg-card/60 rounded-md p-2 font-mono text-xs leading-relaxed max-h-40 overflow-y-auto border border-glass-border scrollbar-thin scrollbar-thumb-border/30 mt-2">
+							<div className="bg-card/60 rounded-md p-2 font-mono text-xs leading-relaxed max-h-40 overflow-y-auto border border-border scrollbar-thin scrollbar-thumb-border/30 mt-2">
 								{download.logs.map((log, i) => (
 									<div
 										// biome-ignore lint/suspicious/noArrayIndexKey: logs are an append-only stream without stable IDs
 										key={`${download.id}-log-${i}`}
 										className="text-muted-foreground break-all"
 									>
-										<span className="text-primary/50 mr-2">[{i + 1}]</span>
+										<span className="text-primary mr-2">[{i + 1}]</span>
 										{log}
 									</div>
 								))}

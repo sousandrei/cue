@@ -90,7 +90,9 @@ function SetupWizard() {
 							<Rocket className="w-8 h-8 text-primary" />
 						)}
 					</div>
-					<CardTitle>{isUpdate ? "Finish Update" : "Welcome to Cue"}</CardTitle>
+					<CardTitle as="h1">
+						{isUpdate ? "Finish Update" : "Welcome to Cue"}
+					</CardTitle>
 					<CardDescription>
 						{isUpdate
 							? "We need to download the latest components to keep Cue running smoothly. Your library location is preserved."
