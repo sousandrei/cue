@@ -6,7 +6,7 @@ import { ToastProvider, toast } from "./toast";
 function Example({ onAction }: { onAction: () => void }) {
 	return (
 		<ToastProvider>
-			<div className="flex gap-3">
+			<div className="flex flex-wrap gap-3">
 				<Button
 					variant="outline"
 					onClick={() =>
@@ -70,6 +70,75 @@ const meta = {
 } satisfies Meta<typeof Example>;
 export default meta;
 type Story = StoryObj<typeof meta>;
+export const CompactConfirmation: Story = {
+	render: () => (
+		<ToastProvider>
+			<Button
+				onClick={() =>
+					toast.success("Added to queue", {
+						id: "story-compact",
+						duration: Infinity,
+					})
+				}
+			>
+				Show confirmation
+			</Button>
+		</ToastProvider>
+	),
+	play: async ({ canvasElement }) => {
+		await userEvent.click(
+			within(canvasElement).getByRole("button", { name: "Show confirmation" }),
+		);
+		const notification = await within(document.body).findByRole("dialog", {
+			name: "Added to queue",
+		});
+		await expect(notification.getBoundingClientRect().width).toBeLessThan(250);
+		await expect(notification.scrollWidth).toBeLessThanOrEqual(
+			notification.clientWidth,
+		);
+	},
+};
+
+export const LongMessage: Story = {
+	render: () => (
+		<ToastProvider>
+			<Button
+				onClick={() =>
+					toast.info("Some tracks are already in your collection", {
+						id: "story-long",
+						duration: Infinity,
+						description:
+							"Existing tracks were skipped. Your remaining tracks are queued and will appear in the collection when downloading finishes.",
+					})
+				}
+			>
+				Show detailed notification
+			</Button>
+		</ToastProvider>
+	),
+	play: async ({ canvasElement }) => {
+		await userEvent.click(
+			within(canvasElement).getByRole("button", {
+				name: "Show detailed notification",
+			}),
+		);
+		const notification = await within(document.body).findByRole("dialog", {
+			name: "Some tracks are already in your collection",
+		});
+		await expect(
+			notification.getBoundingClientRect().width,
+		).toBeLessThanOrEqual(288);
+		await expect(notification.scrollWidth).toBeLessThanOrEqual(
+			notification.clientWidth,
+		);
+		await waitFor(() =>
+			expect(
+				within(notification).getByText(/Existing tracks were skipped/),
+			).toBeVisible(),
+		);
+	},
+};
+
 export const ActionDismisses: Story = {
 	play: async ({ canvasElement, args }) => {
 		await userEvent.click(

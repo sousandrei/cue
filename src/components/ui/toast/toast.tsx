@@ -67,7 +67,7 @@ function ToastList() {
 			<Toast.Root
 				key={notification.id}
 				toast={notification}
-				className="relative rounded-xl bg-surface-raised p-4 text-foreground shadow-[0_8px_32px_-8px_#0009] outline-none transition-[opacity,transform] duration-250 data-starting-style:translate-x-8 data-starting-style:opacity-0 data-ending-style:translate-x-8 data-ending-style:opacity-0 data-limited:hidden"
+				className="relative w-fit max-w-full self-end rounded-xl bg-surface-raised p-4 text-foreground shadow-[0_8px_32px_-8px_#0009] outline-none transition-[opacity,transform] duration-250 data-starting-style:translate-x-8 data-starting-style:opacity-0 data-ending-style:translate-x-8 data-ending-style:opacity-0 data-limited:hidden"
 			>
 				<Toast.Content className="flex items-start gap-3">
 					<Icon
@@ -111,7 +111,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
 		<Toast.Provider toastManager={toastManager} limit={3}>
 			{children}
 			<Toast.Portal>
-				<Toast.Viewport className="fixed right-5 bottom-5 z-80 flex w-88 max-w-[calc(100vw-2.5rem)] flex-col gap-3 outline-none">
+				<Toast.Viewport className="fixed right-5 bottom-5 z-80 flex w-72 max-w-[calc(100vw-2.5rem)] flex-col gap-3 outline-none">
 					<ToastList />
 				</Toast.Viewport>
 			</Toast.Portal>
