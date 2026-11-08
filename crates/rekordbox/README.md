@@ -24,12 +24,17 @@ contents with exactly the imported tracks carrying that tag. Folders,
 intelligent playlists, and duplicate-name ambiguities are rejected. Playlists
 outside Cue are not adopted or changed. Removing a tag removes its managed playlist.
 
+Cue's own database is the only ownership record. Owned IDs that no longer exist
+in the library are forgotten, so those playlists are adopted by name or
+recreated. If Cue exits after a sync but before saving ownership, the next sync
+adopts the same folder and playlists by name.
+
 Writes require Rekordbox to be closed and its database journal to be settled.
 Sync backs up the database, internal playlist index, and ownership record;
 changes a temporary copy; verifies SQLite integrity; checks that the source has
 not changed; and installs the result. An index-install failure restores the
-original files. Backups and durable ownership records live under
-`rekordbox-backups` in Cue's application data directory.
+original files. Backups live under `rekordbox-backups` in Cue's application data
+directory.
 
 Rekordbox's internal `masterPlaylists6.xml` is part of its native library. Cue
 does not require a user-exported XML file. Any test copy must include that index.
