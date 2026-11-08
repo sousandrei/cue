@@ -12,6 +12,7 @@ const meta = {
 		status: {
 			supported: true,
 			sync_state: "synced",
+			sync_error: null,
 			watching: true,
 			available: true,
 			running: false,

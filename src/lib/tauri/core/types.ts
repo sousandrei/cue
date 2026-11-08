@@ -66,17 +66,20 @@ export interface RekordboxTrack {
 	key: string | null;
 }
 
+/** Mirrors the Rust `SyncState` enum. */
+export type RekordboxSyncState =
+	| "reading"
+	| "pending"
+	| "syncing"
+	| "synced"
+	| "error"
+	| "unsupported";
+
 export interface RekordboxStatus {
 	supported: boolean;
-	sync_state?:
-		| "reading"
-		| "pending"
-		| "syncing"
-		| "synced"
-		| "error"
-		| "unsupported";
-	sync_error?: string | null;
-	watching?: boolean;
+	sync_state: RekordboxSyncState;
+	sync_error: string | null;
+	watching: boolean;
 	available: boolean;
 	running: boolean;
 	database_path: string | null;

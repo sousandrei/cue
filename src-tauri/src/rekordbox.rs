@@ -8,6 +8,17 @@ pub use cue_rekordbox::{
     is_running, read_library, sync_playlists, LibrarySnapshot, LibraryTrack, Ownership, SyncRequest,
 };
 
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(rename_all = "snake_case")]
+pub enum SyncState {
+    Reading,
+    Pending,
+    Syncing,
+    Synced,
+    Error,
+    Unsupported,
+}
+
 fn owner_key(database_path: &str) -> String {
     format!("owner:{database_path}")
 }
@@ -66,7 +77,7 @@ pub struct RekordboxStatus {
     pub checked_at: u64,
     pub error: Option<String>,
     pub tracks: Vec<TrackMatch>,
-    pub sync_state: String,
+    pub sync_state: SyncState,
     pub sync_error: Option<String>,
     pub watching: bool,
 }
@@ -84,7 +95,7 @@ pub fn unsupported_status() -> RekordboxStatus {
         checked_at: 0,
         error: None,
         tracks: Vec::new(),
-        sync_state: "unsupported".into(),
+        sync_state: SyncState::Unsupported,
         sync_error: None,
         watching: false,
     }
@@ -139,7 +150,7 @@ pub fn inspect(songs: &[Song], library_path: &Path) -> RekordboxStatus {
             database_path: Some(snapshot.database_path),
             checked_at,
             error: None,
-            sync_state: "reading".into(),
+            sync_state: SyncState::Reading,
             sync_error: None,
             watching: false,
         },
@@ -151,7 +162,7 @@ pub fn inspect(songs: &[Song], library_path: &Path) -> RekordboxStatus {
             checked_at,
             error: Some(error.to_string()),
             tracks: Vec::new(),
-            sync_state: "error".into(),
+            sync_state: SyncState::Error,
             sync_error: None,
             watching: false,
         },
@@ -239,7 +250,7 @@ mod tests {
         let status = unsupported_status();
         assert!(!status.supported && !status.available && !status.running && !status.watching);
         assert!(status.tracks.is_empty() && status.database_path.is_none());
-        assert_eq!(status.sync_state, "unsupported");
+        assert_eq!(status.sync_state, SyncState::Unsupported);
         assert_eq!(
             supported(),
             cfg!(any(target_os = "windows", target_os = "macos"))

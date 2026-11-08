@@ -1,4 +1,6 @@
-use crate::rekordbox::{self as bridge, LibrarySnapshot, Ownership, RekordboxStatus, SyncRequest};
+use crate::rekordbox::{
+    self as bridge, LibrarySnapshot, Ownership, RekordboxStatus, SyncRequest, SyncState,
+};
 use notify::{RecommendedWatcher, RecursiveMode, Watcher};
 use std::collections::{BTreeMap, BTreeSet};
 use std::path::{Path, PathBuf};
@@ -220,14 +222,18 @@ pub fn start(app: AppHandle) {
                         .as_secs(),
                     error: None,
                     tracks: matches,
-                    sync_state: if pending { "pending" } else { "synced" }.into(),
+                    sync_state: if pending {
+                        SyncState::Pending
+                    } else {
+                        SyncState::Synced
+                    },
                     sync_error: None,
                     watching: watcher.is_some(),
                 };
                 // A quiet period is only a debounce, not a safety guarantee. The
                 // library independently rechecks the process, journals and hashes.
                 if can_write(pending, status.running, running, quiet) {
-                    status.sync_state = "syncing".into();
+                    status.sync_state = SyncState::Syncing;
                     monitor.publish(&app, status.clone());
                     let request = SyncRequest {
                         database_path: snapshot.database_path,
@@ -236,9 +242,9 @@ pub fn start(app: AppHandle) {
                         playlists: desired,
                     };
                     match bridge::sync(&db, request).await {
-                        Ok(()) => status.sync_state = "synced".into(),
+                        Ok(()) => status.sync_state = SyncState::Synced,
                         Err(error) => {
-                            status.sync_state = "error".into();
+                            status.sync_state = SyncState::Error;
                             status.sync_error = Some(format!("{error:#}"));
                             retry_after = Instant::now() + Duration::from_secs(30);
                         }
@@ -268,11 +274,11 @@ pub fn start(app: AppHandle) {
                     checked_at: 0,
                     error: None,
                     tracks: Vec::new(),
-                    sync_state: "error".into(),
+                    sync_state: SyncState::Error,
                     sync_error: None,
                     watching: false,
                 });
-                status.sync_state = "error".into();
+                status.sync_state = SyncState::Error;
                 status.sync_error = Some(format!("{error:#}"));
                 monitor.publish(&app, status);
             }
