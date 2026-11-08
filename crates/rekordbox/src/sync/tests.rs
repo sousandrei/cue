@@ -7,6 +7,7 @@ struct FakeLibrary {
     content: BTreeSet<String>,
     calls: Vec<String>,
     fail_add: bool,
+    fail_playlist: Option<String>,
 }
 
 impl Library for FakeLibrary {
@@ -46,7 +47,10 @@ impl Library for FakeLibrary {
     }
     fn add_member(&mut self, playlist: &str, content: &str) -> Result<()> {
         self.calls.push(format!("add:{playlist}:{content}"));
-        ensure!(!self.fail_add, "rbox write failed");
+        ensure!(
+            !self.fail_add && self.fail_playlist.as_deref() != Some(playlist),
+            "rbox write failed"
+        );
         self.members.entry(playlist.into()).or_default().push(entry(
             &format!("new-{content}"),
             content,
@@ -62,6 +66,8 @@ fn info(id: &str, name: &str, parent: &str, kind: PlaylistKind) -> PlaylistInfo 
             id: id.into(),
             name: name.into(),
             parent_id: parent.into(),
+            is_folder: kind == PlaylistKind::Folder,
+            is_regular: kind == PlaylistKind::List,
         },
         kind,
     }
@@ -147,46 +153,85 @@ fn reconciles_exact_membership_and_removes_disappeared_tags() {
 }
 
 #[test]
-fn resolves_all_conflicts_and_missing_tracks_before_mutating() {
+fn validates_missing_tracks_before_mutating() {
     let mut db = existing();
-    db.playlists
-        .push(info("conflict", "z-tag", "folder", PlaylistKind::Other));
-    let mut targets = desired();
-    targets.insert("z-tag".into(), BTreeSet::new());
-    assert!(reconcile(&mut db, Ownership::default(), &targets).is_err());
-    assert!(db.calls.is_empty());
     db.content.clear();
     assert!(reconcile(&mut db, Ownership::default(), &desired()).is_err());
     assert!(db.calls.is_empty());
 }
 
 #[test]
-fn recreates_missing_owned_ids_but_rejects_renamed_owned_playlists() {
+fn removes_untracked_playlists_even_with_no_remaining_tags() {
     let mut db = existing();
+    db.members
+        .insert("list".into(), vec![entry("old", "track", false)]);
+    let result = reconcile(&mut db, Ownership::default(), &BTreeMap::new()).unwrap();
+    assert!(result.ownership.playlists.is_empty());
+    assert!(!db.playlists.iter().any(|p| p.playlist.id == "list"));
+}
+
+#[test]
+fn partial_failure_then_removed_tag_converges_without_saved_ownership() {
+    let mut db = FakeLibrary {
+        content: BTreeSet::from(["track".into()]),
+        fail_playlist: Some("list-z-tag".into()),
+        ..Default::default()
+    };
+    let mut targets = desired();
+    targets.insert("z-tag".into(), BTreeSet::from(["track".into()]));
+    assert!(reconcile(&mut db, Ownership::default(), &targets).is_err());
+    assert_eq!(db.members["list-house"].len(), 1);
+    targets.remove("house");
+    db.fail_playlist = None;
+    let result = reconcile(&mut db, Ownership::default(), &targets).unwrap();
+    assert!(!db.playlists.iter().any(|p| p.playlist.name == "house"));
+    assert!(!db.members.contains_key("list-house"));
+    assert_eq!(result.ownership.playlists.len(), 1);
+}
+
+#[test]
+fn replaces_wrong_types_and_duplicates_and_ignores_stale_ids_outside_cue() {
+    let mut db = existing();
+    db.playlists[1].kind = PlaylistKind::Other;
+    db.playlists
+        .push(info("outside", "house", "root", PlaylistKind::List));
+    db.playlists.push(info(
+        "folder-extra",
+        "Nested",
+        "folder",
+        PlaylistKind::Folder,
+    ));
     let owner = Ownership {
         folder_id: Some("missing".into()),
         playlists: BTreeMap::from([(
             "house".into(),
             OwnedPlaylist {
-                id: "missing-list".into(),
+                id: "outside".into(),
             },
         )]),
     };
     let result = reconcile(&mut db, owner, &desired()).unwrap();
-    assert_eq!(result.ownership.folder_id.as_deref(), Some("folder"));
-    db.calls.clear();
-    db.playlists[1].playlist.name = "Renamed".into();
-    assert!(reconcile(&mut db, result.ownership, &desired()).is_err());
-    assert!(db.calls.is_empty());
+    assert_eq!(result.ownership.playlists["house"].id, "list-house");
+    assert!(db.playlists.iter().any(|p| p.playlist.id == "outside"));
+    assert!(!db
+        .playlists
+        .iter()
+        .any(|p| p.playlist.id == "list" || p.playlist.id == "folder-extra"));
+    db.playlists
+        .push(info("duplicate", "house", "folder", PlaylistKind::List));
+    let repeated = reconcile(&mut db, result.ownership, &desired()).unwrap();
+    assert_eq!(repeated.ownership.playlists["house"].id, "list-house");
+    assert!(!db.playlists.iter().any(|p| p.playlist.id == "duplicate"));
 }
 
 #[test]
-fn rejects_duplicate_names_without_mutations() {
+fn renamed_children_are_removed_and_tags_are_recreated() {
     let mut db = existing();
-    db.playlists
-        .push(info("duplicate", "house", "folder", PlaylistKind::List));
-    assert!(reconcile(&mut db, Ownership::default(), &desired()).is_err());
-    assert!(db.calls.is_empty());
+    let first = reconcile(&mut db, Ownership::default(), &desired()).unwrap();
+    db.playlists[1].playlist.name = "Renamed".into();
+    let result = reconcile(&mut db, first.ownership, &desired()).unwrap();
+    assert!(!db.playlists.iter().any(|p| p.playlist.name == "Renamed"));
+    assert_eq!(result.ownership.playlists["house"].id, "list-house");
 }
 
 #[test]

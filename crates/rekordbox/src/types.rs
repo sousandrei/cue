@@ -40,6 +40,12 @@ pub struct Playlist {
     pub name: String,
     #[cfg_attr(any(target_os = "windows", target_os = "macos"), diesel(sql_type = diesel::sql_types::Text))]
     pub parent_id: String,
+    #[serde(default)]
+    #[cfg_attr(any(target_os = "windows", target_os = "macos"), diesel(sql_type = diesel::sql_types::Bool))]
+    pub is_folder: bool,
+    #[serde(default)]
+    #[cfg_attr(any(target_os = "windows", target_os = "macos"), diesel(sql_type = diesel::sql_types::Bool))]
+    pub is_regular: bool,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]

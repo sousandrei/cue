@@ -74,63 +74,51 @@ fn needs_sync(
     desired: &BTreeMap<String, BTreeSet<String>>,
     owner: &Ownership,
 ) -> bool {
-    if desired.is_empty() && owner.playlists.is_empty() {
-        return false;
+    let folders: Vec<_> = snapshot
+        .playlists
+        .iter()
+        .filter(|p| p.parent_id == "root" && p.name == "Cue")
+        .collect();
+    let Some(folder) = folders.first() else {
+        return !desired.is_empty() || owner.folder_id.is_some() || !owner.playlists.is_empty();
+    };
+    if folders.len() != 1 || !folder.is_folder {
+        return true;
     }
-    if let Some(id) = owner.folder_id.as_deref() {
-        if !snapshot
-            .playlists
+    let children: Vec<_> = snapshot
+        .playlists
+        .iter()
+        .filter(|p| p.parent_id == folder.id)
+        .collect();
+    // Scope comes from the live folder, even if a previous write never saved IDs.
+    if children.len() != desired.len()
+        || children
             .iter()
-            .any(|folder| folder.id == id && folder.name == "Cue" && folder.parent_id == "root")
-        {
-            return true;
-        }
+            .any(|p| !p.is_regular || !desired.contains_key(&p.name))
+    {
+        return true;
     }
-    let folder = owner.folder_id.as_deref().or_else(|| {
-        snapshot
-            .playlists
-            .iter()
-            .find(|playlist| playlist.parent_id == "root" && playlist.name == "Cue")
-            .map(|playlist| playlist.id.as_str())
-    });
-    // Owned playlists must also be visited when their tag has disappeared.
-    for tag in desired.keys().chain(owner.playlists.keys()) {
-        let Some(target) = desired.get(tag) else {
+    if owner.folder_id.as_deref() != Some(folder.id.as_str())
+        || owner.playlists.len() != desired.len()
+    {
+        return true;
+    }
+    for (tag, target) in desired {
+        let matches: Vec<_> = children.iter().filter(|p| p.name == *tag).collect();
+        let [playlist] = matches.as_slice() else {
             return true;
         };
-        let id = owner
-            .playlists
-            .get(tag)
-            .map(|playlist| playlist.id.as_str())
-            .or_else(|| {
-                snapshot
-                    .playlists
-                    .iter()
-                    .find(|playlist| {
-                        Some(playlist.parent_id.as_str()) == folder && playlist.name == *tag
-                    })
-                    .map(|playlist| playlist.id.as_str())
-            });
-        let Some(id) = id else {
-            return true;
-        };
-        // Let the library reject moved, renamed, or ambiguous playlists.
-        if !snapshot.playlists.iter().any(|playlist| {
-            playlist.id == id
-                && Some(playlist.parent_id.as_str()) == folder
-                && playlist.name == *tag
-        }) {
+        if owner.playlists.get(tag).map(|p| p.id.as_str()) != Some(playlist.id.as_str()) {
             return true;
         }
         let members: Vec<_> = snapshot
             .memberships
             .iter()
-            .filter(|entry| entry.playlist_id == id)
+            .filter(|entry| entry.playlist_id == playlist.id)
             .map(|entry| entry.content_id.clone())
             .collect();
         let unique: BTreeSet<_> = members.iter().cloned().collect();
-        if unique != *target || unique.len() != members.len() || !owner.playlists.contains_key(tag)
-        {
+        if unique != *target || unique.len() != members.len() {
             return true;
         }
     }
@@ -452,7 +440,7 @@ mod tests {
     }
 
     fn snapshot() -> LibrarySnapshot {
-        serde_json::from_value(serde_json::json!({"database_path":"master.db","rekordbox_running":false,"tracks":[],"playlists":[{"id":"folder","name":"Cue","parent_id":"root"},{"id":"list","name":"house","parent_id":"folder"}],"memberships":[{"playlist_id":"list","content_id":"a"}]})).unwrap()
+        serde_json::from_value(serde_json::json!({"database_path":"master.db","rekordbox_running":false,"tracks":[],"playlists":[{"id":"folder","name":"Cue","parent_id":"root","is_folder":true},{"id":"list","name":"house","parent_id":"folder","is_regular":true}],"memberships":[{"playlist_id":"list","content_id":"a"}]})).unwrap()
     }
     fn owner() -> Ownership {
         serde_json::from_value(
@@ -480,8 +468,31 @@ mod tests {
         assert!(needs_sync(&moved, &desired, &owner()));
     }
     #[test]
+    fn detects_untracked_children_wrong_types_and_duplicate_names() {
+        let desired = BTreeMap::from([("house".into(), BTreeSet::from(["a".into()]))]);
+        let mut library = snapshot();
+        library.playlists[1].is_regular = false;
+        assert!(needs_sync(&library, &desired, &owner()));
+        library = snapshot();
+        let mut extra = library.playlists[1].clone();
+        extra.id = "untracked".into();
+        extra.name = "old-tag".into();
+        library.playlists.push(extra);
+        assert!(needs_sync(&library, &desired, &owner()));
+        library.playlists.last_mut().unwrap().name = "house".into();
+        assert!(needs_sync(&library, &desired, &owner()));
+    }
+
+    #[test]
     fn ignores_unrelated_playlists_and_reader_bookkeeping() {
+        let mut unrelated = snapshot();
+        unrelated.playlists[0].name = "Personal".into();
         assert!(!needs_sync(
+            &unrelated,
+            &BTreeMap::new(),
+            &Ownership::default()
+        ));
+        assert!(needs_sync(
             &snapshot(),
             &BTreeMap::new(),
             &Ownership::default()
