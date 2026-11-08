@@ -7,6 +7,7 @@ on:
 
 jobs:
   check-and-build:
+    name: Linux (frontend, Rust, build)
     runs-on: ubuntu-latest
     
     steps:
@@ -56,11 +57,15 @@ jobs:
         run: bun tauri build --no-bundle
 
   native-checks:
-    name: Native checks (${{ matrix.os }})
+    name: ${{ matrix.platform }} (Rust, build)
     strategy:
       fail-fast: false
       matrix:
-        os: [macos-latest, windows-latest]
+        include:
+          - os: macos-latest
+            platform: macOS
+          - os: windows-latest
+            platform: Windows
     runs-on: ${{ matrix.os }}
     steps:
       - name: Checkout repository
