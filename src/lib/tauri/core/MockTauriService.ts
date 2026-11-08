@@ -3,12 +3,47 @@ import type {
 	Config,
 	DownloadJob,
 	MetadataPayload,
+	RekordboxStatus,
 	Song,
 	TauriEventMap,
 	TauriService,
 } from "./types";
 
 export class MockTauriService implements TauriService {
+	async openUrl(url: string): Promise<void> {
+		window.open(url, "_blank", "noopener,noreferrer");
+	}
+
+	async getRekordboxStatus(): Promise<RekordboxStatus> {
+		return {
+			supported: true,
+			sync_state: "synced",
+			sync_error: null,
+			watching: true,
+			available: true,
+			running: false,
+			database_path: "/mock/rekordbox/master.db",
+			checked_at: Math.floor(Date.now() / 1000),
+			error: null,
+			tracks: [
+				{
+					song_id: "s1",
+					status: "imported",
+					rekordbox_id: "rb-1",
+					bpm: 126,
+					key: "Am",
+				},
+				{
+					song_id: "s2",
+					status: "not_imported",
+					rekordbox_id: null,
+					bpm: null,
+					key: null,
+				},
+			],
+		};
+	}
+
 	// biome-ignore lint/suspicious/noExplicitAny: internal handler mapping
 	private handlers: Record<string, ((event: Event<any>) => void)[]> = {};
 
