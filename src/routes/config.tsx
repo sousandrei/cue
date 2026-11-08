@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { Loader2, Save, SlidersHorizontal } from "lucide-react";
 import { useState } from "react";
+import { AboutDialog } from "@/components/about-dialog";
 import { FolderPicker } from "@/components/folder-picker";
 import { Header } from "@/components/header";
 import { Button } from "@/components/ui/button";
@@ -109,6 +110,7 @@ function ConfigPage() {
 			<Header
 				title="Options"
 				subtitle="Make Cue feel at home in your workflow."
+				action={<AboutDialog />}
 			/>
 
 			<Card className="flex min-h-0 flex-1 flex-col overflow-hidden p-0">

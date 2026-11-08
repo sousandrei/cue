@@ -5,6 +5,7 @@ import { useMemo, useState } from "react";
 import { EmptyState } from "@/components/empty-state";
 import { Header } from "@/components/header";
 import { createColumns } from "@/components/library/columns";
+import { RekordboxConnection } from "@/components/library/rekordbox-connection";
 import { Button } from "@/components/ui/button";
 import { DataTable } from "@/components/ui/data-table";
 import { Input } from "@/components/ui/input";
@@ -21,14 +22,24 @@ function Library() {
 		songs,
 		loading,
 		missingIds,
+		rekordbox,
+		refreshingRekordbox,
+		refreshRekordbox,
 		handleDelete,
 		handleUpdateTags,
 		handleSyncAll,
 	} = useLibrarySongs();
 
+	const rekordboxSupported = rekordbox?.supported === true;
 	const columns = useMemo(
-		() => createColumns(handleDelete, handleUpdateTags, missingIds),
-		[handleDelete, handleUpdateTags, missingIds],
+		() =>
+			createColumns(
+				handleDelete,
+				handleUpdateTags,
+				missingIds,
+				rekordboxSupported,
+			),
+		[handleDelete, handleUpdateTags, missingIds, rekordboxSupported],
 	);
 	const normalizedQuery = query.trim().toLocaleLowerCase();
 	const filteredSongs = songs.filter((song) =>
@@ -62,26 +73,33 @@ function Library() {
 							className="pl-9"
 						/>
 					</div>
-					<p
-						className="text-xs tabular-nums text-muted-foreground"
-						role="status"
-					>
-						{filteredSongs.length} of {songs.length} tracks
-					</p>
-					{missingIds.size > 0 && (
-						<Button
-							variant="outline"
-							size="sm"
-							onClick={handleSyncAll}
-							className="flex items-center gap-2"
+					<div className="flex w-full flex-wrap items-center justify-between gap-3 sm:w-auto sm:justify-end">
+						<p
+							className="text-xs tabular-nums text-muted-foreground"
+							role="status"
 						>
-							<RefreshCw className="w-4 h-4" />
-							Sync
-							<span className="ml-1 rounded-full bg-destructive text-destructive-foreground text-xs font-semibold px-1.5 py-0.5">
-								{missingIds.size}
-							</span>
-						</Button>
-					)}
+							{filteredSongs.length} of {songs.length} tracks
+						</p>
+						{missingIds.size > 0 && (
+							<Button
+								variant="outline"
+								size="sm"
+								onClick={handleSyncAll}
+								className="flex items-center gap-2"
+							>
+								<RefreshCw className="w-4 h-4" />
+								Sync
+								<span className="ml-1 rounded-full bg-destructive text-destructive-foreground text-xs font-semibold px-1.5 py-0.5">
+									{missingIds.size}
+								</span>
+							</Button>
+						)}
+						<RekordboxConnection
+							status={rekordbox}
+							refreshing={refreshingRekordbox}
+							onRefresh={refreshRekordbox}
+						/>
+					</div>
 				</div>
 				{!loading && !songs.length ? (
 					<EmptyState
