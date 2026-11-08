@@ -64,4 +64,6 @@ Cue is built with [Tauri](https://tauri.app/) and [Rsbuild](https://rsbuild.dev/
 
 ## License
 
-This project is licensed under the MIT License.
+Cue is free software under the [GNU GPL v3](LICENSE.md) (GPL-3.0-only).
+You can use, share, and modify it under that license. It comes without any warranty.
+Third-party components keep their own licenses and copyright notices.
