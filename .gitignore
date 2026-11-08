@@ -37,3 +37,8 @@ dist-ssr
 /coverage/
 /artifacts/
 /.rstest/
+
+# Rust build output (including the previous local helper cache)
+/target/
+/crates/rekordbox-bridge/target/
+/src-tauri/binaries/

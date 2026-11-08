@@ -1,0 +1,22 @@
+[workspace]
+members = ["src-tauri", "crates/rekordbox"]
+default-members = ["src-tauri"]
+resolver = "3"
+
+[workspace.dependencies.sqlx]
+# SQLx 0.9.0 excludes libsqlite3-sys 0.38, which rbox 0.3 requires.
+# Pin the upstream compatibility fix: https://github.com/transact-rs/sqlx/pull/4402
+# Return to a crates.io release once it includes this fix.
+git = "https://github.com/transact-rs/sqlx"
+rev = "94aafe3a68884d923b0798a767c8d7f6cfda89d2"
+features = ["sqlite", "runtime-tokio", "macros", "migrate"]
+
+# Diesel's generated Rekordbox schema produces very large debug information.
+[profile.dev.package."*"]
+debug = 0
+
+[profile.dev.package.cue-rekordbox]
+debug = 0
+
+[profile.release]
+strip = true
