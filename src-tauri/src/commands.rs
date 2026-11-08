@@ -109,14 +109,14 @@ pub async fn get_rekordbox_status(
     monitor: State<'_, crate::rekordbox_monitor::Monitor>,
     refresh: Option<bool>,
 ) -> Result<crate::rekordbox::RekordboxStatus, String> {
-    use crate::rekordbox;
+    use crate::rekordbox::{self, SyncState};
     if !rekordbox::supported() {
         return Ok(rekordbox::unsupported_status());
     }
     let refresh = refresh.unwrap_or(false);
     if let Some(mut status) = monitor.get(refresh) {
         if refresh {
-            status.sync_state = "reading".into();
+            status.sync_state = SyncState::Reading;
         }
         return Ok(status);
     }
