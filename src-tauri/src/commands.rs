@@ -103,95 +103,19 @@ pub async fn initialize_setup(
 
 // --- DB Commands ---
 
-#[derive(serde::Serialize)]
-pub struct RekordboxSyncReceipt {
-    added: usize,
-    removed: usize,
-    skipped: usize,
-    playlists: usize,
-}
-
-#[command]
-pub async fn sync_rekordbox_playlists(
-    db_state: State<'_, DbState>,
-    app: AppHandle,
-) -> Result<RekordboxSyncReceipt, String> {
-    use crate::rekordbox::{self, ImportStatus, Ownership, SyncRequest};
-    if !rekordbox::supported() {
-        return Err("Rekordbox integration is available only on Windows and macOS".into());
-    }
-    let db = db_state
-        .lock()
-        .map_err(|e| e.to_string())?
-        .clone()
-        .ok_or("Database not initialized")?;
-    let songs = db.get_songs().await.map_err(|e| e.to_string())?;
-    let snapshot = tauri::async_runtime::spawn_blocking(rekordbox::read_library)
-        .await
-        .map_err(|e| e.to_string())?
-        .map_err(|e| e.to_string())?;
-    if snapshot.rekordbox_running {
-        return Err("Close Rekordbox before syncing playlists".into());
-    }
-    let matches = rekordbox::match_tracks(
-        &songs,
-        std::path::Path::new(&db.library_path),
-        &snapshot.tracks,
-    );
-    let skipped = matches
-        .iter()
-        .filter(|track| track.status != ImportStatus::Imported)
-        .count();
-    let playlists = rekordbox::playlist_memberships(&songs, &matches);
-    let playlist_count = playlists.len();
-    let owner_key = format!("owner:{}", snapshot.database_path);
-    let previous: Option<String> =
-        sqlx::query_scalar("SELECT value FROM rekordbox_state WHERE key = ?")
-            .bind(&owner_key)
-            .fetch_optional(&db.pool)
-            .await
-            .map_err(|e| e.to_string())?;
-    let ownership: Ownership = previous
-        .map(|value| serde_json::from_str(&value))
-        .transpose()
-        .map_err(|e| e.to_string())?
-        .unwrap_or_default();
-    let request = SyncRequest {
-        database_path: snapshot.database_path,
-        backup_directory: app
-            .path()
-            .app_data_dir()
-            .map_err(|e| e.to_string())?
-            .join("rekordbox-backups"),
-        ownership,
-        playlists,
-    };
-    let result = tauri::async_runtime::spawn_blocking(move || rekordbox::sync_playlists(&request))
-        .await
-        .map_err(|e| e.to_string())?
-        .map_err(|e| e.to_string())?;
-    let value = serde_json::to_string(&result.ownership).map_err(|e| e.to_string())?;
-    sqlx::query("INSERT INTO rekordbox_state (key, value) VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value")
-        .bind(owner_key).bind(value).execute(&db.pool).await.map_err(|e| e.to_string())?;
-    Ok(RekordboxSyncReceipt {
-        added: result.added,
-        removed: result.removed,
-        skipped,
-        playlists: playlist_count,
-    })
-}
-
 #[command]
 pub async fn get_rekordbox_status(
     db_state: State<'_, DbState>,
     monitor: State<'_, crate::rekordbox_monitor::Monitor>,
     refresh: Option<bool>,
 ) -> Result<crate::rekordbox::RekordboxStatus, String> {
-    if !crate::rekordbox::supported() {
-        return Ok(crate::rekordbox::unsupported_status());
+    use crate::rekordbox;
+    if !rekordbox::supported() {
+        return Ok(rekordbox::unsupported_status());
     }
-    if let Some(mut status) = monitor.get(refresh.unwrap_or(false)) {
-        if refresh.unwrap_or(false) {
+    let refresh = refresh.unwrap_or(false);
+    if let Some(mut status) = monitor.get(refresh) {
+        if refresh {
             status.sync_state = "reading".into();
         }
         return Ok(status);
@@ -203,15 +127,11 @@ pub async fn get_rekordbox_status(
         .ok_or("Database not initialized")?;
     let songs = db.get_songs().await.map_err(|e| e.to_string())?;
     let library_path = db.library_path.clone();
-    let status = tauri::async_runtime::spawn_blocking(move || {
-        crate::rekordbox::inspect(&songs, std::path::Path::new(&library_path))
+    tauri::async_runtime::spawn_blocking(move || {
+        rekordbox::inspect(&songs, std::path::Path::new(&library_path))
     })
     .await
-    .map_err(|e| e.to_string())?;
-    let value = serde_json::to_string(&status).map_err(|e| e.to_string())?;
-    sqlx::query("INSERT INTO rekordbox_state (key, value) VALUES ('snapshot', ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value")
-        .bind(value).execute(&db.pool).await.map_err(|e| e.to_string())?;
-    Ok(status)
+    .map_err(|e| e.to_string())
 }
 
 #[command]

@@ -1,4 +1,4 @@
-use crate::rekordbox::{self as bridge, LibrarySnapshot, Ownership, RekordboxStatus};
+use crate::rekordbox::{self as bridge, LibrarySnapshot, Ownership, RekordboxStatus, SyncRequest};
 use notify::{RecommendedWatcher, RecursiveMode, Watcher};
 use std::collections::{BTreeMap, BTreeSet};
 use std::path::{Path, PathBuf};
@@ -212,21 +212,13 @@ pub fn start(app: AppHandle) {
                 let matches =
                     bridge::match_tracks(&songs, Path::new(&db.library_path), &snapshot.tracks);
                 let desired = bridge::playlist_memberships(&songs, &matches);
-                let previous: Option<String> =
-                    sqlx::query_scalar("SELECT value FROM rekordbox_state WHERE key = ?")
-                        .bind(format!("owner:{}", snapshot.database_path))
-                        .fetch_optional(&db.pool)
-                        .await?;
-                let owner: Ownership = previous
-                    .map(|value| serde_json::from_str(&value))
-                    .transpose()?
-                    .unwrap_or_default();
+                let owner = bridge::load_ownership(&db, &snapshot.database_path).await?;
                 let pending = needs_sync(&snapshot, &desired, &owner);
                 let mut status = RekordboxStatus {
                     supported: true,
                     available: true,
                     running: snapshot.rekordbox_running,
-                    database_path: Some(snapshot.database_path),
+                    database_path: Some(snapshot.database_path.clone()),
                     checked_at: SystemTime::now()
                         .duration_since(UNIX_EPOCH)
                         .unwrap_or_default()
@@ -242,12 +234,17 @@ pub fn start(app: AppHandle) {
                 if can_write(pending, status.running, running, quiet) {
                     status.sync_state = "syncing".into();
                     monitor.publish(&app, status.clone());
-                    match crate::commands::sync_rekordbox_playlists(app.state(), app.clone()).await
-                    {
-                        Ok(_) => status.sync_state = "synced".into(),
+                    let request = SyncRequest {
+                        database_path: snapshot.database_path,
+                        backup_directory: app.path().app_data_dir()?.join("rekordbox-backups"),
+                        ownership: owner,
+                        playlists: desired,
+                    };
+                    match bridge::sync(&db, request).await {
+                        Ok(()) => status.sync_state = "synced".into(),
                         Err(error) => {
                             status.sync_state = "error".into();
-                            status.sync_error = Some(error);
+                            status.sync_error = Some(format!("{error:#}"));
                             retry_after = Instant::now() + Duration::from_secs(30);
                         }
                     }
@@ -268,7 +265,7 @@ pub fn start(app: AppHandle) {
                     .lock()
                     .ok()
                     .and_then(|snapshot| snapshot.clone());
-                let mut status = cached.unwrap_or_else(|| bridge::RekordboxStatus {
+                let mut status = cached.unwrap_or_else(|| RekordboxStatus {
                     supported: true,
                     available: false,
                     running: running.unwrap_or(true),
@@ -281,7 +278,7 @@ pub fn start(app: AppHandle) {
                     watching: false,
                 });
                 status.sync_state = "error".into();
-                status.sync_error = Some(error.to_string());
+                status.sync_error = Some(format!("{error:#}"));
                 monitor.publish(&app, status);
             }
         }
@@ -304,7 +301,10 @@ mod tests {
         serde_json::from_value(serde_json::json!({"database_path":"master.db","rekordbox_running":false,"tracks":[],"playlists":[{"id":"folder","name":"Cue","parent_id":"root"},{"id":"list","name":"house","parent_id":"folder"}],"memberships":[{"playlist_id":"list","content_id":"a"}]})).unwrap()
     }
     fn owner() -> Ownership {
-        serde_json::from_value(serde_json::json!({"folder_id":"folder","playlists":{"house":{"id":"list","members":["a"]}}})).unwrap()
+        serde_json::from_value(
+            serde_json::json!({"folder_id":"folder","playlists":{"house":{"id":"list"}}}),
+        )
+        .unwrap()
     }
     #[test]
     fn detects_adoption_manual_changes_duplicates_and_removed_tags() {
