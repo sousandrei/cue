@@ -15,8 +15,9 @@ close after each snapshot. The application watches the database directory and
 refreshes metadata while Rekordbox is open. Its backend owns watching, retries,
 pending work, and persistence; the frontend displays that state.
 
-Matching uses full filesystem paths. Duplicate Rekordbox records for one file
-are ambiguous. Unknown BPM and key remain absent.
+Matching uses full paths, compared as text. On Windows and macOS the comparison
+ignores case and Unicode normalization form. Duplicate Rekordbox records for one
+file are ambiguous. Unknown BPM and key remain absent.
 
 Each tag maps to a same-named playlist inside the root Cue folder. An existing
 matching playlist in that folder is adopted, retaining its ID and replacing its
