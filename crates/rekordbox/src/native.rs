@@ -1,3 +1,4 @@
+use crate::sync::{self, Entry, Library, PlaylistInfo, PlaylistKind};
 use crate::{
     LibrarySnapshot, LibraryTrack as Track, Membership, Playlist, SyncRequest, SyncResult,
 };
@@ -5,23 +6,13 @@ use anyhow::Result;
 use diesel::prelude::*;
 use rbox_core::locate_library;
 use rbox_db::{ConnectionOptions, OpenMode};
+use rbox_masterdb::{MasterDb, PlaylistType};
 use std::path::Path;
-#[path = "sync.rs"]
-mod sync;
 
 pub fn is_running() -> Result<bool> {
-    let mut system = sysinfo::System::new();
-    system.refresh_processes_specifics(
-        sysinfo::ProcessesToUpdate::All,
-        true,
-        sysinfo::ProcessRefreshKind::nothing().without_tasks(),
-    );
-    Ok(system.processes().values().any(|process| {
-        process.name().to_str().is_some_and(|name| {
-            name.eq_ignore_ascii_case("rekordbox") || name.eq_ignore_ascii_case("rekordbox.exe")
-        })
-    }))
+    Ok(rbox_core::is_rekordbox_running())
 }
+
 pub fn read_library() -> Result<LibrarySnapshot> {
     read_library_at(&locate_library()?.db_path)
 }
@@ -39,9 +30,12 @@ pub fn read_library_at(path: &Path) -> Result<LibrarySnapshot> {
         memberships,
     })
 }
-/// Reconcile playlists only while Rekordbox is closed, using verified copies and backups.
+/// Delegate writes to rbox, keeping its default write safeguards enabled.
 pub fn sync_playlists(request: &SyncRequest) -> Result<SyncResult> {
-    sync::sync(Path::new(&request.database_path), request.clone())
+    let _lock = sync::lock(&request.sync_directory)?;
+    anyhow::ensure!(!is_running()?, "Close Rekordbox before syncing playlists");
+    let mut library = RboxLibrary(MasterDb::new(&request.database_path)?);
+    sync::reconcile(&mut library, request.ownership.clone(), &request.playlists)
 }
 
 fn read_connection(path: &Path) -> Result<diesel::SqliteConnection> {
@@ -63,47 +57,76 @@ fn read_tracks(connection: &mut diesel::SqliteConnection) -> Result<Vec<Track>> 
     Ok(tracks)
 }
 
-#[derive(QueryableByName)]
-struct Integrity {
-    #[diesel(sql_type = diesel::sql_types::Text)]
-    integrity_check: String,
+struct RboxLibrary(MasterDb);
+
+fn playlist_info(playlist: rbox_masterdb::models::DjmdPlaylist) -> PlaylistInfo {
+    let kind = match playlist.attribute {
+        PlaylistType::Folder => PlaylistKind::Folder,
+        PlaylistType::List => PlaylistKind::List,
+        _ => PlaylistKind::Other,
+    };
+    PlaylistInfo {
+        playlist: Playlist {
+            id: playlist.id,
+            name: playlist.name,
+            parent_id: playlist.parent_id,
+        },
+        kind,
+    }
 }
 
-fn validate_database(path: &Path) -> Result<()> {
-    let mut connection = read_connection(path)?;
-    let result: Vec<Integrity> =
-        diesel::sql_query("PRAGMA integrity_check").load(&mut connection)?;
-    anyhow::ensure!(
-        result.len() == 1 && result[0].integrity_check == "ok",
-        "Staged Rekordbox database did not pass integrity validation"
-    );
-    Ok(())
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use diesel::connection::SimpleConnection;
-
-    #[test]
-    fn read_only_connection_rejects_writes() {
-        let folder = tempfile::tempdir().unwrap();
-        let path = folder.path().join("master.db");
-        let options = ConnectionOptions {
-            open_mode: OpenMode::ReadWriteCreate,
-            ..ConnectionOptions::default()
-        };
-        let mut connection = rbox_masterdb::establish_connection(&path, &options).unwrap();
-        connection
-            .batch_execute("CREATE TABLE example (value TEXT)")
-            .unwrap();
-        drop(connection);
-        let before = std::fs::read(&path).unwrap();
-        let mut connection = read_connection(&path).unwrap();
-        assert!(connection
-            .batch_execute("INSERT INTO example VALUES ('unexpected write')")
-            .is_err());
-        drop(connection);
-        assert_eq!(before, std::fs::read(path).unwrap());
+impl Library for RboxLibrary {
+    fn playlists(&mut self) -> Result<Vec<PlaylistInfo>> {
+        Ok(self
+            .0
+            .get_playlists()?
+            .into_iter()
+            .filter(|p| p.rb_local_deleted == 0)
+            .map(playlist_info)
+            .collect())
+    }
+    fn members(&mut self, playlist: &str) -> Result<Vec<Entry>> {
+        Ok(self
+            .0
+            .get_playlist_songs(playlist)?
+            .into_iter()
+            .map(|entry| Entry {
+                id: entry.id,
+                content_id: entry.content_id,
+                deleted: entry.rb_local_deleted != 0,
+            })
+            .collect())
+    }
+    fn content_exists(&mut self, id: &str) -> Result<bool> {
+        Ok(self
+            .0
+            .get_content_by_id(id)?
+            .is_some_and(|track| track.rb_local_deleted == 0))
+    }
+    fn create_folder(&mut self) -> Result<Playlist> {
+        Ok(playlist_info(self.0.create_playlist_folder("Cue".into(), None, None)?).playlist)
+    }
+    fn create_playlist(&mut self, tag: &str, folder: &str) -> Result<Playlist> {
+        Ok(playlist_info(self.0.create_playlist(
+            tag.into(),
+            Some(folder.into()),
+            None,
+            None,
+            None,
+        )?)
+        .playlist)
+    }
+    fn remove_playlist(&mut self, id: &str) -> Result<()> {
+        self.0.delete_playlist(id)?;
+        Ok(())
+    }
+    fn remove_member(&mut self, id: &str) -> Result<()> {
+        self.0.delete_playlist_song(id)?;
+        Ok(())
+    }
+    fn add_member(&mut self, playlist: &str, content: &str) -> Result<()> {
+        self.0
+            .create_playlist_song(&playlist.to_owned(), &content.to_owned(), None)?;
+        Ok(())
     }
 }

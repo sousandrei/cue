@@ -54,3 +54,39 @@ jobs:
 
       - name: Tauri build check
         run: bun tauri build --no-bundle
+
+  native-checks:
+    name: Native checks (${{ matrix.os }})
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [macos-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Check Perl for vendored OpenSSL
+        run: perl -v
+
+      - name: Install frontend dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Clippy
+        run: cargo clippy --locked --workspace --all-targets --all-features -- -D warnings
+
+      - name: Orchestration tests
+        run: cargo test --locked --workspace
+
+      - name: Tauri build check
+        run: bun tauri build --no-bundle

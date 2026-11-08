@@ -1,4 +1,6 @@
 //! Read Rekordbox metadata and reconcile Cue playlists on Windows and macOS.
+#[cfg(any(test, target_os = "windows", target_os = "macos"))]
+mod sync;
 mod types;
 pub use types::*;
 #[cfg(any(target_os = "windows", target_os = "macos"))]

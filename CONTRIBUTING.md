@@ -63,20 +63,14 @@ cargo test --workspace
 bun tauri build --no-bundle
 ```
 
-## Rekordbox tests
+## Rekordbox orchestration tests
 
-Close Rekordbox, then run:
+`cargo test --workspace` uses fake library responses to check Cue's playlist
+policy, scheduling, retries, and ownership persistence. These tests do not require
+Rekordbox or a local library. Windows and macOS CI also compile the native rbox
+adapter. Database and Rekordbox application behavior are tested upstream in rbox.
 
-```sh
-bun run test:rekordbox
-```
-
-This opt-in Rust test copies the local library and checks playlist creation,
-adoption, exact tag membership, removal, and unrelated data. It checks that the
-original database and playlist index stay unchanged. Failed copies remain under
-ignored artifacts/. The test is not included in normal test runs.
-
-See the [Rekordbox crate](crates/rekordbox/README.md) for database safeguards.
+See the [Rekordbox crate](crates/rekordbox/README.md) for the responsibility split.
 
 ## Source code
 

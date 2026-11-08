@@ -38,8 +38,19 @@ pub async fn load_ownership(db: &Database, database_path: &str) -> anyhow::Resul
 
 /// Write playlists into the library, then save the new ownership in Cue's database.
 pub async fn sync(db: &Database, request: SyncRequest) -> anyhow::Result<()> {
+    sync_with(db, request, |request| async move {
+        tauri::async_runtime::spawn_blocking(move || sync_playlists(&request)).await?
+    })
+    .await
+}
+
+async fn sync_with<F, Fut>(db: &Database, request: SyncRequest, write: F) -> anyhow::Result<()>
+where
+    F: FnOnce(SyncRequest) -> Fut,
+    Fut: std::future::Future<Output = anyhow::Result<cue_rekordbox::SyncResult>>,
+{
     let key = owner_key(&request.database_path);
-    let result = tauri::async_runtime::spawn_blocking(move || sync_playlists(&request)).await??;
+    let result = write(request).await?;
     sqlx::query(
         "INSERT INTO rekordbox_state (key, value) VALUES (?, ?) \
          ON CONFLICT(key) DO UPDATE SET value = excluded.value",
@@ -244,6 +255,52 @@ pub fn match_tracks(
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[tokio::test]
+    async fn ownership_is_persisted_only_after_a_successful_write() {
+        let pool = sqlx::SqlitePool::connect("sqlite::memory:").await.unwrap();
+        sqlx::migrate!("./migrations").run(&pool).await.unwrap();
+        let db = Database {
+            pool,
+            library_path: "cue".into(),
+        };
+        let request = SyncRequest {
+            database_path: "master.db".into(),
+            sync_directory: std::path::PathBuf::from("unused"),
+            ownership: Ownership::default(),
+            playlists: BTreeMap::new(),
+        };
+        sync_with(&db, request.clone(), |_| async {
+            Ok(cue_rekordbox::SyncResult {
+                ownership: Ownership {
+                    folder_id: Some("folder".into()),
+                    playlists: BTreeMap::from([(
+                        "house".into(),
+                        cue_rekordbox::OwnedPlaylist { id: "list".into() },
+                    )]),
+                },
+                added: 1,
+                removed: 0,
+            })
+        })
+        .await
+        .unwrap();
+        let saved = load_ownership(&db, "master.db").await.unwrap();
+        assert_eq!(saved.playlists["house"].id, "list");
+        assert!(load_ownership(&db, "other.db")
+            .await
+            .unwrap()
+            .playlists
+            .is_empty());
+        assert!(sync_with(&db, request, |_| async {
+            anyhow::bail!("rbox write failed")
+        })
+        .await
+        .is_err());
+        let unchanged = load_ownership(&db, "master.db").await.unwrap();
+        assert_eq!(unchanged.folder_id, saved.folder_id);
+        assert_eq!(unchanged.playlists["house"].id, "list");
+    }
 
     #[test]
     fn unsupported_platform_has_no_connection_or_pending_work() {

@@ -31,7 +31,7 @@ impl Monitor {
     }
 }
 
-// Watch the directory: SQLite rotates journals and Cue replaces the database.
+// Watch the directory because SQLite rotates its journals.
 // SHM changes alone are ignored so opening a reader cannot trigger a read loop.
 fn relevant(path: &Path, database: &Path) -> bool {
     let Some(name) = database.file_name().and_then(|name| name.to_str()) else {
@@ -146,6 +146,96 @@ fn can_write(
     pending && !snapshot_running && process_running == Some(false) && quiet
 }
 
+struct RefreshSchedule {
+    observed: u64,
+    changed_at: Instant,
+    last_read: Instant,
+    running: Option<bool>,
+    fingerprint: Option<(String, u64)>,
+    retry_after: Option<Instant>,
+    pending_deferred: bool,
+}
+
+impl RefreshSchedule {
+    fn new(now: Instant) -> Self {
+        Self {
+            observed: 0,
+            changed_at: now,
+            last_read: now - Duration::from_secs(30),
+            running: None,
+            fingerprint: None,
+            retry_after: None,
+            pending_deferred: false,
+        }
+    }
+
+    fn observe(&mut self, generation: u64, now: Instant) {
+        if generation != self.observed {
+            self.changed_at = now;
+            self.observed = generation;
+        }
+    }
+
+    fn quiet(&self, now: Instant) -> bool {
+        now.duration_since(self.changed_at) >= Duration::from_secs(2)
+    }
+
+    fn due(
+        &self,
+        now: Instant,
+        requested: bool,
+        fingerprint: &(String, u64),
+        running: Option<bool>,
+    ) -> bool {
+        if requested {
+            return true;
+        }
+        if self.retry_after.is_some_and(|deadline| now < deadline) {
+            return false;
+        }
+        self.fingerprint.as_ref() != Some(fingerprint)
+            || self.running != running
+            || now.duration_since(self.last_read) >= Duration::from_secs(30)
+            || (self.observed != 0 && self.last_read < self.changed_at && self.quiet(now))
+            || (self.pending_deferred && self.quiet(now))
+            || self.retry_after.is_some()
+    }
+
+    fn started(&mut self, now: Instant, fingerprint: (String, u64), running: Option<bool>) {
+        self.last_read = now;
+        self.fingerprint = Some(fingerprint);
+        self.running = running;
+        self.retry_after = None;
+        self.pending_deferred = false;
+    }
+
+    fn failed(&mut self, now: Instant) {
+        self.retry_after = Some(now + Duration::from_secs(30));
+    }
+
+    fn defer_pending(&mut self) {
+        self.pending_deferred = true;
+    }
+}
+
+fn unavailable_status(running: Option<bool>, error: String) -> RekordboxStatus {
+    RekordboxStatus {
+        supported: true,
+        available: false,
+        running: running.unwrap_or(true),
+        database_path: None,
+        checked_at: SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .unwrap_or_default()
+            .as_secs(),
+        error: Some(error.clone()),
+        tracks: Vec::new(),
+        sync_state: SyncState::Error,
+        sync_error: Some(error),
+        watching: false,
+    }
+}
+
 pub fn start(app: AppHandle) {
     if !bridge::supported() {
         return;
@@ -154,12 +244,7 @@ pub fn start(app: AppHandle) {
         let generation = Arc::new(AtomicU64::new(0));
         let mut watcher = None;
         let mut watched_path = PathBuf::new();
-        let mut observed = 0;
-        let mut changed_at = Instant::now();
-        let mut last_read = Instant::now() - Duration::from_secs(30);
-        let mut last_running = None;
-        let mut cue_fingerprint = None;
-        let mut retry_after = Instant::now();
+        let mut schedule = RefreshSchedule::new(Instant::now());
         loop {
             tokio::time::sleep(Duration::from_secs(2)).await;
             let monitor = app.state::<Monitor>();
@@ -173,32 +258,19 @@ pub fn start(app: AppHandle) {
             };
             // Cheap change check; songs are loaded only when a read is due.
             let fingerprint = (db.library_path.clone(), crate::db::revision());
-            let current = generation.load(Ordering::Acquire);
-            if current != observed {
-                changed_at = Instant::now();
-                observed = current;
-            }
-            let quiet = changed_at.elapsed() >= Duration::from_secs(2);
+            let now = Instant::now();
+            schedule.observe(generation.load(Ordering::Acquire), now);
+            let quiet = schedule.quiet(now);
             let running = tauri::async_runtime::spawn_blocking(bridge::is_running)
                 .await
                 .ok()
                 .and_then(Result::ok);
             let requested = monitor.refresh.swap(false, Ordering::AcqRel);
-            let cue_changed = cue_fingerprint.as_ref() != Some(&fingerprint);
-            let process_changed = running != last_running;
-            // Reconcile periodically as well: OS notifications can be lost, and
-            // unsupported/network volumes may need the polling fallback.
-            let stale = last_read.elapsed() >= Duration::from_secs(30);
-            let file_changed = current != 0 && last_read < changed_at;
-            if !(requested || cue_changed || process_changed || stale || (file_changed && quiet)) {
+            // Poll periodically even if native notifications are lost.
+            if !schedule.due(now, requested, &fingerprint, running) {
                 continue;
             }
-            if !requested && Instant::now() < retry_after {
-                continue;
-            }
-            last_running = running;
-            cue_fingerprint = Some(fingerprint);
-            last_read = Instant::now();
+            schedule.started(now, fingerprint, running);
             let result = async {
                 let songs = db.get_songs().await?;
                 let snapshot = tauri::async_runtime::spawn_blocking(bridge::read_library).await??;
@@ -230,14 +302,14 @@ pub fn start(app: AppHandle) {
                     sync_error: None,
                     watching: watcher.is_some(),
                 };
-                // A quiet period is only a debounce, not a safety guarantee. The
-                // library independently rechecks the process, journals and hashes.
+                // A quiet period is only a debounce, not a safety guarantee.
+                // rbox retains responsibility for database writes and their safeguards.
                 if can_write(pending, status.running, running, quiet) {
                     status.sync_state = SyncState::Syncing;
                     monitor.publish(&app, status.clone());
                     let request = SyncRequest {
                         database_path: snapshot.database_path,
-                        backup_directory: app.path().app_data_dir()?.join("rekordbox-backups"),
+                        sync_directory: app.path().app_data_dir()?.join("rekordbox"),
                         ownership: owner,
                         playlists: desired,
                     };
@@ -246,40 +318,24 @@ pub fn start(app: AppHandle) {
                         Err(error) => {
                             status.sync_state = SyncState::Error;
                             status.sync_error = Some(format!("{error:#}"));
-                            retry_after = Instant::now() + Duration::from_secs(30);
+                            schedule.failed(Instant::now());
                         }
                     }
                 }
                 // Keep pending work eligible after the debounce, even without
                 // another event or a process-state transition.
                 if pending && !status.running && !quiet {
-                    last_read = changed_at - Duration::from_millis(1);
+                    schedule.defer_pending();
                 }
                 monitor.publish(&app, status);
                 Ok::<(), anyhow::Error>(())
             }
             .await;
             if let Err(error) = result {
-                retry_after = Instant::now() + Duration::from_secs(30);
-                let cached = monitor
-                    .snapshot
-                    .lock()
-                    .ok()
-                    .and_then(|snapshot| snapshot.clone());
-                let mut status = cached.unwrap_or_else(|| RekordboxStatus {
-                    supported: true,
-                    available: false,
-                    running: running.unwrap_or(true),
-                    database_path: None,
-                    checked_at: 0,
-                    error: None,
-                    tracks: Vec::new(),
-                    sync_state: SyncState::Error,
-                    sync_error: None,
-                    watching: false,
-                });
-                status.sync_state = SyncState::Error;
-                status.sync_error = Some(format!("{error:#}"));
+                schedule.failed(Instant::now());
+                watcher = None;
+                watched_path.clear();
+                let status = unavailable_status(running, format!("{error:#}"));
                 monitor.publish(&app, status);
             }
         }
@@ -298,6 +354,103 @@ mod tests {
         assert!(!can_write(true, false, None, true));
         assert!(!can_write(true, false, Some(false), false));
     }
+    #[test]
+    fn schedule_debounces_changes_retries_failures_and_allows_manual_recovery() {
+        let now = Instant::now();
+        let fingerprint = ("library".into(), 0);
+        let mut schedule = RefreshSchedule::new(now);
+        assert!(schedule.due(now, false, &fingerprint, Some(false)));
+        schedule.started(now, fingerprint.clone(), Some(false));
+        assert!(!schedule.due(now, false, &fingerprint, Some(false)));
+        schedule.observe(1, now + Duration::from_secs(1));
+        assert!(!schedule.due(
+            now + Duration::from_secs(2),
+            false,
+            &fingerprint,
+            Some(false)
+        ));
+        assert!(schedule.due(
+            now + Duration::from_secs(3),
+            false,
+            &fingerprint,
+            Some(false)
+        ));
+        schedule.started(
+            now + Duration::from_secs(3),
+            fingerprint.clone(),
+            Some(false),
+        );
+        schedule.failed(now + Duration::from_secs(3));
+        assert!(!schedule.due(
+            now + Duration::from_secs(4),
+            false,
+            &fingerprint,
+            Some(true)
+        ));
+        assert!(schedule.due(
+            now + Duration::from_secs(4),
+            true,
+            &fingerprint,
+            Some(false)
+        ));
+        assert!(schedule.due(
+            now + Duration::from_secs(33),
+            false,
+            &fingerprint,
+            Some(false)
+        ));
+        // A successful manual retry clears the prior backoff.
+        schedule.started(
+            now + Duration::from_secs(4),
+            fingerprint.clone(),
+            Some(false),
+        );
+        let changed = ("library".into(), 1);
+        assert!(schedule.due(now + Duration::from_secs(5), false, &changed, Some(false)));
+    }
+
+    #[test]
+    fn pending_work_survives_debounce_and_polling_recovers_lost_events() {
+        let now = Instant::now();
+        let fingerprint = ("library".into(), 0);
+        let mut schedule = RefreshSchedule::new(now);
+        schedule.started(now, fingerprint.clone(), Some(false));
+        schedule.defer_pending();
+        // Startup may have no file event at all; pending work must still resume.
+        assert!(!schedule.due(
+            now + Duration::from_secs(1),
+            false,
+            &fingerprint,
+            Some(false)
+        ));
+        assert!(schedule.due(
+            now + Duration::from_secs(2),
+            false,
+            &fingerprint,
+            Some(false)
+        ));
+        schedule.started(
+            now + Duration::from_secs(2),
+            fingerprint.clone(),
+            Some(false),
+        );
+        assert!(schedule.due(
+            now + Duration::from_secs(32),
+            false,
+            &fingerprint,
+            Some(false)
+        ));
+    }
+
+    #[test]
+    fn failed_reads_invalidate_connection_metadata() {
+        let status = unavailable_status(Some(false), "Drive disconnected".into());
+        assert!(!status.available && !status.watching);
+        assert!(status.tracks.is_empty() && status.database_path.is_none());
+        assert_eq!(status.error.as_deref(), Some("Drive disconnected"));
+        assert_eq!(status.sync_state, SyncState::Error);
+    }
+
     fn snapshot() -> LibrarySnapshot {
         serde_json::from_value(serde_json::json!({"database_path":"master.db","rekordbox_running":false,"tracks":[],"playlists":[{"id":"folder","name":"Cue","parent_id":"root"},{"id":"list","name":"house","parent_id":"folder"}],"memberships":[{"playlist_id":"list","content_id":"a"}]})).unwrap()
     }

@@ -4,7 +4,6 @@
 	"version": "1.6.0",
 	"type": "module",
 	"scripts": {
-		"test:rekordbox": "cargo test -p cue-rekordbox --test library_round_trip -- --ignored --nocapture",
 		"dev": "rsbuild dev",
 		"build": "tsc && rsbuild build",
 		"preview": "rsbuild preview",
