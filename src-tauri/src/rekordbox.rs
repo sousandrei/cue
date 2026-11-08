@@ -1,4 +1,4 @@
-use crate::db::entities::Song;
+use crate::db::{entities::Song, Database};
 use serde::{Deserialize, Serialize};
 use std::collections::{BTreeMap, BTreeSet, HashMap};
 use std::path::Path;
@@ -6,6 +6,38 @@ use std::path::Path;
 pub use cue_rekordbox::{
     is_running, read_library, sync_playlists, LibrarySnapshot, LibraryTrack, Ownership, SyncRequest,
 };
+
+fn owner_key(database_path: &str) -> String {
+    format!("owner:{database_path}")
+}
+
+/// Load the playlists Cue owns in this Rekordbox library from Cue's database.
+pub async fn load_ownership(db: &Database, database_path: &str) -> anyhow::Result<Ownership> {
+    let value: Option<String> =
+        sqlx::query_scalar("SELECT value FROM rekordbox_state WHERE key = ?")
+            .bind(owner_key(database_path))
+            .fetch_optional(&db.pool)
+            .await?;
+    Ok(value
+        .map(|value| serde_json::from_str(&value))
+        .transpose()?
+        .unwrap_or_default())
+}
+
+/// Write playlists into the library, then save the new ownership in Cue's database.
+pub async fn sync(db: &Database, request: SyncRequest) -> anyhow::Result<()> {
+    let key = owner_key(&request.database_path);
+    let result = tauri::async_runtime::spawn_blocking(move || sync_playlists(&request)).await??;
+    sqlx::query(
+        "INSERT INTO rekordbox_state (key, value) VALUES (?, ?) \
+         ON CONFLICT(key) DO UPDATE SET value = excluded.value",
+    )
+    .bind(key)
+    .bind(serde_json::to_string(&result.ownership)?)
+    .execute(&db.pool)
+    .await?;
+    Ok(())
+}
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 #[serde(rename_all = "snake_case")]

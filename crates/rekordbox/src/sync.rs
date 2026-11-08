@@ -226,13 +226,9 @@ pub fn apply_to_copy(
             db.delete_playlist(&playlist.id)?;
             owner.playlists.remove(&tag);
         } else {
-            owner.playlists.insert(
-                tag,
-                OwnedPlaylist {
-                    id: playlist.id,
-                    members: target,
-                },
-            );
+            owner
+                .playlists
+                .insert(tag, OwnedPlaylist { id: playlist.id });
         }
     }
     // rbox also maintains Rekordbox's internal masterPlaylists6.xml. Verify it can

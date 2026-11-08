@@ -47,7 +47,6 @@ pub fn run() {
             commands::sync_song,
             commands::update_song_tags,
             commands::get_rekordbox_status,
-            commands::sync_rekordbox_playlists,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

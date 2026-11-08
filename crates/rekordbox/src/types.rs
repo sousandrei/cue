@@ -63,10 +63,11 @@ pub struct Ownership {
     pub playlists: BTreeMap<String, OwnedPlaylist>,
 }
 
+/// A playlist Cue created or adopted. Older records may carry extra fields,
+/// which serde ignores.
 #[derive(Clone, Serialize, Deserialize)]
 pub struct OwnedPlaylist {
     pub id: String,
-    pub members: BTreeSet<String>,
 }
 
 #[derive(Clone, Serialize, Deserialize)]
