@@ -34,7 +34,7 @@ Sync backs up the database, internal playlist index, and ownership record;
 changes a temporary copy; verifies SQLite integrity; checks that the source has
 not changed; and installs the result. An index-install failure restores the
 original files. Backups live under `rekordbox-backups` in Cue's application data
-directory.
+directory; only the newest three are kept.
 
 Rekordbox's internal `masterPlaylists6.xml` is part of its native library. Cue
 does not require a user-exported XML file. Any test copy must include that index.
