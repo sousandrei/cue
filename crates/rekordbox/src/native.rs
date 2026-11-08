@@ -27,8 +27,8 @@ pub fn read_library() -> Result<LibrarySnapshot> {
 }
 /// Read a selected library without changing its database or playlist index.
 pub fn read_library_at(path: &Path) -> Result<LibrarySnapshot> {
-    let tracks = read_tracks(path)?;
     let mut connection = read_connection(path)?;
+    let tracks = read_tracks(&mut connection)?;
     let playlists = diesel::sql_query("SELECT ID AS id, Name AS name, ParentID AS parent_id FROM djmdPlaylist WHERE rb_local_deleted = 0 ORDER BY ID").load::<Playlist>(&mut connection)?;
     let memberships = diesel::sql_query("SELECT ID AS id, PlaylistID AS playlist_id, ContentID AS content_id FROM djmdSongPlaylist WHERE rb_local_deleted = 0 ORDER BY ID").load::<Membership>(&mut connection)?;
     Ok(LibrarySnapshot {
@@ -53,14 +53,13 @@ fn read_connection(path: &Path) -> Result<diesel::SqliteConnection> {
     Ok(rbox_masterdb::establish_connection(path, &options)?)
 }
 
-fn read_tracks(path: &Path) -> Result<Vec<Track>> {
-    let mut connection = read_connection(path)?;
+fn read_tracks(connection: &mut diesel::SqliteConnection) -> Result<Vec<Track>> {
     let tracks: Vec<Track> = diesel::sql_query(
         "SELECT c.ID AS id, c.FolderPath AS path, c.BPM AS bpm_hundredths, k.ScaleName AS key \
          FROM djmdContent c LEFT JOIN djmdKey k ON c.KeyID = k.ID \
          WHERE c.rb_local_deleted = 0",
     )
-    .load(&mut connection)?;
+    .load(connection)?;
     Ok(tracks)
 }
 
