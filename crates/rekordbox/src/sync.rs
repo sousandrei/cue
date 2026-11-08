@@ -6,8 +6,13 @@ use std::collections::{BTreeMap, BTreeSet};
 use std::fs::{self, File};
 use std::io::{Read, Write};
 use std::path::{Path, PathBuf};
+use std::time::{SystemTime, UNIX_EPOCH};
 
 use crate::{OwnedPlaylist, Ownership, SyncRequest as Request, SyncResult as Response};
+
+/// Number of pre-sync library backups kept in the backup directory.
+const BACKUPS_KEPT: usize = 3;
+const BACKUP_PREFIX: &str = "cue-rekordbox-";
 
 fn checksum(path: &Path) -> Result<Vec<u8>> {
     let mut file = File::open(path)?;
@@ -70,6 +75,26 @@ fn forget_missing(db: &mut MasterDb, owner: &mut Ownership) -> Result<()> {
     }
     for tag in missing {
         owner.playlists.remove(&tag);
+    }
+    Ok(())
+}
+
+/// Remove all but the newest backups. Names start with a zero-padded timestamp.
+fn prune_backups(directory: &Path) -> Result<()> {
+    let mut backups: Vec<PathBuf> = fs::read_dir(directory)?
+        .filter_map(|entry| entry.ok().map(|entry| entry.path()))
+        .filter(|path| {
+            path.is_dir()
+                && path
+                    .file_name()
+                    .and_then(|name| name.to_str())
+                    .is_some_and(|name| name.starts_with(BACKUP_PREFIX))
+        })
+        .collect();
+    backups.sort();
+    let excess = backups.len().saturating_sub(BACKUPS_KEPT);
+    for old in &backups[..excess] {
+        fs::remove_dir_all(old)?;
     }
     Ok(())
 }
@@ -258,8 +283,12 @@ pub fn sync(source: &Path, request: Request) -> Result<Response> {
     );
     let original_hash = checksum(source)?;
     let index_hash = checksum(&index)?;
+    let millis = SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .unwrap_or_default()
+        .as_millis();
     let backup = tempfile::Builder::new()
-        .prefix("cue-rekordbox-")
+        .prefix(&format!("{BACKUP_PREFIX}{millis:020}-"))
         .tempdir_in(&request.backup_directory)?
         .keep();
     fs::copy(source, backup.join("master.db"))?;
@@ -268,6 +297,7 @@ pub fn sync(source: &Path, request: Request) -> Result<Response> {
         backup.join("ownership.json"),
         serde_json::to_vec_pretty(&request.ownership)?,
     )?;
+    prune_backups(&request.backup_directory)?;
     let stage = tempfile::Builder::new()
         .prefix(".cue-stage-")
         .tempdir_in(parent)?;
@@ -306,6 +336,35 @@ pub fn sync(source: &Path, request: Request) -> Result<Response> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn keeps_only_the_newest_backups() {
+        let directory = tempfile::tempdir().unwrap();
+        for millis in [5_u128, 1, 4, 2, 3] {
+            fs::create_dir(
+                directory
+                    .path()
+                    .join(format!("{BACKUP_PREFIX}{millis:020}-x")),
+            )
+            .unwrap();
+        }
+        fs::create_dir(directory.path().join("unrelated")).unwrap();
+        prune_backups(directory.path()).unwrap();
+        let mut left: Vec<String> = fs::read_dir(directory.path())
+            .unwrap()
+            .map(|entry| entry.unwrap().file_name().to_string_lossy().into_owned())
+            .collect();
+        left.sort();
+        assert_eq!(
+            left,
+            [
+                format!("{BACKUP_PREFIX}{:020}-x", 3),
+                format!("{BACKUP_PREFIX}{:020}-x", 4),
+                format!("{BACKUP_PREFIX}{:020}-x", 5),
+                "unrelated".to_string(),
+            ]
+        );
+    }
 
     #[test]
     fn second_lock_fails_until_the_first_is_released() {
