@@ -1,66 +1,47 @@
 # <img src="app-icon.svg" width="32" height="32" valign="middle" /> Cue
 
-**Cue** is a premium, opinionated media management utility for DJs. It removes technical friction from media acquisition and library organization, providing a native modern experience.
+Download music and organize your tracks with tags. On Windows and macOS, turn those tags into Rekordbox playlists.
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Latest Release](https://img.shields.io/github/v/release/sousandrei/cue?label=latest)](https://github.com/sousandrei/cue/releases)
-
----
+**[Download Cue](https://github.com/sousandrei/cue/releases)** for Windows, macOS, or Linux.
 
 <p align="center">
-  <img alt="Cue walkthrough: add a track, browse and search the collection, and scroll through preferences" src="assets/demo.gif" width="960">
+  <img alt="Add music, browse the collection, and change preferences in Cue" src="assets/demo.gif" width="960">
 </p>
 
-<p align="center"><em>A quick tour of Cue with sample library data and simulated download progress.</em></p>
+*Demo with sample tracks.*
 
-## How to use Cue
+## What you can do
 
-Cue is designed to be invisible. Just focus on your music.
+- Download tracks and playlists from YouTube and SoundCloud.
+- Save your music as MP3 files.
+- Follow download progress and see recent activity.
+- Search your collection by track, artist, album, or tag.
+- Add tags to organize your music.
+- Use your tags to manage Rekordbox playlists on Windows and macOS.
 
-1.  **Add Music:** Paste a link (YouTube, SoundCloud, etc.) into the main intake field and click **Add**.
-2.  **Monitor:** Watch the progress in your **Collection**. Cue automatically handles the high-quality download and metadata tagging.
-3.  **Organize:** View and manage your tracks in the Collection tab.
-4.  **Sync:** When ready, use **Push to Rekordbox** to sync your library with your DJ software.
+## Get started
 
-## Features
+1. Open Cue and choose a folder for your music. Cue completes the first-time setup for you.
+2. Paste a track or playlist link into Intake. Select **Add to queue**.
+3. Open Collection to find your tracks and add tags.
 
-*   **Zero-Config:** No bitrate sliders or technical jargon. Cue defaults to 320kbps MP3.
-*   **Automatic Setup:** On first launch, Cue automatically downloads its required dependencies (`yt-dlp`, `ffmpeg`, `bun`, and `yt-dlp-ejs`) to ensure everything works out of the box.
-*   **Focused Design:** Charcoal surfaces, violet accents, and expressive motion, with dedicated scrolling for your collection, recent activity, and preferences.
+## Use Cue with Rekordbox
 
-## Downloads & Releases
+Available on Windows and macOS.
 
-Stable versions of Cue are available for macOS, Windows, and Linux.
+- Import your tracks into Rekordbox. Cue shows their BPM, key, and import status.
+- Add tags in Cue. Each tag becomes a playlist in Rekordbox's **Cue** folder.
+- Close Rekordbox to apply playlist changes. Reopen it to see the updated playlists.
 
-👉 **[Download the latest release on GitHub](https://github.com/sousandrei/cue/releases)**
+Cue checks for library changes automatically. Playlists inside the **Cue** folder contain only imported tracks with the matching tag. Other playlists are left alone.
 
-*Choose the installer for your platform (e.g., `.dmg` for Mac, `.exe` for Windows, `.deb` or `AppImage` for Linux).*
+On Linux, you can use Collection and tags without Rekordbox support.
 
-## Development
+## Help and contributions
 
-Cue is built with [Tauri](https://tauri.app/) and [Rsbuild](https://rsbuild.dev/) using React and Tailwind CSS.
+[Report a problem or request a feature](https://github.com/sousandrei/cue/issues).
 
-### Prerequisites
-
-- [Bun](https://bun.sh/)
-- [Rust](https://www.rust-lang.org/)
-
-### Setup
-
-1.  **Install dependencies:**
-    ```bash
-    bun install
-    ```
-
-2.  **Run in development mode:**
-    ```bash
-    bun tauri dev
-    ```
-
-3.  **Build the application:**
-    ```bash
-    bun tauri build
-    ```
+To work on Cue's code or review its components in Storybook, see the [development guide](CONTRIBUTING.md).
 
 ## License
 
