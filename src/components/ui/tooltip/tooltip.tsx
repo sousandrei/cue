@@ -18,7 +18,7 @@ export function Tooltip({
 					<Primitive.Popup
 						id={descriptionId}
 						role="tooltip"
-						className="rounded-md bg-foreground px-2.5 py-1.5 text-xs font-medium text-background transition-[opacity,transform] duration-150 data-starting-style:translate-y-1 data-starting-style:opacity-0 data-ending-style:opacity-0"
+						className="max-w-[min(20rem,calc(100vw-2rem))] rounded-md bg-foreground px-2.5 py-1.5 text-xs font-medium leading-relaxed text-background transition-[opacity,transform] duration-150 data-starting-style:translate-y-1 data-starting-style:opacity-0 data-ending-style:opacity-0"
 					>
 						{content}
 					</Primitive.Popup>

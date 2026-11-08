@@ -1,5 +1,8 @@
 import type { Meta, StoryObj } from "@storybook/react";
 import type { ColumnDef } from "@tanstack/react-table";
+import { createColumns } from "@/components/library/columns";
+import { TooltipProvider } from "@/components/ui/tooltip";
+import type { Song } from "@/lib/tauri/core/types";
 import { expect, userEvent, within } from "@/test/story";
 import { DataTable, type dataTableFeatures } from "./data-table";
 
@@ -42,6 +45,13 @@ function Example({
 const meta = {
 	title: "Patterns/Data table",
 	component: Example,
+	decorators: [
+		(Story) => (
+			<TooltipProvider>
+				<Story />
+			</TooltipProvider>
+		),
+	],
 	parameters: { layout: "fullscreen" },
 } satisfies Meta<typeof Example>;
 export default meta;
@@ -71,6 +81,59 @@ export const Empty: Story = {
 	},
 };
 export const Loading: Story = { args: { loading: true } };
+export const RekordboxMetadata: Story = {
+	render: () => {
+		const songs: Song[] = [126.5, 90, 128.05, null].map((bpm, index) => ({
+			id: String(index),
+			title: `Example track ${index + 1}`,
+			artist: "Studio fixture",
+			filename: `${index}.mp3`,
+			rekordbox: {
+				song_id: String(index),
+				status: bpm ? "imported" : "not_imported",
+				rekordbox_id: bpm ? `rb-${index}` : null,
+				bpm,
+				key: bpm ? "Am" : null,
+			},
+		}));
+		return (
+			<div className="w-full p-6">
+				<DataTable
+					caption="Rekordbox metadata"
+					columns={createColumns(
+						() => {},
+						() => {},
+						new Set(),
+					)}
+					data={songs}
+				/>
+			</div>
+		);
+	},
+	play: async ({ canvasElement }) => {
+		const canvas = within(canvasElement);
+		await expect(
+			canvas.getByRole("button", {
+				name: "Not imported into Rekordbox: Example track 4",
+			}),
+		).toBeVisible();
+		await expect(
+			canvas.queryByRole("columnheader", { name: "Rekordbox" }),
+		).not.toBeInTheDocument();
+		await userEvent.click(canvas.getByRole("button", { name: "BPM" }));
+		await expect(canvas.getAllByRole("row")[1]).toHaveTextContent(
+			"Example track 2",
+		);
+		await expect(canvas.getAllByRole("row")[2]).toHaveTextContent(
+			"Example track 1",
+		);
+		await expect(
+			within(canvas.getAllByRole("row")[4]).getByRole("button", {
+				name: "Not imported into Rekordbox: Example track 4",
+			}),
+		).toBeVisible();
+	},
+};
 export const Scrollable: Story = {
 	args: {
 		fill: true,
@@ -91,6 +154,46 @@ export const Scrollable: Story = {
 		await expect(
 			Math.abs(header.getBoundingClientRect().top - headerTop),
 		).toBeLessThan(2);
+	},
+};
+
+export const WithoutRekordbox: Story = {
+	render: () => (
+		<div className="w-full p-6">
+			<DataTable
+				caption="Collection without Rekordbox"
+				columns={createColumns(
+					() => {},
+					() => {},
+					new Set(),
+					false,
+				)}
+				data={[
+					{
+						id: "linux",
+						title: "Sample track",
+						artist: "Sample artist",
+						filename: "sample.mp3",
+						tags: "house",
+					},
+				]}
+			/>
+		</div>
+	),
+	play: async ({ canvasElement }) => {
+		const canvas = within(canvasElement);
+		await expect(
+			canvas.queryByRole("columnheader", { name: /BPM/ }),
+		).not.toBeInTheDocument();
+		await expect(
+			canvas.queryByRole("columnheader", { name: /Key/ }),
+		).not.toBeInTheDocument();
+		await expect(
+			canvas.queryByRole("button", { name: /Rekordbox/ }),
+		).not.toBeInTheDocument();
+		await expect(
+			canvas.getByRole("button", { name: "Edit tags for Sample track" }),
+		).toBeVisible();
 	},
 };
 export const LongNames: Story = {

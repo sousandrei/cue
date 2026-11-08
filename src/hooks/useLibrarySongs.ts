@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "@/components/ui/toast";
-import type { Song } from "@/lib/tauri/core/types";
+import type { RekordboxStatus, Song } from "@/lib/tauri/core/types";
 import { useTauri } from "@/lib/tauri/TauriProvider";
 
 const ACTIVE_STATUSES = new Set(["queued", "pending", "downloading"]);
@@ -9,17 +9,26 @@ export function useLibrarySongs() {
 	const tauri = useTauri();
 	const [songs, setSongs] = useState<Song[]>([]);
 	const [loading, setLoading] = useState(true);
+	const [rekordbox, setRekordbox] = useState<RekordboxStatus | null>(null);
+	const [refreshingRekordbox, setRefreshingRekordbox] = useState(false);
 	const [missingIds, setMissingIds] = useState<Set<string>>(new Set());
 
 	const fetchSongs = useCallback(async () => {
 		try {
-			const [data, missing, downloads] = await Promise.all([
+			const [data, missing, downloads, snapshot] = await Promise.all([
 				tauri.getSongs(),
 				tauri.checkMissingSongs(),
 				tauri.getDownloads(),
+				tauri.getRekordboxStatus().catch(() => null),
 			]);
 
-			setSongs(data);
+			const matches = new Map(
+				snapshot?.tracks.map((track) => [track.song_id, track]),
+			);
+			setSongs(
+				data.map((song) => ({ ...song, rekordbox: matches.get(song.id) })),
+			);
+			setRekordbox(snapshot);
 
 			const activeIds = new Set(
 				downloads.filter((d) => ACTIVE_STATUSES.has(d.status)).map((d) => d.id),
@@ -33,6 +42,28 @@ export function useLibrarySongs() {
 		}
 	}, [tauri]);
 
+	const refreshRekordbox = useCallback(async () => {
+		setRefreshingRekordbox(true);
+		try {
+			const snapshot = await tauri.getRekordboxStatus(true);
+			const matches = new Map(
+				snapshot.tracks.map((track) => [track.song_id, track]),
+			);
+			setRekordbox(snapshot);
+			setSongs((previous) =>
+				previous.map((song) => ({ ...song, rekordbox: matches.get(song.id) })),
+			);
+		} catch {
+			setRekordbox(null);
+			setSongs((previous) =>
+				previous.map((song) => ({ ...song, rekordbox: undefined })),
+			);
+			toast.error("Could not read the Rekordbox library");
+		} finally {
+			setRefreshingRekordbox(false);
+		}
+	}, [tauri]);
+
 	useEffect(() => {
 		fetchSongs();
 
@@ -43,10 +74,26 @@ export function useLibrarySongs() {
 		const unlistenDownloads = tauri.listen("download://list-updated", () => {
 			fetchSongs();
 		});
+		const unlistenRekordbox = tauri.listen(
+			"rekordbox://updated",
+			({ payload }) => {
+				setRekordbox(payload);
+				const matches = new Map(
+					payload.tracks.map((track) => [track.song_id, track]),
+				);
+				setSongs((previous) =>
+					previous.map((song) => ({
+						...song,
+						rekordbox: matches.get(song.id),
+					})),
+				);
+			},
+		);
 
 		return () => {
 			unlistenLibrary.then((f) => f());
 			unlistenDownloads.then((f) => f());
+			unlistenRekordbox.then((f) => f());
 		};
 	}, [fetchSongs, tauri]);
 
@@ -102,6 +149,9 @@ export function useLibrarySongs() {
 	}, [missingIds, songs, tauri]);
 
 	return {
+		rekordbox,
+		refreshingRekordbox,
+		refreshRekordbox,
 		songs,
 		loading,
 		missingIds,
