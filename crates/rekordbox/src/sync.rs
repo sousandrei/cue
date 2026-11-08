@@ -1,5 +1,4 @@
 use anyhow::{bail, ensure, Context, Result};
-use rbox_core::is_rekordbox_running;
 use rbox_masterdb::{MasterDb, PlaylistType};
 use sha2::{Digest, Sha256};
 use std::collections::{BTreeMap, BTreeSet};
@@ -40,7 +39,7 @@ fn replace(from: &Path, to: &Path) -> Result<()> {
 
 fn require_closed(path: &Path) -> Result<()> {
     ensure!(
-        !is_rekordbox_running(),
+        !super::is_running()?,
         "Close Rekordbox before syncing playlists"
     );
     for suffix in ["-wal", "-journal"] {
