@@ -45,11 +45,12 @@ jobs:
 
       - name: Cargo fmt
         run: cargo fmt --all -- --check
-        working-directory: src-tauri
 
       - name: Clippy
-        run: cargo clippy --all-targets --all-features -- -D warnings
-        working-directory: src-tauri
+        run: cargo clippy --locked --workspace --all-targets --all-features -- -D warnings
+
+      - name: Rust tests
+        run: cargo test --locked --workspace
 
       - name: Tauri build check
         run: bun tauri build --no-bundle

@@ -38,7 +38,7 @@ const config: RsbuildConfig = {
 	tools: {
 		rspack: {
 			watchOptions: {
-				ignored: ["**/src-tauri/**"],
+                ignored: ["**/src-tauri/**", "**/crates/**", "**/artifacts/**", "**/target/**"],
 			},
 			resolve: {
 				alias: {

@@ -1,0 +1,20 @@
+[package]
+name = "cue-rekordbox"
+version = "0.1.0"
+edition = "2021"
+license = "GPL-3.0-only"
+publish = false
+
+[dependencies]
+anyhow = "1"
+serde = { version = "1", features = ["derive"] }
+
+[target.'cfg(any(target_os = "windows", target_os = "macos"))'.dependencies]
+diesel = { version = "2.3", features = ["sqlite"] }
+rbox-core = "=0.3.0"
+rbox-db = { version = "=0.3.0", features = ["bundled-vendored-openssl"] }
+rbox-masterdb = "=0.3.0"
+serde_json = "1"
+sha2 = "0.10"
+tempfile = "3"
+sysinfo = "=0.38.4"
