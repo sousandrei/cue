@@ -35,7 +35,6 @@ impl Database {
             .execute(&self.pool)
             .await?;
 
-        self.trigger_rekordbox_export().await;
         Ok(())
     }
 
@@ -45,7 +44,6 @@ impl Database {
             .execute(&self.pool)
             .await?;
 
-        self.trigger_rekordbox_export().await;
         Ok(())
     }
 
@@ -70,7 +68,6 @@ impl Database {
             .execute(&self.pool)
             .await?;
 
-        self.trigger_rekordbox_export().await;
         Ok(())
     }
 
@@ -81,7 +78,6 @@ impl Database {
             .execute(&self.pool)
             .await?;
 
-        self.trigger_rekordbox_export().await;
         Ok(())
     }
 
@@ -100,25 +96,33 @@ impl Database {
             .await?;
         Ok(songs)
     }
-
-    async fn trigger_rekordbox_export(&self) {
-        let songs = match self.get_songs().await {
-            Ok(s) => s,
-            Err(e) => {
-                eprintln!("Failed to get songs for Rekordbox export: {}", e);
-                return;
-            }
-        };
-
-        if let Err(e) = crate::rekordbox::export_xml(songs, &self.library_path).await {
-            eprintln!("Failed to export Rekordbox XML: {}", e);
-        }
-    }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[tokio::test]
+    async fn shared_sqlite_build_keeps_cue_database_unencrypted() {
+        let folder = tempfile::tempdir().unwrap();
+        let path = folder.path().join("songs.db");
+        let url = format!("sqlite:{}", path.to_string_lossy().replace('\\', "/"));
+        let pool = init_db(&url).await.unwrap();
+        sqlx::query("INSERT INTO songs (id, title, artist, filename) VALUES ('compatibility', 'Track', 'Artist', 'track.mp3')")
+            .execute(&pool).await.unwrap();
+        pool.close().await;
+        // A workspace build can unify rbox's SQLCipher features with SQLx's.
+        // Cue's own files must remain ordinary, unencrypted SQLite databases.
+        assert_eq!(&std::fs::read(&path).unwrap()[..16], b"SQLite format 3\0");
+        let reopened = SqlitePool::connect(&url).await.unwrap();
+        let count: i64 =
+            sqlx::query_scalar("SELECT COUNT(*) FROM songs WHERE id = 'compatibility'")
+                .fetch_one(&reopened)
+                .await
+                .unwrap();
+        assert_eq!(count, 1);
+        reopened.close().await;
+    }
 
     async fn setup_test_db(suffix: &str) -> Database {
         let pool = SqlitePool::connect("sqlite::memory:").await.unwrap();
@@ -183,36 +187,22 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn test_export_rekordbox_xml() {
-        let db = setup_test_db("export").await;
+    async fn tags_are_saved_without_rekordbox() {
+        let db = setup_test_db("tags").await;
         let song = Song {
-            id: "1".to_string(),
-            title: "Test Song".to_string(),
-            artist: "Test Artist".to_string(),
-            album: Some("Test Album".to_string()),
-            filename: "test.mp3".to_string(),
+            id: "tagged".into(),
+            title: "Example".into(),
+            artist: "Fixture".into(),
+            album: None,
+            filename: "track.mp3".into(),
             source_url: None,
             tags: None,
         };
-
-        // Ensure Songs directory exists
-        let library_path = std::path::Path::new(&db.library_path);
-        std::fs::create_dir_all(library_path.join("Songs")).unwrap();
-
-        // Adding a song should trigger export
         db.add_song(&song).await.unwrap();
-
-        let xml_path = library_path.join("rekordbox.xml");
-        assert!(xml_path.exists());
-
-        let xml_content = std::fs::read_to_string(xml_path).unwrap();
-        assert!(xml_content.contains("DJ_PLAYLISTS"));
-        assert!(xml_content.contains("COLLECTION"));
-        assert!(xml_content.contains("TRACK"));
-        assert!(xml_content.contains("TrackID=\"1\""));
-        assert!(xml_content.contains("Name=\"Test Song\""));
-        assert!(xml_content.contains("Artist=\"Test Artist\""));
-        assert!(xml_content.contains("Location=\"file://localhost"));
-        assert!(xml_content.contains("test.mp3\""));
+        db.update_song_tags(&song.id, "house,warm-up")
+            .await
+            .unwrap();
+        let saved = db.get_song_by_id(&song.id).await.unwrap().unwrap();
+        assert_eq!(saved.tags.as_deref(), Some("house,warm-up"));
     }
 }

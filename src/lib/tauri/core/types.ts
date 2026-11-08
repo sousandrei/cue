@@ -55,9 +55,38 @@ export interface Song {
 	filename: string;
 	source_url?: string | null;
 	tags?: string | null;
+	rekordbox?: RekordboxTrack;
+}
+
+export interface RekordboxTrack {
+	song_id: string;
+	status: "imported" | "not_imported" | "ambiguous";
+	rekordbox_id: string | null;
+	bpm: number | null;
+	key: string | null;
+}
+
+export interface RekordboxStatus {
+	supported: boolean;
+	sync_state?:
+		| "reading"
+		| "pending"
+		| "syncing"
+		| "synced"
+		| "error"
+		| "unsupported";
+	sync_error?: string | null;
+	watching?: boolean;
+	available: boolean;
+	running: boolean;
+	database_path: string | null;
+	checked_at: number;
+	error: string | null;
+	tracks: RekordboxTrack[];
 }
 
 export interface TauriEventMap {
+	"rekordbox://updated": RekordboxStatus;
 	"config://update": Config;
 	"download://list-updated": DownloadJob[];
 	"download://progress": DownloadProgressPayload;
@@ -67,6 +96,7 @@ export interface TauriEventMap {
 }
 
 export interface TauriService {
+	getRekordboxStatus(refresh?: boolean): Promise<RekordboxStatus>;
 	// Commands
 	getConfig(): Promise<Config | null>;
 	updateConfig(newConfig: Config): Promise<void>;
@@ -89,6 +119,7 @@ export interface TauriService {
 	updateSongTags(id: string, tags: string): Promise<void>;
 
 	// API / Dialogs / System
+	openUrl(url: string): Promise<void>;
 	listen<K extends keyof TauriEventMap | string>(
 		event: K,
 		handler: (

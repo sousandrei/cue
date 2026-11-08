@@ -6,18 +6,28 @@ import {
 	type OpenDialogOptions,
 	open,
 } from "@tauri-apps/plugin-dialog";
+import { openUrl } from "@tauri-apps/plugin-opener";
 import { relaunch } from "@tauri-apps/plugin-process";
 import { check } from "@tauri-apps/plugin-updater";
 import type {
 	Config,
 	DownloadJob,
 	MetadataPayload,
+	RekordboxStatus,
 	Song,
 	TauriEventMap,
 	TauriService,
 } from "./types";
 
 export class RealTauriService implements TauriService {
+	async openUrl(url: string): Promise<void> {
+		await openUrl(url);
+	}
+
+	async getRekordboxStatus(refresh = false): Promise<RekordboxStatus> {
+		return await invoke<RekordboxStatus>("get_rekordbox_status", { refresh });
+	}
+
 	async getConfig(): Promise<Config | null> {
 		return await invoke<Config | null>("get_config");
 	}

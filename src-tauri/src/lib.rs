@@ -4,6 +4,7 @@ mod config;
 mod db;
 mod download;
 mod rekordbox;
+mod rekordbox_monitor;
 
 use db::Database;
 use std::sync::Mutex;
@@ -45,6 +46,8 @@ pub fn run() {
             commands::check_missing_songs,
             commands::sync_song,
             commands::update_song_tags,
+            commands::get_rekordbox_status,
+            commands::sync_rekordbox_playlists,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
@@ -60,6 +63,8 @@ async fn init_app(app: &mut tauri::App) -> Result<(), Box<dyn std::error::Error>
     app.manage(cfg_state);
     app.manage(db_state);
     app.manage(download_manager);
+    app.manage(rekordbox_monitor::Monitor::default());
+    rekordbox_monitor::start(app.handle().clone());
 
     // Now try to load config and initialize DB
     let config = match config::load_config() {
