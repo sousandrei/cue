@@ -227,11 +227,28 @@ pub fn apply_to_copy(
     })
 }
 
+/// Hold an OS lock that serializes Cue syncs. The OS releases it if Cue exits,
+/// so an interrupted sync never blocks later ones.
+fn lock(directory: &Path) -> Result<File> {
+    let file = File::options()
+        .create(true)
+        .truncate(false)
+        .write(true)
+        .open(directory.join("sync.lock"))?;
+    match file.try_lock() {
+        Ok(()) => Ok(file),
+        Err(fs::TryLockError::WouldBlock) => bail!("Another Cue sync is active"),
+        Err(fs::TryLockError::Error(error)) => Err(error.into()),
+    }
+}
+
 pub fn sync(source: &Path, request: Request) -> Result<Response> {
     ensure!(
         source.canonicalize()? == Path::new(&request.database_path).canonicalize()?,
         "The selected Rekordbox library changed; refresh before syncing"
     );
+    fs::create_dir_all(&request.backup_directory)?;
+    let _lock = lock(&request.backup_directory)?;
     require_closed(source)?;
     let parent = source.parent().context("No Rekordbox library directory")?;
     let index = parent.join("masterPlaylists6.xml");
@@ -239,28 +256,6 @@ pub fn sync(source: &Path, request: Request) -> Result<Response> {
         index.is_file(),
         "Rekordbox's internal playlist index is missing"
     );
-    fs::create_dir_all(&request.backup_directory)?;
-    // A lock owned by this process serializes Cue syncs without claiming a
-    // Rekordbox/SQLite lock. Library process checks and checksums are still required.
-    let lock_path = parent.join(".cue-sync.lock");
-    let lock = File::options()
-        .write(true)
-        .create_new(true)
-        .open(&lock_path)
-        .context("Another Cue sync is active, or an earlier sync was interrupted")?;
-    struct Lock {
-        path: PathBuf,
-        _file: File,
-    }
-    impl Drop for Lock {
-        fn drop(&mut self) {
-            let _ = fs::remove_file(&self.path);
-        }
-    }
-    let _lock = Lock {
-        path: lock_path,
-        _file: lock,
-    };
     let original_hash = checksum(source)?;
     let index_hash = checksum(&index)?;
     let backup = tempfile::Builder::new()
@@ -306,4 +301,18 @@ pub fn sync(source: &Path, request: Request) -> Result<Response> {
     }
     result.backup_path = Some(backup);
     Ok(result)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn second_lock_fails_until_the_first_is_released() {
+        let directory = tempfile::tempdir().unwrap();
+        let first = lock(directory.path()).unwrap();
+        assert!(lock(directory.path()).is_err());
+        drop(first);
+        assert!(lock(directory.path()).is_ok());
+    }
 }

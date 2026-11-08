@@ -39,9 +39,10 @@ directory.
 Rekordbox's internal `masterPlaylists6.xml` is part of its native library. Cue
 does not require a user-exported XML file. Any test copy must include that index.
 
-An interrupted process can leave `.cue-sync.lock` beside the database. Do not
-remove it while a sync is active. If a hard crash interrupts installation,
-inspect the retained backup before resuming. Error rollback cannot guarantee
+An OS file lock on `rekordbox-backups/sync.lock` serializes syncs. The OS
+releases it when Cue exits, so an interrupted sync does not block later ones.
+If a hard crash interrupts installation, inspect the retained backup before
+resuming. Error rollback cannot guarantee
 recovery from termination or power loss between filesystem replacements.
 
 ## Validation
