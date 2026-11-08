@@ -35,6 +35,7 @@ tauri-plugin-opener = "2.7.2"
 tauri-plugin-process = "2.4.0"
 tempfile = "3.27.0"
 tokio = { version = "1.54.1", features = ["full"] }
+unicode-normalization = "0.1.26"
 xz2 = "0.1.7"
 zip = { version = "9.4.1", default-features = false, features = ["deflate"] }
 

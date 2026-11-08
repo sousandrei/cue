@@ -966,6 +966,7 @@ dependencies = [
  "tauri-plugin-updater",
  "tempfile",
  "tokio",
+ "unicode-normalization",
  "xz2",
  "zip",
 ]

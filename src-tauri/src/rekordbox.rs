@@ -2,6 +2,7 @@ use crate::db::{entities::Song, Database};
 use serde::{Deserialize, Serialize};
 use std::collections::{BTreeMap, BTreeSet, HashMap};
 use std::path::Path;
+use unicode_normalization::UnicodeNormalization;
 
 pub use cue_rekordbox::{
     is_running, read_library, sync_playlists, LibrarySnapshot, LibraryTrack, Ownership, SyncRequest,
@@ -157,14 +158,19 @@ pub fn inspect(songs: &[Song], library_path: &Path) -> RekordboxStatus {
     }
 }
 
+/// Text-only path key: no filesystem access. Windows and macOS volumes usually
+/// ignore case, and macOS may store a different Unicode form than Rekordbox.
 fn normalized_path(path: &Path) -> String {
-    let resolved = path.canonicalize().unwrap_or_else(|_| path.to_path_buf());
-    let text = resolved.to_string_lossy().replace('\\', "/");
+    let text = path.to_string_lossy().replace('\\', "/");
     let text = text.strip_prefix("//?/").unwrap_or(&text);
-    if cfg!(windows) || text.as_bytes().get(1) == Some(&b':') || text.starts_with("//") {
+    let text: String = text.nfc().collect();
+    if cfg!(any(windows, target_os = "macos"))
+        || text.as_bytes().get(1) == Some(&b':')
+        || text.starts_with("//")
+    {
         text.to_lowercase()
     } else {
-        text.to_string()
+        text
     }
 }
 
@@ -182,11 +188,23 @@ pub fn match_tracks(
                 .push(track);
         }
     }
+    // Resolve Cue's folder once; Rekordbox may store either form of the path.
+    let songs_dir = library_path.join("Songs");
+    let folders: Vec<_> = std::iter::once(songs_dir.clone())
+        .chain(songs_dir.canonicalize().ok())
+        .collect();
     songs
         .iter()
         .map(|song| {
-            let path = normalized_path(&library_path.join("Songs").join(&song.filename));
-            let candidates = by_path.get(&path).map(Vec::as_slice).unwrap_or_default();
+            let mut candidates: Vec<&LibraryTrack> = Vec::new();
+            for folder in &folders {
+                let key = normalized_path(&folder.join(&song.filename));
+                for track in by_path.get(&key).into_iter().flatten() {
+                    if !candidates.iter().any(|seen| seen.id == track.id) {
+                        candidates.push(track);
+                    }
+                }
+            }
             let matched = if candidates.len() == 1 {
                 Some(candidates[0])
             } else {
@@ -276,6 +294,16 @@ mod tests {
         );
         assert_eq!(result[0].status, ImportStatus::NotImported);
         assert_eq!(result[0].bpm, None);
+    }
+
+    #[test]
+    fn matches_despite_case_and_unicode_form() {
+        let result = match_tracks(
+            &[song("Cafe\u{301}.mp3")],
+            Path::new("C:/Music/Cue"),
+            &[track("rb", "C:/MUSIC/Cue/Songs/Caf\u{e9}.mp3")],
+        );
+        assert_eq!(result[0].status, ImportStatus::Imported);
     }
 
     #[test]
