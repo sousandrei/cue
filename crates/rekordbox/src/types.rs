@@ -73,7 +73,7 @@ pub struct OwnedPlaylist {
 #[derive(Clone, Serialize, Deserialize)]
 pub struct SyncRequest {
     pub database_path: String,
-    pub backup_directory: std::path::PathBuf,
+    pub sync_directory: std::path::PathBuf,
     pub ownership: Ownership,
     pub playlists: BTreeMap<String, BTreeSet<String>>,
 }
@@ -83,5 +83,4 @@ pub struct SyncResult {
     pub ownership: Ownership,
     pub added: usize,
     pub removed: usize,
-    pub backup_path: Option<std::path::PathBuf>,
 }
