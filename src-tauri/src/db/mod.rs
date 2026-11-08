@@ -1,5 +1,6 @@
 use sqlx::sqlite::{SqliteConnectOptions, SqlitePool};
 use std::str::FromStr;
+use std::sync::atomic::{AtomicU64, Ordering};
 
 pub mod entities;
 
@@ -12,6 +13,17 @@ pub struct Database {
 }
 
 pub type DbState = std::sync::Mutex<Option<Database>>;
+
+/// Increases on every song write, so watchers can skip reloading unchanged songs.
+static REVISION: AtomicU64 = AtomicU64::new(0);
+
+pub fn revision() -> u64 {
+    REVISION.load(Ordering::Acquire)
+}
+
+fn bump_revision() {
+    REVISION.fetch_add(1, Ordering::AcqRel);
+}
 
 pub async fn init_db(db_path: &str) -> anyhow::Result<SqlitePool> {
     let opts = SqliteConnectOptions::from_str(db_path)?.create_if_missing(true);
@@ -35,6 +47,7 @@ impl Database {
             .execute(&self.pool)
             .await?;
 
+        bump_revision();
         Ok(())
     }
 
@@ -44,6 +57,7 @@ impl Database {
             .execute(&self.pool)
             .await?;
 
+        bump_revision();
         Ok(())
     }
 
@@ -68,6 +82,7 @@ impl Database {
             .execute(&self.pool)
             .await?;
 
+        bump_revision();
         Ok(())
     }
 
@@ -78,6 +93,7 @@ impl Database {
             .execute(&self.pool)
             .await?;
 
+        bump_revision();
         Ok(())
     }
 

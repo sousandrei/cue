@@ -156,7 +156,7 @@ pub fn start(app: AppHandle) {
         let mut changed_at = Instant::now();
         let mut last_read = Instant::now() - Duration::from_secs(30);
         let mut last_running = None;
-        let mut cue_fingerprint = String::new();
+        let mut cue_fingerprint = None;
         let mut retry_after = Instant::now();
         loop {
             tokio::time::sleep(Duration::from_secs(2)).await;
@@ -169,14 +169,8 @@ pub fn start(app: AppHandle) {
             let Some(db) = db else {
                 continue;
             };
-            let Ok(songs) = db.get_songs().await else {
-                continue;
-            };
-            let fingerprint = format!(
-                "{}:{}",
-                db.library_path,
-                serde_json::to_string(&songs).unwrap_or_default()
-            );
+            // Cheap change check; songs are loaded only when a read is due.
+            let fingerprint = (db.library_path.clone(), crate::db::revision());
             let current = generation.load(Ordering::Acquire);
             if current != observed {
                 changed_at = Instant::now();
@@ -188,7 +182,7 @@ pub fn start(app: AppHandle) {
                 .ok()
                 .and_then(Result::ok);
             let requested = monitor.refresh.swap(false, Ordering::AcqRel);
-            let cue_changed = fingerprint != cue_fingerprint;
+            let cue_changed = cue_fingerprint.as_ref() != Some(&fingerprint);
             let process_changed = running != last_running;
             // Reconcile periodically as well: OS notifications can be lost, and
             // unsupported/network volumes may need the polling fallback.
@@ -201,9 +195,10 @@ pub fn start(app: AppHandle) {
                 continue;
             }
             last_running = running;
-            cue_fingerprint = fingerprint;
+            cue_fingerprint = Some(fingerprint);
             last_read = Instant::now();
             let result = async {
+                let songs = db.get_songs().await?;
                 let snapshot = tauri::async_runtime::spawn_blocking(bridge::read_library).await??;
                 if watched_path != Path::new(&snapshot.database_path) || watcher.is_none() {
                     watched_path = PathBuf::from(&snapshot.database_path);
