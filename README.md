@@ -33,7 +33,7 @@ Available on Windows and macOS.
 - Add tags in Cue. Each tag becomes a playlist in Rekordbox's **Cue** folder.
 - Close Rekordbox to apply playlist changes. Reopen it to see the updated playlists.
 
-Cue checks for library changes automatically. Playlists inside the **Cue** folder contain only imported tracks with the matching tag. Other playlists are left alone.
+Cue checks for library changes automatically and manages every playlist inside the **Cue** folder. Each playlist contains only imported tracks with the matching tag. Playlists for removed tags are deleted. Playlists outside that folder are left alone.
 
 On Linux, you can use Collection and tags without Rekordbox support.
 

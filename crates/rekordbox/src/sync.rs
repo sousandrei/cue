@@ -43,7 +43,6 @@ struct PlannedPlaylist {
     playlist: Option<Playlist>,
     members: Vec<Entry>,
     target: BTreeSet<String>,
-    remove: bool,
 }
 
 pub(crate) fn reconcile(
@@ -52,96 +51,56 @@ pub(crate) fn reconcile(
     desired: &BTreeMap<String, BTreeSet<String>>,
 ) -> Result<SyncResult> {
     let existing = db.playlists()?;
-    // The adapter returns active playlists only. Missing IDs can be adopted again by name.
-    owner
-        .playlists
-        .retain(|_, owned| existing.iter().any(|p| p.playlist.id == owned.id));
-    let owned_folder = owner
-        .folder_id
-        .as_ref()
-        .and_then(|id| existing.iter().find(|p| p.playlist.id == *id));
-    let folder = if let Some(folder) = owned_folder {
-        ensure!(
-            folder.kind == PlaylistKind::Folder
-                && folder.playlist.parent_id == "root"
-                && folder.playlist.name == "Cue",
-            "The Cue playlist folder was moved or changed; resolve it before syncing"
-        );
-        Some(folder.playlist.clone())
-    } else {
-        owner.folder_id = None;
-        let candidates: Vec<_> = existing
-            .iter()
-            .filter(|p| p.playlist.parent_id == "root" && p.playlist.name == "Cue")
-            .collect();
-        ensure!(
-            candidates.len() <= 1,
-            "Multiple root folders named Cue exist; resolve the ambiguity before syncing"
-        );
-        candidates
-            .first()
-            .map(|p| {
-                ensure!(
-                    p.kind == PlaylistKind::Folder,
-                    "Cue already exists as a playlist, rather than a folder"
-                );
-                Ok(p.playlist.clone())
-            })
-            .transpose()?
-    };
-    if desired.is_empty() && owner.playlists.is_empty() {
+    let folders: Vec<_> = existing
+        .iter()
+        .filter(|p| p.playlist.parent_id == "root" && p.playlist.name == "Cue")
+        .collect();
+    ensure!(
+        folders.len() <= 1,
+        "Multiple root folders named Cue exist; resolve the ambiguity before syncing"
+    );
+    let folder = folders
+        .first()
+        .map(|p| {
+            ensure!(
+                p.kind == PlaylistKind::Folder,
+                "Cue already exists as a playlist, rather than a folder"
+            );
+            Ok(p.playlist.clone())
+        })
+        .transpose()?;
+    if folder.is_none() && desired.is_empty() {
         return Ok(SyncResult {
-            ownership: owner,
+            ownership: Ownership::default(),
             added: 0,
             removed: 0,
         });
     }
-    // Resolve all names and validate all requested tracks before the first mutation.
-    // Runtime failures can still leave partial progress; the next read reconciles it.
-    let tags: BTreeSet<_> = desired
-        .keys()
-        .chain(owner.playlists.keys())
-        .cloned()
+    let children: Vec<_> = existing
+        .iter()
+        .filter(|p| Some(p.playlist.parent_id.as_str()) == folder.as_ref().map(|p| p.id.as_str()))
         .collect();
+    // Cue administers every child of this folder. Stored IDs only prefer which
+    // regular playlist to retain when duplicate names exist; they never limit scope.
     let mut plans = Vec::new();
-    for tag in tags {
-        let previous = owner
+    let mut retained_playlists = BTreeSet::new();
+    for tag in desired.keys() {
+        let mut candidates: Vec<_> = children
+            .iter()
+            .filter(|p| p.playlist.name == *tag && p.kind == PlaylistKind::List)
+            .collect();
+        candidates.sort_by_key(|p| &p.playlist.id);
+        let preferred = owner
             .playlists
-            .get(&tag)
-            .and_then(|owned| existing.iter().find(|p| p.playlist.id == owned.id));
-        let playlist = if let Some(previous) = previous {
-            ensure!(
-                Some(previous.playlist.parent_id.as_str())
-                    == folder.as_ref().map(|p| p.id.as_str())
-                    && previous.kind == PlaylistKind::List
-                    && previous.playlist.name == tag,
-                "A Cue playlist was moved, renamed, or changed; resolve it before syncing"
-            );
-            Some(previous.playlist.clone())
-        } else {
-            let candidates: Vec<_> = existing
-                .iter()
-                .filter(|p| {
-                    Some(p.playlist.parent_id.as_str()) == folder.as_ref().map(|p| p.id.as_str())
-                        && p.playlist.name == tag
-                })
-                .collect();
-            ensure!(
-                candidates.len() <= 1,
-                "Multiple playlists named Cue/{tag} exist; resolve the ambiguity before syncing"
-            );
-            candidates
-                .first()
-                .map(|p| {
-                    ensure!(
-                        p.kind == PlaylistKind::List,
-                        "Cue/{tag} is not a regular playlist"
-                    );
-                    Ok(p.playlist.clone())
-                })
-                .transpose()?
-        };
-        let target = desired.get(&tag).cloned().unwrap_or_default();
+            .get(tag)
+            .and_then(|owned| candidates.iter().find(|p| p.playlist.id == owned.id));
+        let playlist = preferred
+            .or_else(|| candidates.first())
+            .map(|p| p.playlist.clone());
+        if let Some(playlist) = &playlist {
+            retained_playlists.insert(playlist.id.clone());
+        }
+        let target = desired.get(tag).cloned().unwrap_or_default();
         for id in &target {
             ensure!(
                 db.content_exists(id)?,
@@ -153,20 +112,30 @@ pub(crate) fn reconcile(
             None => Vec::new(),
         };
         plans.push(PlannedPlaylist {
-            remove: !desired.contains_key(&tag),
-            tag,
+            tag: tag.clone(),
             playlist,
             members,
             target,
         });
     }
+    // Validate desired tracks and read retained memberships before mutating.
+    // rbox handles deletion of any descendants of an unwanted folder.
+    let mut removed = 0;
+    for child in children {
+        if !retained_playlists.contains(&child.playlist.id) {
+            db.remove_playlist(&child.playlist.id)?;
+            removed += 1;
+        }
+    }
     let folder = match folder {
         Some(folder) => folder,
         None => db.create_folder()?,
     };
-    owner.folder_id = Some(folder.id.clone());
+    owner = Ownership {
+        folder_id: Some(folder.id.clone()),
+        playlists: BTreeMap::new(),
+    };
     let mut added = 0;
-    let mut removed = 0;
     for plan in plans {
         let playlist = match plan.playlist {
             Some(playlist) => playlist,
@@ -188,14 +157,9 @@ pub(crate) fn reconcile(
             db.add_member(&playlist.id, id)?;
             added += 1;
         }
-        if plan.remove {
-            db.remove_playlist(&playlist.id)?;
-            owner.playlists.remove(&plan.tag);
-        } else {
-            owner
-                .playlists
-                .insert(plan.tag, OwnedPlaylist { id: playlist.id });
-        }
+        owner
+            .playlists
+            .insert(plan.tag, OwnedPlaylist { id: playlist.id });
     }
     Ok(SyncResult {
         ownership: owner,

@@ -20,7 +20,7 @@ pub fn read_library() -> Result<LibrarySnapshot> {
 pub fn read_library_at(path: &Path) -> Result<LibrarySnapshot> {
     let mut connection = read_connection(path)?;
     let tracks = read_tracks(&mut connection)?;
-    let playlists = diesel::sql_query("SELECT ID AS id, Name AS name, ParentID AS parent_id FROM djmdPlaylist WHERE rb_local_deleted = 0 ORDER BY ID").load::<Playlist>(&mut connection)?;
+    let playlists = diesel::sql_query(format!("SELECT ID AS id, Name AS name, ParentID AS parent_id, Attribute = {} AS is_folder, Attribute = {} AS is_regular FROM djmdPlaylist WHERE rb_local_deleted = 0 ORDER BY ID", PlaylistType::Folder as i32, PlaylistType::List as i32)).load::<Playlist>(&mut connection)?;
     let memberships = diesel::sql_query("SELECT ID AS id, PlaylistID AS playlist_id, ContentID AS content_id FROM djmdSongPlaylist WHERE rb_local_deleted = 0 ORDER BY ID").load::<Membership>(&mut connection)?;
     Ok(LibrarySnapshot {
         database_path: path.to_string_lossy().into_owned(),
@@ -70,6 +70,8 @@ fn playlist_info(playlist: rbox_masterdb::models::DjmdPlaylist) -> PlaylistInfo 
             id: playlist.id,
             name: playlist.name,
             parent_id: playlist.parent_id,
+            is_folder: kind == PlaylistKind::Folder,
+            is_regular: kind == PlaylistKind::List,
         },
         kind,
     }
