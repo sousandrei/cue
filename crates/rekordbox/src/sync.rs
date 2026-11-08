@@ -48,12 +48,39 @@ fn require_closed(path: &Path) -> Result<()> {
     Ok(())
 }
 
+fn playlist_exists(db: &mut MasterDb, id: &str) -> Result<bool> {
+    Ok(db
+        .get_playlist_by_id(id)?
+        .is_some_and(|playlist| playlist.rb_local_deleted == 0))
+}
+
+/// Forget owned IDs that no longer exist in the library. Those playlists are
+/// then adopted by name or recreated, so stale ownership never blocks a sync.
+fn forget_missing(db: &mut MasterDb, owner: &mut Ownership) -> Result<()> {
+    if let Some(id) = owner.folder_id.clone() {
+        if !playlist_exists(db, &id)? {
+            owner.folder_id = None;
+        }
+    }
+    let mut missing = Vec::new();
+    for (tag, playlist) in &owner.playlists {
+        if !playlist_exists(db, &playlist.id)? {
+            missing.push(tag.clone());
+        }
+    }
+    for tag in missing {
+        owner.playlists.remove(&tag);
+    }
+    Ok(())
+}
+
 pub fn apply_to_copy(
     path: &Path,
     mut owner: Ownership,
     desired: &BTreeMap<String, BTreeSet<String>>,
 ) -> Result<Response> {
     let mut db = MasterDb::new(path)?;
+    forget_missing(&mut db, &mut owner)?;
     let folder = match owner.folder_id.as_deref() {
         Some(id) => {
             let folder = db.get_playlist_by_id(id)?.context(
@@ -79,7 +106,11 @@ pub fn apply_to_copy(
             let existing = db.get_playlists()?;
             let containers: Vec<_> = existing
                 .iter()
-                .filter(|playlist| playlist.parent_id == "root" && playlist.name == "Cue")
+                .filter(|playlist| {
+                    playlist.parent_id == "root"
+                        && playlist.name == "Cue"
+                        && playlist.rb_local_deleted == 0
+                })
                 .collect();
             ensure!(
                 containers.len() <= 1,
@@ -209,24 +240,6 @@ pub fn sync(source: &Path, request: Request) -> Result<Response> {
         "Rekordbox's internal playlist index is missing"
     );
     fs::create_dir_all(&request.backup_directory)?;
-    let manifest_name = format!(
-        "ownership-{:x}.json",
-        Sha256::digest(source.canonicalize()?.to_string_lossy().as_bytes())
-    );
-    let manifest = request.backup_directory.join(manifest_name);
-    let old_manifest = if manifest.exists() {
-        Some(fs::read(&manifest)?)
-    } else {
-        None
-    };
-    // Keep a durable ownership record beside the backups as well as in Cue's DB.
-    // This avoids taking over or duplicating playlists if Cue exits after the
-    // library commit but before it persists the sync result.
-    let ownership = if let Some(bytes) = &old_manifest {
-        serde_json::from_slice(bytes)?
-    } else {
-        request.ownership
-    };
     // A lock owned by this process serializes Cue syncs without claiming a
     // Rekordbox/SQLite lock. Library process checks and checksums are still required.
     let lock_path = parent.join(".cue-sync.lock");
@@ -258,7 +271,7 @@ pub fn sync(source: &Path, request: Request) -> Result<Response> {
     fs::copy(&index, backup.join("masterPlaylists6.xml"))?;
     fs::write(
         backup.join("ownership.json"),
-        serde_json::to_vec_pretty(&ownership)?,
+        serde_json::to_vec_pretty(&request.ownership)?,
     )?;
     let stage = tempfile::Builder::new()
         .prefix(".cue-stage-")
@@ -269,19 +282,15 @@ pub fn sync(source: &Path, request: Request) -> Result<Response> {
         backup.join("masterPlaylists6.xml"),
         stage.path().join("masterPlaylists6.xml"),
     )?;
-    let mut result = apply_to_copy(&staged_db, ownership, &request.playlists)?;
+    let mut result = apply_to_copy(&staged_db, request.ownership, &request.playlists)?;
     super::validate_database(&staged_db)?;
     require_closed(source)?;
     ensure!(
         checksum(source)? == original_hash && checksum(&index)? == index_hash,
         "Rekordbox's library changed during sync; no staged changes were applied"
     );
-    let staged_manifest = stage.path().join("ownership.json");
-    fs::write(
-        &staged_manifest,
-        serde_json::to_vec_pretty(&result.ownership)?,
-    )?;
-    replace(&staged_manifest, &manifest)?;
+    // Cue saves the returned ownership after this call. If Cue exits before
+    // that, the next sync adopts the Cue folder and playlists by name.
     let install = replace(&staged_db, source)
         .and_then(|()| replace(&stage.path().join("masterPlaylists6.xml"), &index));
     if let Err(error) = install {
@@ -292,13 +301,6 @@ pub fn sync(source: &Path, request: Request) -> Result<Response> {
                 "Playlist update failed ({error}); restore failed ({restore_error}). Backup: {}",
                 backup.display()
             );
-        }
-        if let Some(bytes) = old_manifest {
-            let old = backup.join("ownership.json");
-            fs::write(&old, bytes)?;
-            replace(&old, &manifest)?;
-        } else {
-            fs::remove_file(&manifest)?;
         }
         return Err(error.context("Playlist update failed; the original library was restored"));
     }
