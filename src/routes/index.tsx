@@ -116,6 +116,12 @@ function Index() {
 
 	return (
 		<IntakeLayout
+			historyEmpty={
+				!downloads.some(
+					(download) =>
+						download.status === "completed" || download.status === "error",
+				)
+			}
 			input={
 				<DownloadInput
 					url={url}
