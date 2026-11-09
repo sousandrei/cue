@@ -139,6 +139,7 @@ pub async fn remove_song(
     db_state: State<'_, DbState>,
     cfg_state: State<'_, ConfigState>,
     id: String,
+    app: AppHandle,
 ) -> Result<(), String> {
     let db = {
         let db_guard = db_state.lock().unwrap();
@@ -166,7 +167,8 @@ pub async fn remove_song(
         eprintln!("Failed to delete file {}: {}", file_path.display(), e);
     }
 
-    db.remove_song(&id).await.map_err(|e| e.to_string())
+    db.remove_song(&id).await.map_err(|e| e.to_string())?;
+    app.emit("library://updated", ()).map_err(|e| e.to_string())
 }
 
 #[command]

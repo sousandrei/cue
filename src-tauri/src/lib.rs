@@ -3,6 +3,7 @@ mod commands;
 mod config;
 mod db;
 mod download;
+mod playback;
 mod rekordbox;
 mod rekordbox_monitor;
 
@@ -29,6 +30,7 @@ pub fn run() {
             commands::get_config,
             commands::update_config,
             commands::get_songs,
+            playback::get_song_audio_path,
             commands::search_songs,
             commands::get_metadata,
             commands::remove_song,

@@ -158,6 +158,11 @@ export class MockTauriService implements TauriService {
 		return true;
 	}
 
+	async getSongAudioUrl(_id: string): Promise<string> {
+		const { previewAudioUrl } = await import("./previewAudio");
+		return previewAudioUrl();
+	}
+
 	async getSongs(): Promise<Song[]> {
 		return [
 			{
@@ -181,6 +186,7 @@ export class MockTauriService implements TauriService {
 
 	async removeSong(id: string): Promise<void> {
 		console.error("[Mock] removeSong:", id);
+		this.emit("library://updated", undefined);
 	}
 
 	async factoryReset(): Promise<void> {

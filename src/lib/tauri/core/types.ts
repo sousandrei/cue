@@ -115,6 +115,7 @@ export interface TauriService {
 	clearQueue(): Promise<void>;
 	checkHealth(): Promise<boolean>;
 	getSongs(): Promise<Song[]>;
+	getSongAudioUrl(id: string): Promise<string>;
 	removeSong(id: string): Promise<void>;
 	factoryReset(): Promise<void>;
 	checkMissingSongs(): Promise<string[]>;
