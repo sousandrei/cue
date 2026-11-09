@@ -1,18 +1,20 @@
 import { Slider } from "@base-ui/react/slider";
 import { Loader2, Music2, Pause, Play, Volume2, X } from "lucide-react";
+import { Waveform } from "@/components/library/waveform";
 import { Button } from "@/components/ui/button";
 import type { AudioPlayerState } from "@/hooks/useAudioPlayer";
-
-export function formatTime(seconds: number) {
-	const total = Number.isFinite(seconds) ? Math.max(0, Math.floor(seconds)) : 0;
-	return `${Math.floor(total / 60)}:${String(total % 60).padStart(2, "0")}`;
-}
+import { formatTime } from "@/lib/audio";
+import type { TrackAnalysis } from "@/lib/tauri/core/types";
 
 interface PlayerProps extends AudioPlayerState {
+	analysis?: TrackAnalysis | null;
+	analysisStatus?: "idle" | "loading" | "ready" | "unavailable" | "error";
 	onToggle: () => void;
 	onSeek: (position: number) => void;
 	onVolumeChange: (volume: number) => void;
 	onClose: () => void;
+	onSkipBar?: (direction: -1 | 1) => void;
+	getPosition?: () => number;
 }
 
 function PlayerSlider({
@@ -23,6 +25,7 @@ function PlayerSlider({
 	disabled,
 	valueText,
 	onChange,
+	onSkipBar,
 }: {
 	label: string;
 	value: number;
@@ -31,15 +34,27 @@ function PlayerSlider({
 	disabled?: boolean;
 	valueText: string;
 	onChange: (value: number) => void;
+	onSkipBar?: (direction: -1 | 1) => void;
 }) {
 	return (
 		<Slider.Root
+			data-audio-seek={onSkipBar ? "" : undefined}
 			value={value}
 			min={0}
 			max={max}
 			step={step}
 			disabled={disabled}
 			onValueChange={onChange}
+			onKeyDown={(event) => {
+				if (
+					onSkipBar &&
+					(event.key === "ArrowLeft" || event.key === "ArrowRight")
+				) {
+					event.preventDefault();
+					event.stopPropagation();
+					onSkipBar(event.key === "ArrowLeft" ? -1 : 1);
+				}
+			}}
 			className="min-w-0 flex-1 data-disabled:opacity-40"
 		>
 			<Slider.Control className="flex h-7 w-full touch-none items-center select-none cursor-pointer">
@@ -68,17 +83,22 @@ export function Player({
 	onSeek,
 	onVolumeChange,
 	onClose,
+	analysis,
+	analysisStatus,
+	onSkipBar,
+	getPosition,
 }: PlayerProps) {
 	return (
 		<section
 			aria-label="Track player"
+			data-audio-player=""
 			className="shrink-0 rounded-xl border border-border bg-card px-4 py-3"
 		>
 			<div className="flex min-w-0 items-center gap-3">
 				<Button
 					size="icon"
 					variant={song ? "default" : "outline"}
-					disabled={!song}
+					disabled={!song || loading}
 					onClick={onToggle}
 					aria-label={
 						playing ? "Pause track" : error ? "Retry playback" : "Play track"
@@ -92,6 +112,7 @@ export function Player({
 						<Play aria-hidden="true" />
 					)}
 				</Button>
+
 				<div className="min-w-0 flex-1">
 					<p className="truncate text-sm font-medium">
 						{song?.title ?? "Listen to your collection"}
@@ -127,19 +148,48 @@ export function Player({
 					<Music2 className="size-4 text-muted-foreground" aria-hidden="true" />
 				)}
 			</div>
+			{analysis &&
+				(analysis.waveform.length > 0 || analysis.beats.length > 0) && (
+					<Waveform
+						key={song?.id}
+						analysis={analysis}
+						position={position}
+						duration={duration}
+						onSeek={onSeek}
+						playing={playing}
+						getPosition={getPosition}
+					/>
+				)}
+			{song &&
+				analysisStatus &&
+				analysisStatus !== "ready" &&
+				analysisStatus !== "idle" && (
+					<p role="status" className="mt-2 text-xs text-muted-foreground">
+						{analysisStatus === "loading"
+							? "Loading Rekordbox analysis…"
+							: analysisStatus === "error"
+								? "Could not read Rekordbox analysis. Playback is still available."
+								: "No Rekordbox analysis available for this track."}
+					</p>
+				)}
 			<div className="mt-2 flex items-center gap-3">
 				<span className="w-10 text-xs tabular-nums text-muted-foreground">
 					{formatTime(position)}
 				</span>
-				<PlayerSlider
-					label="Playback position"
-					value={Math.min(position, duration || 0)}
-					max={duration || 1}
-					step={0.1}
-					disabled={!song || !duration}
-					valueText={`${formatTime(position)} of ${formatTime(duration)}`}
-					onChange={onSeek}
-				/>
+				{!analysis ? (
+					<PlayerSlider
+						label="Playback position"
+						value={Math.min(position, duration || 0)}
+						max={duration || 1}
+						step={0.1}
+						disabled={!song || !duration}
+						valueText={`${formatTime(position)} of ${formatTime(duration)}`}
+						onChange={onSeek}
+						onSkipBar={onSkipBar}
+					/>
+				) : (
+					<div className="flex-1" />
+				)}
 				<span className="w-10 text-right text-xs tabular-nums text-muted-foreground">
 					{formatTime(duration)}
 				</span>
