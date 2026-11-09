@@ -14,8 +14,7 @@
 		"check:stories": "bun scripts/check-component-stories.mjs",
 		"test": "bun run check:stories && rstest run",
 		"test:storybook": "bun run test",
-		"test:watch": "rstest",
-		"test:waveform": "rstest run --config packages/waveform/rstest.config.ts"
+		"test:watch": "rstest"
 	},
 	"dependencies": {
 		"@base-ui/react": "^1.9.0",

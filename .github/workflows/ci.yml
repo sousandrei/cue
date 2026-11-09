@@ -48,18 +48,14 @@ jobs:
       - name: Install browser-test engines
         run: bunx --no-install playwright install --with-deps chromium webkit firefox
 
-      - name: Component stories and accessibility tests (Rstest)
-        run: bun run test:storybook
+      - name: App and workspace tests (including accessibility)
+        run: bun run test
 
-      - name: Waveform package (WebKit)
-        run: bun run test:waveform
-        env:
-          WAVEFORM_TEST_BROWSER: webkit
+      - name: Workspace browser tests (WebKit)
+        run: bun run test --project '@cue/*' --browser.name webkit
 
-      - name: Waveform package (Firefox)
-        run: bun run test:waveform
-        env:
-          WAVEFORM_TEST_BROWSER: firefox
+      - name: Workspace browser tests (Firefox)
+        run: bun run test --project '@cue/*' --browser.name firefox
 
       - name: Build component documentation
         run: bun run storybook:build
