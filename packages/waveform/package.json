@@ -1,0 +1,11 @@
+{
+	"name": "@cue/waveform",
+	"version": "0.1.0",
+	"private": true,
+	"type": "module",
+	"sideEffects": false,
+	"exports": {
+		".": "./src/index.ts"
+	},
+	"license": "GPL-3.0-only"
+}
