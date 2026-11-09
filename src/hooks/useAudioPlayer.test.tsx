@@ -11,7 +11,11 @@ import { MockTauriService } from "@/lib/tauri/core/MockTauriService";
 import type { Song } from "@/lib/tauri/core/types";
 import { TauriProvider } from "@/lib/tauri/TauriProvider";
 import { userEvent } from "@/test/story";
-import { AudioPlayerProvider, useAudioPlayer } from "./useAudioPlayer";
+import {
+	AudioPlayerProvider,
+	useAudioPlayer,
+	useAudioPlayerSelection,
+} from "./useAudioPlayer";
 
 const first: Song = {
 	id: "first",
@@ -60,7 +64,7 @@ function Harness() {
 		</>
 	);
 }
-function setup(service = new MockTauriService()) {
+function setup(service = new MockTauriService(), extra?: React.ReactNode) {
 	let position = 0;
 	let playing = false;
 	rs.spyOn(MemoryAudioPlayer.prototype, "duration", "get").mockReturnValue(30);
@@ -94,6 +98,7 @@ function setup(service = new MockTauriService()) {
 		<TauriProvider service={service}>
 			<AudioPlayerProvider>
 				<Harness />
+				{extra}
 			</AudioPlayerProvider>
 		</TauriProvider>,
 	);
@@ -249,4 +254,41 @@ test("a second Space cancels pending playback without restarting the load", asyn
 	await act(async () => finish());
 	expect(player.play).not.toHaveBeenCalled();
 	expect(player.load).toHaveBeenCalledTimes(1);
+});
+
+function SelectionProbe({
+	selections,
+}: {
+	selections: (string | undefined)[];
+}) {
+	selections.push(useAudioPlayerSelection().songId);
+	return null;
+}
+
+test("track selection subscribers skip playback clock and seek updates", async () => {
+	const selections: (string | undefined)[] = [];
+
+	const service = new MockTauriService();
+	rs.spyOn(service, "getSongAudioUrl").mockResolvedValue("first.mp3");
+	const { load } = setup(service, <SelectionProbe selections={selections} />);
+	fireEvent.click(screen.getByText("First"));
+	await waitFor(() => expect(load).toHaveBeenCalledTimes(1));
+	await waitFor(() =>
+		expect(screen.getByTestId("state").textContent).toContain(
+			'"loading":false',
+		),
+	);
+	expect(selections).toEqual([undefined, "first"]);
+	fireEvent.click(screen.getByText("Toggle"));
+	await waitFor(() =>
+		expect(screen.getByTestId("state").textContent).toContain('"playing":true'),
+	);
+	fireEvent.click(screen.getByText("Seek"));
+	await act(async () => new Promise((resolve) => setTimeout(resolve, 250)));
+	expect(selections).toEqual([undefined, "first"]);
+	fireEvent.click(screen.getByText("Second"));
+	await waitFor(() => expect(load).toHaveBeenCalledTimes(2));
+	expect(selections).toEqual([undefined, "first", "second"]);
+	fireEvent.click(screen.getByText("Stop"));
+	expect(selections).toEqual([undefined, "first", "second", undefined]);
 });

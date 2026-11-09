@@ -3,6 +3,7 @@ import {
 	useCallback,
 	useContext,
 	useEffect,
+	useMemo,
 	useRef,
 	useState,
 } from "react";
@@ -44,6 +45,11 @@ const initialState: AudioPlayerState = {
 	error: null,
 };
 const AudioPlayerContext = createContext<AudioPlayer | null>(null);
+// Collection rows need track selection, never the continuously advancing clock.
+const AudioPlayerSelectionContext = createContext<{
+	songId: string | undefined;
+	loadSong: AudioPlayer["loadSong"];
+} | null>(null);
 
 export function AudioPlayerProvider({
 	children,
@@ -297,23 +303,30 @@ export function AudioPlayerProvider({
 		return () => window.removeEventListener("keydown", onKeyDown);
 	}, [skipBar, toggle]);
 
+	const selection = useMemo(
+		() => ({ songId: state.song?.id, loadSong }),
+		[state.song?.id, loadSong],
+	);
+
 	return (
-		<AudioPlayerContext.Provider
-			value={{
-				...state,
-				analysis: trackAnalysis.analysis,
-				analysisStatus: trackAnalysis.status,
-				loadSong,
-				toggle,
-				seek,
-				skipBar,
-				getPosition,
-				setVolume,
-				stop,
-			}}
-		>
-			{children}
-		</AudioPlayerContext.Provider>
+		<AudioPlayerSelectionContext.Provider value={selection}>
+			<AudioPlayerContext.Provider
+				value={{
+					...state,
+					analysis: trackAnalysis.analysis,
+					analysisStatus: trackAnalysis.status,
+					loadSong,
+					toggle,
+					seek,
+					skipBar,
+					getPosition,
+					setVolume,
+					stop,
+				}}
+			>
+				{children}
+			</AudioPlayerContext.Provider>
+		</AudioPlayerSelectionContext.Provider>
 	);
 }
 
@@ -322,4 +335,13 @@ export function useAudioPlayer() {
 	if (!player)
 		throw new Error("useAudioPlayer must be used within AudioPlayerProvider");
 	return player;
+}
+
+export function useAudioPlayerSelection() {
+	const selection = useContext(AudioPlayerSelectionContext);
+	if (!selection)
+		throw new Error(
+			"useAudioPlayerSelection must be used within AudioPlayerProvider",
+		);
+	return selection;
 }
