@@ -132,3 +132,14 @@ impl Library for RboxLibrary {
         Ok(())
     }
 }
+
+/// Read saved analysis through a read-only database connection.
+pub fn read_track_analysis(id: &str) -> Result<Option<crate::TrackAnalysis>> {
+    let location = locate_library()?;
+    let mut connection = read_connection(&location.db_path)?;
+    let Some(relative) = rbox_masterdb::models::DjmdContent::find_anlz_path(&mut connection, id)?
+    else {
+        return Ok(None);
+    };
+    crate::analysis::read_analysis(&location.analysis_root, &relative)
+}

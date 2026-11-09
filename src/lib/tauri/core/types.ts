@@ -58,6 +58,14 @@ export interface Song {
 	rekordbox?: RekordboxTrack;
 }
 
+export interface TrackAnalysis {
+	/** Evenly spaced [height, red, green, blue] values in 0..255. */
+	waveform: [number, number, number, number][];
+	waveform_kind: "rgb" | "three_band" | "monochrome";
+	waveform_duration: number | null;
+	beats: { time: number; beat_number: number; bpm: number }[];
+}
+
 export interface RekordboxTrack {
 	song_id: string;
 	status: "imported" | "not_imported" | "ambiguous";
@@ -116,6 +124,7 @@ export interface TauriService {
 	checkHealth(): Promise<boolean>;
 	getSongs(): Promise<Song[]>;
 	getSongAudioUrl(id: string): Promise<string>;
+	getSongAnalysis(id: string): Promise<TrackAnalysis | null>;
 	removeSong(id: string): Promise<void>;
 	factoryReset(): Promise<void>;
 	checkMissingSongs(): Promise<string[]>;

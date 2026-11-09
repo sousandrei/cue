@@ -977,6 +977,7 @@ version = "0.1.0"
 dependencies = [
  "anyhow",
  "diesel",
+ "rbox-anlz",
  "rbox-core",
  "rbox-db",
  "rbox-masterdb",

@@ -58,3 +58,24 @@ in rbox. CI checks the native adapter on Windows and macOS and the Linux build.
 
 See [CONTRIBUTING](../../CONTRIBUTING.md) for native build requirements and
 [source information](../../CONTRIBUTING.md#source-code).
+
+## Saved track analysis
+
+`read_track_analysis` locates the selected library through rbox, opens a read-only
+connection, and resolves the matched track's analysis path against rbox's analysis
+root. `read_analysis` parses those files without modifying them. RGB detail is
+preferred, with three-band and monochrome fallbacks. Beat timestamps include the
+saved grid correction. Detail samples use ANLZ's 150 Hz timebase; preview-only
+waveforms use the playback duration supplied by the UI.
+
+Waveforms are reduced to at most 65536 peak-preserving time buckets. A bounded
+in-memory cache keeps eight parsed tracks and invalidates entries when analysis
+file paths, lengths, or modification times change. Missing analysis returns
+`None`; optional unreadable sections permit a lower-detail fallback. This reads
+saved analysis and does not run Rekordbox's analysis engine.
+
+To check a local track without changing Rekordbox:
+
+```sh
+cargo run -p cue-rekordbox --example inspect_analysis -- filename-fragment
+```

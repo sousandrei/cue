@@ -31,6 +31,7 @@ pub fn run() {
             commands::update_config,
             commands::get_songs,
             playback::get_song_audio_path,
+            playback::get_song_analysis,
             commands::search_songs,
             commands::get_metadata,
             commands::remove_song,
