@@ -95,6 +95,7 @@ export const createColumns = (
 								size="icon"
 								className="size-8"
 								disabled={isMissing}
+								data-load-track=""
 								aria-label={`Load ${row.original.title} into player`}
 								aria-pressed={playback.songId === row.original.id}
 								title={
@@ -102,9 +103,10 @@ export const createColumns = (
 										? "Loaded in player"
 										: "Load into player"
 								}
-								onClick={() => {
+								onClick={(event) => {
 									if (playback.songId !== row.original.id)
 										playback.onLoad(row.original);
+									if (event.detail > 0) event.currentTarget.blur();
 								}}
 							>
 								<Play aria-hidden="true" />

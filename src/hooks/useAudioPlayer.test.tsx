@@ -10,6 +10,7 @@ import { MemoryAudioPlayer } from "@/lib/MemoryAudioPlayer";
 import { MockTauriService } from "@/lib/tauri/core/MockTauriService";
 import type { Song } from "@/lib/tauri/core/types";
 import { TauriProvider } from "@/lib/tauri/TauriProvider";
+import { userEvent } from "@/test/story";
 import { AudioPlayerProvider, useAudioPlayer } from "./useAudioPlayer";
 
 const first: Song = {
@@ -23,7 +24,12 @@ function Harness() {
 	const player = useAudioPlayer();
 	return (
 		<>
-			<button type="button" onClick={() => void player.loadSong(first)}>
+			<button
+				type="button"
+				data-load-track=""
+				aria-pressed={player.song?.id === first.id}
+				onClick={() => void player.loadSong(first)}
+			>
 				First
 			</button>
 			<button type="button" onClick={() => void player.loadSong(second)}>
@@ -197,4 +203,50 @@ test("Space and arrow shortcuts remain active while a waveform control has focus
 	await waitFor(() => expect(player.play).toHaveBeenCalledTimes(1));
 	fireEvent.keyDown(waveform, { code: "ArrowLeft", key: "ArrowLeft" });
 	expect(player.position()).toBe(29);
+});
+
+test("Space on the load button queues playback until decoding finishes", async () => {
+	const service = new MockTauriService();
+	const url = rs
+		.spyOn(service, "getSongAudioUrl")
+		.mockResolvedValue("first.mp3");
+	const player = setup(service);
+	let finish: () => void = () => {};
+	player.load.mockImplementation(
+		() =>
+			new Promise<void>((resolve) => {
+				finish = resolve;
+			}),
+	);
+	const button = screen.getByText("First");
+	fireEvent.click(button);
+	await waitFor(() => expect(player.load).toHaveBeenCalledTimes(1));
+	button.focus();
+	await userEvent.keyboard(" ");
+	expect(player.play).not.toHaveBeenCalled();
+	await act(async () => finish());
+	await waitFor(() => expect(player.play).toHaveBeenCalledTimes(1));
+	expect(url).toHaveBeenCalledTimes(1);
+	expect(player.load).toHaveBeenCalledTimes(1);
+});
+
+test("a second Space cancels pending playback without restarting the load", async () => {
+	const service = new MockTauriService();
+	rs.spyOn(service, "getSongAudioUrl").mockResolvedValue("first.mp3");
+	const player = setup(service);
+	let finish: () => void = () => {};
+	player.load.mockImplementation(
+		() =>
+			new Promise<void>((resolve) => {
+				finish = resolve;
+			}),
+	);
+	const button = screen.getByText("First");
+	fireEvent.click(button);
+	await waitFor(() => expect(player.load).toHaveBeenCalledTimes(1));
+	fireEvent.keyDown(button, { code: "Space", key: " " });
+	fireEvent.keyDown(button, { code: "Space", key: " " });
+	await act(async () => finish());
+	expect(player.play).not.toHaveBeenCalled();
+	expect(player.load).toHaveBeenCalledTimes(1);
 });

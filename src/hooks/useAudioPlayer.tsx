@@ -54,6 +54,8 @@ export function AudioPlayerProvider({
 	const audioRef = useRef<MemoryAudioPlayer | null>(null);
 	const abortRef = useRef<AbortController | null>(null);
 	const sourceUrlRef = useRef<string | null>(null);
+	const loadingRef = useRef(false);
+	const playAfterLoadRef = useRef(false);
 	const requestRef = useRef(0);
 	const songRef = useRef<Song | null>(null);
 	const [state, setState] = useState(initialState);
@@ -67,6 +69,8 @@ export function AudioPlayerProvider({
 		const audio = audioRef.current;
 		abortRef.current?.abort();
 		sourceUrlRef.current = null;
+		loadingRef.current = false;
+		playAfterLoadRef.current = false;
 		audio?.reset();
 		setState((previous) => ({ ...initialState, volume: previous.volume }));
 	}, []);
@@ -76,6 +80,8 @@ export function AudioPlayerProvider({
 			const audio = audioRef.current;
 			if (!audio) return;
 			const request = ++requestRef.current;
+			loadingRef.current = true;
+			playAfterLoadRef.current = startPlayback;
 			abortRef.current?.abort();
 			const abort = new AbortController();
 			abortRef.current = abort;
@@ -94,12 +100,13 @@ export function AudioPlayerProvider({
 				sourceUrlRef.current = url;
 				await audio.load(url, abort.signal);
 				if (request !== requestRef.current) return;
+				loadingRef.current = false;
 				setState((previous) => ({
 					...previous,
 					duration: audio.duration,
 					loading: false,
 				}));
-				if (startPlayback) {
+				if (playAfterLoadRef.current) {
 					await audio.play();
 					if (request === requestRef.current)
 						setState((previous) => ({ ...previous, playing: audio.playing }));
@@ -107,6 +114,8 @@ export function AudioPlayerProvider({
 			} catch (error) {
 				if (request !== requestRef.current) return;
 				sourceUrlRef.current = null;
+				loadingRef.current = false;
+				playAfterLoadRef.current = false;
 				setState((previous) => ({
 					...previous,
 					loading: false,
@@ -125,6 +134,10 @@ export function AudioPlayerProvider({
 		const audio = audioRef.current;
 		const song = songRef.current;
 		if (!audio || !song) return;
+		if (loadingRef.current) {
+			playAfterLoadRef.current = !playAfterLoadRef.current;
+			return;
+		}
 		if (audio.playing) {
 			audio.pause();
 			setState((previous) => ({
@@ -268,6 +281,7 @@ export function AudioPlayerProvider({
 			if (
 				target instanceof Element &&
 				target.closest("button") &&
+				!target.closest("[data-load-track][aria-pressed='true']") &&
 				(event.code === "Space" || !target.closest("[data-audio-player]"))
 			)
 				return;
