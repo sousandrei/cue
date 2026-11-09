@@ -1,4 +1,4 @@
-import { invoke } from "@tauri-apps/api/core";
+import { convertFileSrc, invoke } from "@tauri-apps/api/core";
 import { type Event, listen, type UnlistenFn } from "@tauri-apps/api/event";
 import {
 	ask,
@@ -82,6 +82,11 @@ export class RealTauriService implements TauriService {
 
 	async checkHealth(): Promise<boolean> {
 		return await invoke<boolean>("check_health");
+	}
+
+	async getSongAudioUrl(id: string): Promise<string> {
+		const path = await invoke<string>("get_song_audio_path", { id });
+		return convertFileSrc(path);
 	}
 
 	async getSongs(): Promise<Song[]> {
