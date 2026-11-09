@@ -10,6 +10,10 @@
 	--color-muted-foreground: var(--muted-foreground);
 	--color-primary: var(--primary);
 	--color-primary-foreground: var(--primary-foreground);
+	--color-primary-strong: var(--primary-strong);
+	--color-primary-strong-foreground: var(--primary-strong-foreground);
+	--color-primary-hover: var(--primary-hover);
+	--color-primary-active: var(--primary-active);
 	--color-accent-warm: var(--accent-warm);
 	--color-accent-cool: var(--accent-cool);
 	--color-destructive: var(--destructive);
@@ -21,31 +25,39 @@
 	--color-primary-subtle: var(--primary-subtle);
 	--radius-sm: 0.375rem;
 	--radius-md: 0.5rem;
-	--radius: var(--radius);
-	--radius-lg: 0.5rem;
+	/* Controls 12px; panels 20px; dialogs 24px. Circles belong to the mark,
+	   compact badges, status indicators, and continuous controls. */
+	--radius-lg: 0.75rem;
+	--radius-xl: 1.25rem;
+	--radius-2xl: 1.5rem;
 	--font-sans: "Inter Variable", sans-serif;
 }
 
 :root {
-	--radius: 0.75rem;
 	color-scheme: dark;
-	--background: #1b1c24;
-	--foreground: #f2f0fa;
-	--card: #252630;
-	--card-foreground: #f2f0fa;
-	--surface-raised: #30313e;
-	--muted: #373847;
-	--muted-foreground: #b6b5c9;
-	--primary: #a798ff;
-	--primary-foreground: #211840;
-	--primary-subtle: #34304d;
-	--accent-warm: #efc58c;
-	--accent-cool: #85dcc4;
-	--destructive: #ff9eae;
-	--destructive-foreground: #3d1420;
-	--border: #424351;
-	--input: #797987;
-	--ring: #baadff;
+	/* Neutral ink surfaces let the violet, mint, and amber carry the color. */
+	--background: #14151b;
+	--foreground: #f4f4f8;
+	--card: #20222b;
+	--card-foreground: #f4f4f8;
+	--surface-raised: #272a35;
+	--muted: #353946;
+	--muted-foreground: #b9bdcc;
+	--primary: #b58aff;
+	--primary-foreground: #200c39;
+	/* Solid violet anchors the identity; lighter violet stays legible as text. */
+	--primary-strong: #8b4cf5;
+	--primary-strong-foreground: #ffffff;
+	--primary-hover: #6d28d9;
+	--primary-active: #5b21b6;
+	--primary-subtle: #2e293f;
+	--accent-warm: #ffc05a;
+	--accent-cool: #36e2b4;
+	--destructive: #ff7097;
+	--destructive-foreground: #350d20;
+	--border: #484d5e;
+	--input: #7e859a;
+	--ring: #dbc6ff;
 	--ease-out: cubic-bezier(0.16, 1, 0.3, 1);
 	--duration-fast: 140ms;
 	--duration-normal: 240ms;

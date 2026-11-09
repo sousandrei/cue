@@ -42,7 +42,7 @@ export function FloatingDock() {
 							className={cn(
 								"group relative isolate flex min-h-11 items-center justify-center gap-2 rounded-xl px-3 py-2 text-xs font-medium transition-colors duration-150 focus-visible:outline-2 focus-visible:outline-ring focus-visible:outline-offset-2 sm:px-5",
 								isActive
-									? "text-primary"
+									? "text-primary-strong-foreground"
 									: "text-muted-foreground hover:text-foreground",
 							)}
 						>
@@ -57,7 +57,7 @@ export function FloatingDock() {
 							{isActive && (
 								<motion.span
 									layoutId="cue-navigation"
-									className="absolute inset-0 -z-10 rounded-xl bg-primary-subtle"
+									className="absolute inset-0 -z-10 rounded-xl bg-primary-strong"
 									transition={{ type: "spring", stiffness: 420, damping: 32 }}
 								/>
 							)}
