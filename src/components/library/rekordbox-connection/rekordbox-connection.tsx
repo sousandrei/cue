@@ -61,11 +61,11 @@ export function RekordboxConnection({
 					className="size-3 opacity-60 transition-transform duration-150 group-data-popup-open:rotate-180"
 				/>
 			</PopoverTrigger>
-			<PopoverContent align="end" className="space-y-3">
+			<PopoverContent align="end" className="space-y-2 p-3">
 				<div className="space-y-1">
 					<div className="flex items-center justify-between gap-2">
-						<PopoverTitle>Rekordbox</PopoverTitle>
-						<Tooltip content="Cue refreshes when Rekordbox saves changes. Playlist updates wait until Rekordbox is closed to avoid conflicts. Close Rekordbox to apply pending tags, then reopen it to see the updated playlists. Refresh checks again manually.">
+						<PopoverTitle className="mr-auto">Rekordbox</PopoverTitle>
+						<Tooltip content="Tags mirror playlists in the Cue folder. Removing a matching tag removes that track from its playlist. Cue refreshes when Rekordbox saves changes. Playlist updates wait until Rekordbox is closed to avoid conflicts. Close Rekordbox to apply pending tags, then reopen it to see the updated playlists. Refresh checks again manually.">
 							<button
 								type="button"
 								aria-label="How automatic Rekordbox sync works"
@@ -74,14 +74,25 @@ export function RekordboxConnection({
 								<Info className="size-3.5" aria-hidden="true" />
 							</button>
 						</Tooltip>
+						<Button
+							variant="ghost"
+							size="icon"
+							className="size-7"
+							disabled={busy}
+							onClick={onRefresh}
+							aria-label="Refresh Rekordbox library"
+							title="Refresh library"
+						>
+							<RefreshCw aria-hidden="true" />
+						</Button>
 					</div>
 					<PopoverDescription>
 						{status?.available
-							? "Tags mirror playlists in the Cue folder. Sync removes tracks without the matching tag."
+							? "Tags sync to playlists in Cue."
 							: "The local library could not be read. Refresh to try again."}
 					</PopoverDescription>
 				</div>
-				<div className="space-y-2 text-xs">
+				<div className="space-y-1.5 text-xs">
 					<p className="text-foreground">
 						{status?.available
 							? `${imported} imported · ${missing} not imported${ambiguous ? ` · ${ambiguous} to review` : ""}`
@@ -110,18 +121,6 @@ export function RekordboxConnection({
 							Checking periodically · live file watching unavailable.
 						</p>
 					)}
-				</div>
-				<div className="flex justify-end pt-1">
-					<Button
-						variant="ghost"
-						size="sm"
-						disabled={busy}
-						onClick={onRefresh}
-						aria-label="Refresh Rekordbox library"
-					>
-						<RefreshCw aria-hidden="true" />
-						Refresh
-					</Button>
 				</div>
 			</PopoverContent>
 		</Popover>
