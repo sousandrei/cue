@@ -8,7 +8,7 @@ export function Logo() {
 			variants={scaleIn}
 			initial="hidden"
 			animate="visible"
-			className="relative flex size-12 shrink-0 items-center justify-center rounded-xl bg-primary text-primary-foreground"
+			className="relative flex size-12 shrink-0 items-center justify-center rounded-full bg-primary-strong text-primary-strong-foreground"
 			whileHover={{ rotate: -6, scale: 1.05 }}
 			whileTap={{ scale: 0.95 }}
 		>
@@ -22,7 +22,7 @@ export function Logo() {
 				strokeWidth="3"
 				strokeLinecap="round"
 				strokeLinejoin="round"
-				className="size-6"
+				className="size-10"
 				aria-hidden="true"
 			>
 				<path d="m6 9 6 6 6-6" />

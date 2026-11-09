@@ -8,6 +8,7 @@ import {
 	SlidersHorizontal,
 } from "lucide-react";
 import { useState } from "react";
+import { Logo } from "@/components/logo";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -40,9 +41,7 @@ export function Studio() {
 				<div className="mx-auto max-w-6xl">
 					<header className="mb-9 flex flex-wrap items-center justify-between gap-5">
 						<div className="flex items-center gap-4">
-							<span className="flex size-12 items-center justify-center rounded-xl bg-primary text-primary-foreground">
-								<Disc3 className="size-7" />
-							</span>
+							<Logo />
 							<div>
 								<h1 className="text-2xl font-semibold tracking-tight">
 									Component studio
@@ -191,14 +190,15 @@ export function Studio() {
 							<CardHeader>
 								<CardTitle>A familiar place to land.</CardTitle>
 								<CardDescription>
-									Charcoal layers. Lavender focus. A distinctly Cue rhythm.
+									Ink layers. Electric violet. A circular mark with room to
+									breathe.
 								</CardDescription>
 							</CardHeader>
 							<CardContent>
 								<div className="flex flex-wrap gap-2 rounded-xl bg-background p-2">
 									<Button
 										variant="ghost"
-										className="flex-1 bg-primary-subtle text-primary"
+										className="flex-1 bg-primary-strong text-primary-strong-foreground"
 									>
 										<ArrowDownToLine />
 										Intake
