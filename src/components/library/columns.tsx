@@ -81,7 +81,7 @@ export const createColumns = (
 				return (
 					<div
 						className={`flex items-center gap-2 font-medium ${
-							isMissing ? "text-destructive/70" : "text-foreground"
+							isMissing ? "text-destructive" : "text-foreground"
 						}`}
 						title={
 							isMissing ? "File missing locally. Use Sync to re-download." : ""

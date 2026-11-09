@@ -208,3 +208,38 @@ export const LongNames: Story = {
 		],
 	},
 };
+
+export const MissingLocalFile: Story = {
+	render: () => (
+		<div className="w-full p-6">
+			<DataTable
+				caption="Collection with a missing local file"
+				columns={createColumns(
+					() => {},
+					() => {},
+					new Set(["missing"]),
+					false,
+					{ onLoad: () => {} },
+				)}
+				data={[
+					{
+						id: "missing",
+						title: "Missing local track",
+						artist: "Studio fixture",
+						filename: "missing.mp3",
+						tags: "house",
+					},
+				]}
+			/>
+		</div>
+	),
+	play: async ({ canvasElement }) => {
+		const canvas = within(canvasElement);
+		await expect(canvas.getByText("Missing local track")).toBeVisible();
+		await expect(
+			canvas.getByRole("button", {
+				name: "Load Missing local track into player",
+			}),
+		).toBeDisabled();
+	},
+};
