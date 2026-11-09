@@ -11,6 +11,11 @@ export class MemoryAudioPlayer {
 	private generation = 0;
 	private playRequest = 0;
 	private level = 0.8;
+	private visualClock: {
+		frameTime: number;
+		contextTime: number;
+		output: boolean;
+	} | null = null;
 	onEnded?: () => void;
 
 	constructor(context: AudioContext | null = null) {
@@ -31,6 +36,56 @@ export class MemoryAudioPlayer {
 					: 0),
 		);
 	}
+	/** Advance smoothly at display time, gently following audio-clock drift.
+	 * Transport operations keep using the exact source position. */
+	getVisualPosition(frameTime = performance.now()) {
+		const context = this.context;
+		if (
+			!this.active ||
+			!this.voice ||
+			context?.state !== "running" ||
+			!Number.isFinite(frameTime)
+		) {
+			this.visualClock = null;
+			return this.position;
+		}
+		const timestamp =
+			typeof context.getOutputTimestamp === "function"
+				? context.getOutputTimestamp()
+				: undefined;
+		const contextTime = timestamp?.contextTime;
+		const performanceTime = timestamp?.performanceTime;
+		const output =
+			contextTime !== undefined &&
+			performanceTime !== undefined &&
+			Number.isFinite(contextTime) &&
+			Number.isFinite(performanceTime) &&
+			performanceTime > 0;
+		let time = output
+			? contextTime + (frameTime - performanceTime) / 1000
+			: context.currentTime;
+		const clock = this.visualClock;
+		if (clock && clock.output === output) {
+			const elapsed = (frameTime - clock.frameTime) / 1000;
+			const predicted = clock.contextTime + elapsed;
+			const error = time - predicted;
+			// Ignore timestamp noise without accumulating drift. A resumed/changed
+			// clock snaps to the latest audio time instead of replaying missed frames.
+			if (elapsed >= 0 && elapsed <= 0.25 && Math.abs(error) <= 0.1) {
+				time = predicted + error * (1 - Math.exp(-elapsed / 0.5));
+			}
+		}
+		if (clock) {
+			clock.frameTime = frameTime;
+			clock.contextTime = time;
+			clock.output = output;
+		} else this.visualClock = { frameTime, contextTime: time, output };
+		return Math.min(
+			this.duration,
+			this.offset + Math.max(0, time - this.startedAt),
+		);
+	}
+
 	private audioContext() {
 		if (!this.context || this.context.state === "closed")
 			this.context = new AudioContext({ latencyHint: "interactive" });
@@ -70,6 +125,7 @@ export class MemoryAudioPlayer {
 	}
 	pause() {
 		this.offset = this.position;
+		this.visualClock = null;
 		this.active = false;
 		this.playRequest++;
 		this.retireVoice();
@@ -106,6 +162,7 @@ export class MemoryAudioPlayer {
 		this.context = null;
 	}
 	private startVoice() {
+		this.visualClock = null;
 		const context = this.audioContext();
 		const source = context.createBufferSource();
 		const gain = context.createGain();

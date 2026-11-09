@@ -292,3 +292,31 @@ test("track selection subscribers skip playback clock and seek updates", async (
 	fireEvent.click(screen.getByText("Stop"));
 	expect(selections).toEqual([undefined, "first", "second", undefined]);
 });
+
+function PositionProbe({
+	capture,
+}: {
+	capture: (read: (frameTime?: number) => number) => void;
+}) {
+	capture(useAudioPlayer().getPosition);
+	return null;
+}
+
+test("transport shortcuts use the exact clock while frame reads use the visual clock", () => {
+	let read: (frameTime?: number) => number = () => -1;
+	const visual = rs
+		.spyOn(MemoryAudioPlayer.prototype, "getVisualPosition")
+		.mockReturnValue(12.125);
+	setup(
+		new MockTauriService(),
+		<PositionProbe
+			capture={(value) => {
+				read = value;
+			}}
+		/>,
+	);
+	expect(read()).toBe(0);
+	expect(visual).not.toHaveBeenCalled();
+	expect(read(1234)).toBe(12.125);
+	expect(visual).toHaveBeenCalledWith(1234);
+});

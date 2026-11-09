@@ -28,7 +28,7 @@ interface AudioPlayer extends AudioPlayerState {
 	analysis: TrackAnalysis | null;
 	analysisStatus: ReturnType<typeof useTrackAnalysis>["status"];
 	skipBar: (direction: -1 | 1) => void;
-	getPosition: () => number;
+	getPosition: (frameTime?: number) => number;
 	loadSong: (song: Song) => Promise<void>;
 	toggle: () => void;
 	seek: (position: number) => void;
@@ -68,7 +68,14 @@ export function AudioPlayerProvider({
 	const [state, setState] = useState(initialState);
 	if (!audioRef.current) audioRef.current = new MemoryAudioPlayer();
 	const trackAnalysis = useTrackAnalysis(state.song?.id);
-	const getPosition = useCallback(() => audioRef.current?.position ?? 0, []);
+	const getPosition = useCallback((frameTime?: number) => {
+		const audio = audioRef.current;
+		return (
+			(frameTime === undefined
+				? audio?.position
+				: audio?.getVisualPosition(frameTime)) ?? 0
+		);
+	}, []);
 
 	const stop = useCallback(() => {
 		requestRef.current++;
