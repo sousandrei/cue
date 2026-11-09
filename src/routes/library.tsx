@@ -67,58 +67,56 @@ function Library() {
 			<Header
 				title="Collection"
 				subtitle="Your tracks, ready for the next set."
+				actionClassName="w-full md:w-auto"
+				action={
+					<div className="flex w-full flex-wrap items-center justify-between gap-3 md:justify-end">
+						<div className="relative w-full sm:w-72">
+							<Search
+								className="pointer-events-none absolute left-3 top-3 size-4 text-muted-foreground"
+								aria-hidden="true"
+							/>
+							<Input
+								type="search"
+								aria-label="Search collection"
+								placeholder="Search tracks, artists, or tags"
+								value={query}
+								onChange={(event) => setQuery(event.target.value)}
+								className="pl-9"
+							/>
+						</div>
+						<div className="flex w-full flex-wrap items-center justify-between gap-3 sm:w-auto sm:justify-end">
+							{missingIds.size > 0 && (
+								<Button
+									variant="outline"
+									size="sm"
+									onClick={handleSyncAll}
+									className="flex items-center gap-2"
+								>
+									<RefreshCw className="w-4 h-4" />
+									Sync
+									<span className="ml-1 rounded-full bg-destructive text-destructive-foreground text-xs font-semibold px-1.5 py-0.5">
+										{missingIds.size}
+									</span>
+								</Button>
+							)}
+							<RekordboxConnection
+								status={rekordbox}
+								refreshing={refreshingRekordbox}
+								onRefresh={refreshRekordbox}
+							/>
+						</div>
+					</div>
+				}
 			/>
 			<section
 				aria-label="Music collection"
 				className="flex min-h-0 min-w-0 flex-1 flex-col gap-4"
 			>
-				<div className="flex shrink-0 flex-wrap items-center justify-between gap-3">
-					<div className="relative w-full sm:max-w-sm">
-						<Search
-							className="pointer-events-none absolute left-3 top-3 size-4 text-muted-foreground"
-							aria-hidden="true"
-						/>
-						<Input
-							type="search"
-							aria-label="Search collection"
-							placeholder="Search tracks, artists, or tags"
-							value={query}
-							onChange={(event) => setQuery(event.target.value)}
-							className="pl-9"
-						/>
-					</div>
-					<div className="flex w-full flex-wrap items-center justify-between gap-3 sm:w-auto sm:justify-end">
-						<p
-							className="text-xs tabular-nums text-muted-foreground"
-							role="status"
-						>
-							{filteredSongs.length} of {songs.length} tracks
-						</p>
-						{missingIds.size > 0 && (
-							<Button
-								variant="outline"
-								size="sm"
-								onClick={handleSyncAll}
-								className="flex items-center gap-2"
-							>
-								<RefreshCw className="w-4 h-4" />
-								Sync
-								<span className="ml-1 rounded-full bg-destructive text-destructive-foreground text-xs font-semibold px-1.5 py-0.5">
-									{missingIds.size}
-								</span>
-							</Button>
-						)}
-						<RekordboxConnection
-							status={rekordbox}
-							refreshing={refreshingRekordbox}
-							onRefresh={refreshRekordbox}
-						/>
-					</div>
-				</div>
 				<Player
 					{...player}
 					onToggle={player.toggle}
 					onSeek={player.seek}
+					onSkipBar={player.skipBar}
 					onVolumeChange={player.setVolume}
 					onClose={player.stop}
 				/>

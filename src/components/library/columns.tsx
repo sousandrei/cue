@@ -1,5 +1,5 @@
 import type { ColumnDef } from "@tanstack/react-table";
-import { AlertCircle, Plus, Trash2, Upload } from "lucide-react";
+import { AlertCircle, Play, Plus, Trash2 } from "lucide-react";
 import { useState } from "react";
 
 import { TagBadge } from "@/components/library/tag-badge";
@@ -107,7 +107,7 @@ export const createColumns = (
 										playback.onLoad(row.original);
 								}}
 							>
-								<Upload aria-hidden="true" />
+								<Play aria-hidden="true" />
 							</Button>
 						)}
 						{isMissing && <AlertCircle className="w-4 h-4 text-destructive" />}
