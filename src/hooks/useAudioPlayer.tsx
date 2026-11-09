@@ -6,8 +6,11 @@ import {
 	useRef,
 	useState,
 } from "react";
-import type { Song } from "@/lib/tauri/core/types";
+import { barSeekTarget } from "@/lib/audio";
+import { MemoryAudioPlayer } from "@/lib/MemoryAudioPlayer";
+import type { Song, TrackAnalysis } from "@/lib/tauri/core/types";
 import { useTauri } from "@/lib/tauri/TauriProvider";
+import { useTrackAnalysis } from "./useTrackAnalysis";
 
 export interface AudioPlayerState {
 	song: Song | null;
@@ -20,6 +23,10 @@ export interface AudioPlayerState {
 }
 
 interface AudioPlayer extends AudioPlayerState {
+	analysis: TrackAnalysis | null;
+	analysisStatus: ReturnType<typeof useTrackAnalysis>["status"];
+	skipBar: (direction: -1 | 1) => void;
+	getPosition: () => number;
 	loadSong: (song: Song) => Promise<void>;
 	toggle: () => void;
 	seek: (position: number) => void;
@@ -44,20 +51,23 @@ export function AudioPlayerProvider({
 	children: React.ReactNode;
 }) {
 	const tauri = useTauri();
-	const audioRef = useRef<HTMLAudioElement>(null);
+	const audioRef = useRef<MemoryAudioPlayer | null>(null);
+	const abortRef = useRef<AbortController | null>(null);
+	const sourceUrlRef = useRef<string | null>(null);
 	const requestRef = useRef(0);
 	const songRef = useRef<Song | null>(null);
 	const [state, setState] = useState(initialState);
+	if (!audioRef.current) audioRef.current = new MemoryAudioPlayer();
+	const trackAnalysis = useTrackAnalysis(state.song?.id);
+	const getPosition = useCallback(() => audioRef.current?.position ?? 0, []);
 
 	const stop = useCallback(() => {
 		requestRef.current++;
 		songRef.current = null;
 		const audio = audioRef.current;
-		if (audio) {
-			audio.pause();
-			audio.removeAttribute("src");
-			audio.load();
-		}
+		abortRef.current?.abort();
+		sourceUrlRef.current = null;
+		audio?.reset();
 		setState((previous) => ({ ...initialState, volume: previous.volume }));
 	}, []);
 
@@ -66,9 +76,11 @@ export function AudioPlayerProvider({
 			const audio = audioRef.current;
 			if (!audio) return;
 			const request = ++requestRef.current;
-			audio.pause();
-			audio.removeAttribute("src");
-			audio.load();
+			abortRef.current?.abort();
+			const abort = new AbortController();
+			abortRef.current = abort;
+			sourceUrlRef.current = null;
+			audio.reset();
 			songRef.current = song;
 			setState((previous) => ({
 				...initialState,
@@ -79,11 +91,22 @@ export function AudioPlayerProvider({
 			try {
 				const url = await tauri.getSongAudioUrl(song.id);
 				if (request !== requestRef.current) return;
-				audio.src = url;
-				audio.load();
-				if (startPlayback) await audio.play();
+				sourceUrlRef.current = url;
+				await audio.load(url, abort.signal);
+				if (request !== requestRef.current) return;
+				setState((previous) => ({
+					...previous,
+					duration: audio.duration,
+					loading: false,
+				}));
+				if (startPlayback) {
+					await audio.play();
+					if (request === requestRef.current)
+						setState((previous) => ({ ...previous, playing: audio.playing }));
+				}
 			} catch (error) {
 				if (request !== requestRef.current) return;
+				sourceUrlRef.current = null;
 				setState((previous) => ({
 					...previous,
 					loading: false,
@@ -102,47 +125,93 @@ export function AudioPlayerProvider({
 		const audio = audioRef.current;
 		const song = songRef.current;
 		if (!audio || !song) return;
-		if (!audio.paused) {
+		if (audio.playing) {
 			audio.pause();
+			setState((previous) => ({
+				...previous,
+				playing: false,
+				position: audio.position,
+			}));
 			return;
 		}
 		// Reload on retry so missing or replaced files are resolved again.
-		if (!audio.getAttribute("src") || audio.error) {
+		if (!sourceUrlRef.current) {
 			void loadSong(song, true);
 			return;
 		}
 		const request = requestRef.current;
 		setState((previous) => ({ ...previous, error: null }));
-		void audio.play().catch(() => {
-			if (request === requestRef.current)
-				setState((previous) => ({
-					...previous,
-					loading: false,
-					error: "Could not resume playback. Try loading the track again.",
-				}));
-		});
+		void audio
+			.play()
+			.then(() => {
+				if (request === requestRef.current)
+					setState((previous) => ({
+						...previous,
+						playing: audio.playing,
+						position: audio.position,
+					}));
+			})
+			.catch(() => {
+				if (request === requestRef.current)
+					setState((previous) => ({
+						...previous,
+						loading: false,
+						playing: false,
+						error: "Could not resume playback. Try loading the track again.",
+					}));
+			});
 	}, [loadSong]);
 
 	const seek = useCallback((position: number) => {
 		const audio = audioRef.current;
 		if (!audio || !Number.isFinite(audio.duration) || audio.duration <= 0)
 			return;
-		audio.currentTime = Math.max(0, Math.min(position, audio.duration));
-		setState((previous) => ({ ...previous, position: audio.currentTime }));
+		audio.seek(position);
+		setState((previous) => ({ ...previous, position: audio.position }));
 	}, []);
+
+	const skipBar = useCallback(
+		(direction: -1 | 1) => {
+			seek(
+				barSeekTarget(
+					getPosition(),
+					direction,
+					trackAnalysis.analysis?.beats ?? [],
+				),
+			);
+		},
+		[getPosition, seek, trackAnalysis.analysis],
+	);
 
 	const setVolume = useCallback((volume: number) => {
 		const value = Math.max(0, Math.min(volume, 1));
-		if (audioRef.current) audioRef.current.volume = value;
+		if (audioRef.current) audioRef.current.setVolume(value);
 		setState((previous) => ({ ...previous, volume: value }));
 	}, []);
 
 	useEffect(() => {
 		const audio = audioRef.current;
-		if (audio) audio.volume = initialState.volume;
+		if (!audio) return;
+		audio.setVolume(initialState.volume);
+		audio.onEnded = () =>
+			setState((previous) => ({
+				...previous,
+				playing: false,
+				position: audio.duration,
+			}));
+		const timer = window.setInterval(() => {
+			if (audio.playing)
+				setState((previous) => ({
+					...previous,
+					playing: true,
+					position: audio.position,
+				}));
+		}, 100);
 		return () => {
 			requestRef.current++;
-			audio?.pause();
+			abortRef.current?.abort();
+			window.clearInterval(timer);
+			audio.dispose();
 		};
 	}, []);
 
@@ -155,8 +224,8 @@ export function AudioPlayerProvider({
 				const url = await tauri.getSongAudioUrl(song.id);
 				if (
 					request === requestRef.current &&
-					audioRef.current?.getAttribute("src") &&
-					audioRef.current.src !== url
+					sourceUrlRef.current &&
+					sourceUrlRef.current !== url
 				)
 					stop();
 			} catch {
@@ -185,11 +254,21 @@ export function AudioPlayerProvider({
 			)
 				return;
 			const target = event.target;
+			const waveformFocused =
+				target instanceof Element &&
+				target.closest("[data-waveform], [data-audio-seek]");
 			if (
+				!waveformFocused &&
 				target instanceof Element &&
 				target.closest(
-					"input, textarea, select, button, a, [role='slider'], [role='textbox'], [contenteditable='true']",
+					"input, textarea, select, a, [role='slider'], [role='textbox'], [contenteditable='true']",
 				)
+			)
+				return;
+			if (
+				target instanceof Element &&
+				target.closest("button") &&
+				(event.code === "Space" || !target.closest("[data-audio-player]"))
 			)
 				return;
 			if (event.code === "Space") {
@@ -197,80 +276,29 @@ export function AudioPlayerProvider({
 				toggle();
 			} else if (event.code === "ArrowLeft" || event.code === "ArrowRight") {
 				event.preventDefault();
-				seek(
-					(audioRef.current?.currentTime ?? 0) +
-						(event.code === "ArrowLeft" ? -5 : 5),
-				);
+				skipBar(event.code === "ArrowLeft" ? -1 : 1);
 			}
 		};
 		window.addEventListener("keydown", onKeyDown);
 		return () => window.removeEventListener("keydown", onKeyDown);
-	}, [seek, toggle]);
-
-	const updateTime = () => {
-		const audio = audioRef.current;
-		if (!audio?.getAttribute("src")) return;
-		setState((previous) => ({
-			...previous,
-			position: audio.currentTime,
-			duration: Number.isFinite(audio.duration) ? audio.duration : 0,
-		}));
-	};
+	}, [skipBar, toggle]);
 
 	return (
 		<AudioPlayerContext.Provider
-			value={{ ...state, loadSong, toggle, seek, setVolume, stop }}
+			value={{
+				...state,
+				analysis: trackAnalysis.analysis,
+				analysisStatus: trackAnalysis.status,
+				loadSong,
+				toggle,
+				seek,
+				skipBar,
+				getPosition,
+				setVolume,
+				stop,
+			}}
 		>
 			{children}
-			{/* biome-ignore lint/a11y/useMediaCaption: Local music has no caption track; accessible playback controls are provided in Collection. */}
-			<audio
-				ref={audioRef}
-				preload="metadata"
-				onTimeUpdate={updateTime}
-				onDurationChange={updateTime}
-				onLoadedMetadata={() => {
-					updateTime();
-					setState((previous) => ({ ...previous, loading: false }));
-				}}
-				onPlaying={() =>
-					setState((previous) => ({
-						...previous,
-						playing: true,
-						loading: false,
-						error: null,
-					}))
-				}
-				onPause={() =>
-					setState((previous) => ({
-						...previous,
-						playing: false,
-						loading: false,
-					}))
-				}
-				onWaiting={() =>
-					setState((previous) => ({ ...previous, loading: true }))
-				}
-				onCanPlay={() =>
-					setState((previous) => ({ ...previous, loading: false }))
-				}
-				onEnded={() =>
-					setState((previous) => ({
-						...previous,
-						playing: false,
-						loading: false,
-					}))
-				}
-				onError={() => {
-					if (audioRef.current?.getAttribute("src"))
-						setState((previous) => ({
-							...previous,
-							playing: false,
-							loading: false,
-							error:
-								"Could not read this audio file. Try syncing the track again.",
-						}));
-				}}
-			/>
 		</AudioPlayerContext.Provider>
 	);
 }
