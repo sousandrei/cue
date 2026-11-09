@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, rs, test } from "@rstest/core";
+import { afterEach, expect, rs, test } from "@rstest/core";
 import {
 	act,
 	fireEvent,
@@ -6,6 +6,7 @@ import {
 	screen,
 	waitFor,
 } from "@testing-library/react";
+import { MemoryAudioPlayer } from "@/lib/MemoryAudioPlayer";
 import { MockTauriService } from "@/lib/tauri/core/MockTauriService";
 import type { Song } from "@/lib/tauri/core/types";
 import { TauriProvider } from "@/lib/tauri/TauriProvider";
@@ -17,8 +18,7 @@ const first: Song = {
 	artist: "Artist",
 	filename: "first.mp3",
 };
-const second: Song = { ...first, id: "second", title: "Second" };
-
+const second = { ...first, id: "second", title: "Second" };
 function Harness() {
 	const player = useAudioPlayer();
 	return (
@@ -39,154 +39,162 @@ function Harness() {
 				Seek
 			</button>
 			<input aria-label="Search" />
+			<div data-waveform="">
+				<input type="range" aria-label="Focused waveform" />
+			</div>
 			<output data-testid="state">
 				{JSON.stringify({
 					song: player.song?.id,
-					error: player.error,
 					loading: player.loading,
+					error: player.error,
 					position: player.position,
+					playing: player.playing,
 				})}
 			</output>
 		</>
 	);
 }
 function setup(service = new MockTauriService()) {
-	const play = rs
-		.spyOn(HTMLMediaElement.prototype, "play")
+	let position = 0;
+	let playing = false;
+	rs.spyOn(MemoryAudioPlayer.prototype, "duration", "get").mockReturnValue(30);
+	rs.spyOn(MemoryAudioPlayer.prototype, "position", "get").mockImplementation(
+		() => position,
+	);
+	rs.spyOn(MemoryAudioPlayer.prototype, "playing", "get").mockImplementation(
+		() => playing,
+	);
+	const load = rs
+		.spyOn(MemoryAudioPlayer.prototype, "load")
 		.mockResolvedValue(undefined);
-	rs.spyOn(HTMLMediaElement.prototype, "pause").mockImplementation(() => {});
-	rs.spyOn(HTMLMediaElement.prototype, "load").mockImplementation(() => {});
-	const result = render(
+	const play = rs
+		.spyOn(MemoryAudioPlayer.prototype, "play")
+		.mockImplementation(async () => {
+			playing = true;
+		});
+	rs.spyOn(MemoryAudioPlayer.prototype, "pause").mockImplementation(() => {
+		playing = false;
+	});
+	const reset = rs
+		.spyOn(MemoryAudioPlayer.prototype, "reset")
+		.mockImplementation(() => {
+			playing = false;
+			position = 0;
+		});
+	rs.spyOn(MemoryAudioPlayer.prototype, "seek").mockImplementation((value) => {
+		position = Math.max(0, Math.min(30, value));
+	});
+	render(
 		<TauriProvider service={service}>
 			<AudioPlayerProvider>
 				<Harness />
 			</AudioPlayerProvider>
 		</TauriProvider>,
 	);
-	const audio = result.container.querySelector("audio");
-	if (!audio) throw new Error("Audio element missing");
-	return { ...result, audio, play, service };
+	return { load, play, reset, position: () => position };
 }
 afterEach(() => {
 	rs.restoreAllMocks();
 });
 
-describe("shared audio player", () => {
-	test("only loads the latest track when URL requests resolve out of order", async () => {
-		const service = new MockTauriService();
-		let resolveFirst: (url: string) => void = () => {};
-		let resolveSecond: (url: string) => void = () => {};
-		rs.spyOn(service, "getSongAudioUrl").mockImplementation(
-			(id) =>
-				new Promise<string>((resolve) => {
-					if (id === "first") resolveFirst = resolve;
-					else resolveSecond = resolve;
-				}),
-		);
-		const { audio, play } = setup(service);
-		fireEvent.click(screen.getByText("First"));
-		fireEvent.click(screen.getByText("Second"));
-		await act(async () => resolveSecond("https://example.com/second.mp3"));
-		await act(async () => resolveFirst("https://example.com/first.mp3"));
-		expect(audio.src).toBe("https://example.com/second.mp3");
-		expect(play).not.toHaveBeenCalled();
-		expect(screen.getByTestId("state").textContent).toContain(
-			'"song":"second"',
-		);
+test("loads paused and starts only from an explicit play action", async () => {
+	const service = new MockTauriService();
+	rs.spyOn(service, "getSongAudioUrl").mockResolvedValue("first.mp3");
+	const { load, play } = setup(service);
+	fireEvent.click(screen.getByText("First"));
+	await waitFor(() => expect(load).toHaveBeenCalledTimes(1));
+	expect(play).not.toHaveBeenCalled();
+	fireEvent.click(screen.getByText("Toggle"));
+	await waitFor(() => expect(play).toHaveBeenCalledTimes(1));
+	fireEvent.click(screen.getByText("Second"));
+	await waitFor(() => expect(load).toHaveBeenCalledTimes(2));
+	expect(play).toHaveBeenCalledTimes(1);
+});
+test("ignores out-of-order track URL requests", async () => {
+	const service = new MockTauriService();
+	const pending = new Map<string, (url: string) => void>();
+	rs.spyOn(service, "getSongAudioUrl").mockImplementation(
+		(id) => new Promise((resolve) => pending.set(id, resolve)),
+	);
+	const { load } = setup(service);
+	fireEvent.click(screen.getByText("First"));
+	fireEvent.click(screen.getByText("Second"));
+	await act(async () => pending.get("second")?.("second.mp3"));
+	await act(async () => pending.get("first")?.("first.mp3"));
+	expect(load).toHaveBeenCalledTimes(1);
+	expect(load.mock.calls[0][0]).toBe("second.mp3");
+});
+test("stopping cancels a pending load", async () => {
+	const service = new MockTauriService();
+	let resolveUrl: (url: string) => void = () => {};
+	rs.spyOn(service, "getSongAudioUrl").mockImplementation(
+		() =>
+			new Promise((resolve) => {
+				resolveUrl = resolve;
+			}),
+	);
+	const { load } = setup(service);
+	fireEvent.click(screen.getByText("First"));
+	fireEvent.click(screen.getByText("Stop"));
+	await act(async () => resolveUrl("first.mp3"));
+	expect(load).not.toHaveBeenCalled();
+});
+test("retries missing files", async () => {
+	const service = new MockTauriService();
+	const resolve = rs
+		.spyOn(service, "getSongAudioUrl")
+		.mockRejectedValueOnce("File missing")
+		.mockResolvedValue("first.mp3");
+	setup(service);
+	fireEvent.click(screen.getByText("First"));
+	await waitFor(() =>
+		expect(screen.getByTestId("state").textContent).toContain("File missing"),
+	);
+	fireEvent.click(screen.getByText("Toggle"));
+	await waitFor(() => expect(resolve).toHaveBeenCalledTimes(2));
+});
+test("clears the active track when it is removed", async () => {
+	const service = new MockTauriService();
+	rs.spyOn(service, "getSongAudioUrl")
+		.mockResolvedValueOnce("first.mp3")
+		.mockRejectedValue("Song not found");
+	const { load } = setup(service);
+	fireEvent.click(screen.getByText("First"));
+	await waitFor(() => expect(load).toHaveBeenCalledTimes(1));
+	await act(async () => {
+		await service.removeSong(first.id);
 	});
-
-	test("loads paused and starts only when the player is toggled", async () => {
-		const service = new MockTauriService();
-		rs.spyOn(service, "getSongAudioUrl").mockImplementation(
-			async (id) => `https://example.com/${id}.mp3`,
-		);
-		const { audio, play } = setup(service);
-		fireEvent.click(screen.getByText("First"));
-		await waitFor(() =>
-			expect(audio.src).toBe("https://example.com/first.mp3"),
-		);
-		expect(audio.paused).toBe(true);
-		expect(play).not.toHaveBeenCalled();
-		fireEvent.click(screen.getByText("Toggle"));
-		expect(play).toHaveBeenCalledTimes(1);
-		fireEvent.playing(audio);
-		fireEvent.click(screen.getByText("Second"));
-		await waitFor(() =>
-			expect(audio.src).toBe("https://example.com/second.mp3"),
-		);
-		expect(play).toHaveBeenCalledTimes(1);
-		expect(audio.paused).toBe(true);
-	});
-
-	test("stopping cancels a pending load", async () => {
-		const service = new MockTauriService();
-		let resolveUrl: (url: string) => void = () => {};
-		rs.spyOn(service, "getSongAudioUrl").mockImplementation(
-			() =>
-				new Promise<string>((resolve) => {
-					resolveUrl = resolve;
-				}),
-		);
-		const { audio, play } = setup(service);
-		fireEvent.click(screen.getByText("First"));
-		fireEvent.click(screen.getByText("Stop"));
-		await act(async () => resolveUrl("https://example.com/first.mp3"));
-		expect(audio.hasAttribute("src")).toBe(false);
-		expect(play).not.toHaveBeenCalled();
-	});
-
-	test("reports missing files and retries them", async () => {
-		const service = new MockTauriService();
-		const resolve = rs
-			.spyOn(service, "getSongAudioUrl")
-			.mockRejectedValueOnce("File missing")
-			.mockResolvedValue("https://example.com/first.mp3");
-		setup(service);
-		fireEvent.click(screen.getByText("First"));
-		await waitFor(() =>
-			expect(screen.getByTestId("state").textContent).toContain("File missing"),
-		);
-		fireEvent.click(screen.getByText("Toggle"));
-		await waitFor(() => expect(resolve).toHaveBeenCalledTimes(2));
-	});
-
-	test("clears playback when the active track is removed from the library", async () => {
-		const service = new MockTauriService();
-		rs.spyOn(service, "getSongAudioUrl")
-			.mockResolvedValueOnce("https://example.com/first.mp3")
-			.mockRejectedValue("Song not found");
-		const { audio } = setup(service);
-		fireEvent.click(screen.getByText("First"));
-		await waitFor(() =>
-			expect(audio.getAttribute("src")).toBe("https://example.com/first.mp3"),
-		);
-		await act(async () => {
-			await service.removeSong(first.id);
-		});
-		await waitFor(() => expect(audio.hasAttribute("src")).toBe(false));
+	await waitFor(() =>
 		expect(screen.getByTestId("state").textContent).not.toContain(
 			'"song":"first"',
-		);
-	});
+		),
+	);
+});
+test("clamps seeks and leaves typing shortcuts alone", async () => {
+	const service = new MockTauriService();
+	rs.spyOn(service, "getSongAudioUrl").mockResolvedValue("first.mp3");
+	const player = setup(service);
+	fireEvent.click(screen.getByText("First"));
+	await waitFor(() => expect(player.load).toHaveBeenCalledTimes(1));
+	fireEvent.click(screen.getByText("Seek"));
+	expect(player.position()).toBe(30);
+	fireEvent.keyDown(screen.getByRole("textbox"), { code: "ArrowLeft" });
+	expect(player.position()).toBe(30);
+	fireEvent.keyDown(document.body, { code: "ArrowLeft" });
+	expect(player.position()).toBe(29);
+});
 
-	test("clamps seeking and leaves typing shortcuts alone", async () => {
-		const service = new MockTauriService();
-		rs.spyOn(service, "getSongAudioUrl").mockResolvedValue(
-			"https://example.com/first.mp3",
-		);
-		const { audio, play } = setup(service);
-		fireEvent.click(screen.getByText("First"));
-		await waitFor(() =>
-			expect(audio.getAttribute("src")).toBe("https://example.com/first.mp3"),
-		);
-		Object.defineProperty(audio, "duration", { configurable: true, value: 30 });
-		fireEvent.click(screen.getByText("Seek"));
-		expect(audio.currentTime).toBe(30);
-		fireEvent.keyDown(screen.getByRole("textbox"), { code: "ArrowLeft" });
-		expect(audio.currentTime).toBe(30);
-		fireEvent.keyDown(document.body, { code: "ArrowLeft" });
-		expect(audio.currentTime).toBe(25);
-		fireEvent.keyDown(screen.getByRole("textbox"), { code: "Space" });
-		expect(play).not.toHaveBeenCalled();
-	});
+test("Space and arrow shortcuts remain active while a waveform control has focus", async () => {
+	const service = new MockTauriService();
+	rs.spyOn(service, "getSongAudioUrl").mockResolvedValue("first.mp3");
+	const player = setup(service);
+	fireEvent.click(screen.getByText("First"));
+	await waitFor(() => expect(player.load).toHaveBeenCalledTimes(1));
+	fireEvent.click(screen.getByText("Seek"));
+	const waveform = screen.getByRole("slider", { name: "Focused waveform" });
+	waveform.focus();
+	fireEvent.keyDown(waveform, { code: "Space", key: " " });
+	await waitFor(() => expect(player.play).toHaveBeenCalledTimes(1));
+	fireEvent.keyDown(waveform, { code: "ArrowLeft", key: "ArrowLeft" });
+	expect(player.position()).toBe(29);
 });
