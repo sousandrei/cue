@@ -9,6 +9,7 @@ import { FloatingDock } from "@/components/navigation";
 import { ToastProvider } from "@/components/ui/toast";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { Updater } from "@/components/updater";
+import { AudioPlayerProvider } from "@/hooks/useAudioPlayer";
 import { TauriProvider, useTauri } from "@/lib/tauri/TauriProvider";
 
 const RootLayoutContent = () => {
@@ -56,7 +57,9 @@ const RootLayout = () => (
 	<TauriProvider>
 		<ToastProvider>
 			<TooltipProvider>
-				<RootLayoutContent />
+				<AudioPlayerProvider>
+					<RootLayoutContent />
+				</AudioPlayerProvider>
 			</TooltipProvider>
 		</ToastProvider>
 	</TauriProvider>
