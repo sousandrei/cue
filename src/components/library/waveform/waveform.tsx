@@ -12,7 +12,7 @@ interface WaveformProps {
 	duration: number;
 	onSeek: (position: number) => void;
 	playing?: boolean;
-	getPosition?: () => number;
+	getPosition?: (frameTime?: number) => number;
 }
 const zoomBars = [2, 4, 8, 16, 32];
 

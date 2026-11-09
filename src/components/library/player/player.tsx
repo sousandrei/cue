@@ -14,7 +14,7 @@ interface PlayerProps extends AudioPlayerState {
 	onVolumeChange: (volume: number) => void;
 	onClose: () => void;
 	onSkipBar?: (direction: -1 | 1) => void;
-	getPosition?: () => number;
+	getPosition?: (frameTime?: number) => number;
 }
 
 function PlayerSlider({
