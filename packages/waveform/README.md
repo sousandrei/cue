@@ -86,13 +86,19 @@ from browser tests; visible smoothness is checked in the native application.
 Run from the repository root:
 
 ```sh
-bun run test:waveform
-WAVEFORM_TEST_BROWSER=webkit bun run test:waveform
-WAVEFORM_TEST_BROWSER=firefox bun run test:waveform
+bun run test
+bun run test --project @cue/waveform
+bun run test --project @cue/waveform --browser.name webkit
+bun run test --project @cue/waveform --browser.name firefox
 ```
 
-Install the matching Playwright browser engines first. The default Chromium run
-is also included in `bun run test`. CI runs the package in all three engines.
+Install the matching Playwright browser engines first. The root test runner
+automatically discovers `packages/*/rstest.config.ts`, with isolated app and
+package projects. The default browser is Chromium. CI runs workspace browser
+projects in WebKit and Firefox too, using `--project '@cue/*' --browser.name ...`.
+New packages add their own `rstest.config.ts` with an `@cue/` project name;
+no root script or package-specific CI step is needed. Browser selection is a
+standard Rstest CLI option rather than a package-specific environment variable.
 Tests cover actual pixel stability and animation interpolation, clock drift,
 seeks, zoom, cache refills, display scaling, track boundaries, fallback drawing,
 empty waveforms, invalid geometry, and resource disposal. Cue's component tests
