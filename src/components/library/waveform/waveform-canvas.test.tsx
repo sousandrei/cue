@@ -1,5 +1,5 @@
 import { expect, rs, test } from "@rstest/core";
-import { act, render } from "@testing-library/react";
+import { act, fireEvent, render } from "@testing-library/react";
 import { exampleAnalysis } from "@/test/analysis";
 import { WaveformCanvas } from "./waveform-canvas";
 
@@ -24,7 +24,7 @@ test("keeps one frame loop across clock updates and reads the latest view and ca
 		.mockImplementation(() => {});
 	const disconnect = rs.spyOn(ResizeObserver.prototype, "disconnect");
 	let position = 12;
-	const getPosition = () => position;
+	const getPosition = rs.fn((_frameTime?: number) => position);
 	const firstFrame = rs.fn();
 	const nextFrame = rs.fn();
 	const props = {
@@ -37,12 +37,12 @@ test("keeps one frame loop across clock updates and reads the latest view and ca
 		follow: true,
 		onFrame: firstFrame,
 	};
-	const frame = () =>
+	const frame = (timestamp = performance.now()) =>
 		act(() => {
 			const entry = frames.entries().next().value;
 			if (!entry) throw new Error("Expected a pending animation frame");
 			frames.delete(entry[0]);
-			entry[1](performance.now());
+			entry[1](timestamp);
 		});
 	try {
 		const view = render(
@@ -50,7 +50,8 @@ test("keeps one frame loop across clock updates and reads the latest view and ca
 				<WaveformCanvas {...props} />
 			</div>,
 		);
-		frame();
+		frame(1234);
+		expect(getPosition).toHaveBeenLastCalledWith(1234);
 		expect(firstFrame).toHaveBeenLastCalledWith(8, 16, 12);
 		const requests = request.mock.calls.length;
 		position = 20;
@@ -65,6 +66,16 @@ test("keeps one frame loop across clock updates and reads the latest view and ca
 		frame();
 		expect(nextFrame).toHaveBeenLastCalledWith(16, 24, 20);
 		expect(frames.size).toBe(1);
+		const canvas = view.container.querySelector("canvas");
+		if (!canvas) throw new Error("Expected waveform canvas");
+		expect(canvas.getAnimations()).toHaveLength(1);
+		focus.mockReturnValue(false);
+		fireEvent.blur(window);
+		expect(canvas.getAnimations()).toHaveLength(0);
+		expect(frames.size).toBe(0);
+		focus.mockReturnValue(true);
+		fireEvent.focus(window);
+		expect(canvas.getAnimations()).toHaveLength(1);
 		view.rerender(
 			<div style={{ position: "relative", width: 1000, height: 80 }}>
 				<WaveformCanvas
@@ -77,6 +88,7 @@ test("keeps one frame loop across clock updates and reads the latest view and ca
 			</div>,
 		);
 		expect(frames.size).toBe(0);
+		expect(canvas.getAnimations()).toHaveLength(0);
 		expect(nextFrame).toHaveBeenLastCalledWith(18, 22, 20);
 		view.unmount();
 		expect(disconnect).toHaveBeenCalledTimes(2);

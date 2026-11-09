@@ -54,11 +54,20 @@ export function Waveform({
 		(start: number, end: number, time: number) => {
 			if (!duration) return;
 			if (viewportRef.current) {
-				viewportRef.current.style.left = `${(start / duration) * 100}%`;
-				viewportRef.current.style.width = `${((end - start) / duration) * 100}%`;
+				viewportRef.current.style.setProperty(
+					"--viewport-left",
+					`${(start / duration) * 100}%`,
+				);
+				viewportRef.current.style.setProperty(
+					"--viewport-width",
+					`${((end - start) / duration) * 100}%`,
+				);
 			}
 			if (overviewPlayheadRef.current)
-				overviewPlayheadRef.current.style.left = `${(time / duration) * 100}%`;
+				overviewPlayheadRef.current.style.setProperty(
+					"--playhead-left",
+					`${(time / duration) * 100}%`,
+				);
 		},
 		[duration],
 	);
@@ -77,6 +86,7 @@ export function Waveform({
 		);
 	};
 	const total = duration || 1;
+	const live = Boolean(playing && getPosition);
 	return (
 		<div className="mt-3 select-none" data-waveform="">
 			<div className="mb-1 flex flex-wrap items-center justify-end gap-1 text-[10px] text-muted-foreground">
@@ -246,15 +256,24 @@ export function Waveform({
 							aria-hidden="true"
 							className="absolute inset-y-0 z-10 cursor-grab border border-primary/80 bg-primary/15 active:cursor-grabbing"
 							style={{
-								left: `${(view.start / total) * 100}%`,
-								width: `${((view.end - view.start) / total) * 100}%`,
+								left: live
+									? `var(--viewport-left, ${(view.start / total) * 100}%)`
+									: `${(view.start / total) * 100}%`,
+								width: live
+									? `var(--viewport-width, ${((view.end - view.start) / total) * 100}%)`
+									: `${((view.end - view.start) / total) * 100}%`,
 							}}
 						/>
 						<div
 							ref={overviewPlayheadRef}
+							data-testid="waveform-overview-playhead"
 							aria-hidden="true"
 							className="pointer-events-none absolute inset-y-0 w-px bg-white"
-							style={{ left: `${(position / total) * 100}%` }}
+							style={{
+								left: live
+									? `var(--playhead-left, ${(position / total) * 100}%)`
+									: `${(position / total) * 100}%`,
+							}}
 						/>
 						<Slider.Thumb
 							aria-label="Song overview"

@@ -1,3 +1,4 @@
+import { WaveformRenderer } from "@cue/waveform";
 import { useEffect, useEffectEvent, useRef } from "react";
 import { waveformWindow } from "@/lib/audio";
 import { startPlaybackUpdates } from "@/lib/playbackScheduling";
@@ -9,7 +10,7 @@ interface WaveformCanvasProps {
 	start: number;
 	end: number;
 	playing?: boolean;
-	getPosition?: () => number;
+	getPosition?: (frameTime?: number) => number;
 	follow?: boolean;
 	onFrame?: (start: number, end: number, position: number) => void;
 }
@@ -24,88 +25,69 @@ export function WaveformCanvas({
 	follow,
 	onFrame,
 }: WaveformCanvasProps) {
+	const surfaceRef = useRef<HTMLDivElement>(null);
+	const markerRef = useRef<HTMLDivElement>(null);
 	const canvasRef = useRef<HTMLCanvasElement>(null);
+	const rendererRef = useRef<WaveformRenderer | null>(null);
 	const redrawRef = useRef<(() => void) | null>(null);
 	const animating = Boolean(playing && getPosition);
 	// Read current playback/view props without tearing down the frame loop at 10Hz.
-	const draw = useEffectEvent((width: number, height: number) => {
-		const canvas = canvasRef.current;
-		if (!canvas || end <= start) return;
-		const ratio = window.devicePixelRatio || 1;
-		if (
-			canvas.width !== Math.round(width * ratio) ||
-			canvas.height !== Math.round(height * ratio)
-		) {
-			canvas.width = Math.round(width * ratio);
-			canvas.height = Math.round(height * ratio);
-		}
-		const context = canvas.getContext("2d");
-		if (!context || !width) return;
-		context.setTransform(ratio, 0, 0, ratio, 0, 0);
-		context.clearRect(0, 0, width, height);
-		const position = getPosition?.();
-		const view =
-			follow && position !== undefined
-				? waveformWindow(position, duration, end - start)
-				: { start, end };
-		const span = view.end - view.start;
-		const waveformDuration = analysis.waveform_duration ?? duration;
-		const points = analysis.waveform;
-		for (let x = 0; x < width; x++) {
-			const time = view.start + (x / width) * span;
-			const from = Math.floor((time / waveformDuration) * points.length);
-			const to = Math.min(
-				points.length,
-				Math.max(
-					from + 1,
-					Math.ceil(((time + span / width) / waveformDuration) * points.length),
-				),
-			);
-			let peak = points[from];
-			if (!peak) continue;
-			for (let index = from + 1; index < to; index++)
-				if (points[index][0] > peak[0]) peak = points[index];
-			const amplitude = Math.max(1, (peak[0] / 255) * (height - 8));
-			context.fillStyle = `rgb(${peak[1]}, ${peak[2]}, ${peak[3]})`;
-			context.fillRect(x, (height - amplitude) / 2, 1, amplitude);
-		}
-		let lastBeatX = -10;
-		for (const beat of analysis.beats) {
-			if (beat.time < view.start || beat.time > view.end) continue;
-			const x = ((beat.time - view.start) / span) * width;
-			const downbeat = beat.beat_number === 1;
-			if (x - lastBeatX < 3 && !downbeat) continue;
-			lastBeatX = x;
-			context.fillStyle = downbeat
-				? "rgba(255,255,255,0.4)"
-				: "rgba(255,255,255,0.18)";
-			context.fillRect(x, downbeat ? 0 : height - 6, 1, downbeat ? height : 6);
-		}
-		if (position !== undefined && onFrame) {
-			context.fillStyle = "white";
-			context.fillRect(((position - view.start) / span) * width, 0, 2, height);
-			onFrame(view.start, view.end, position);
-		}
-	});
+	const draw = useEffectEvent(
+		(
+			width: number,
+			height: number,
+			frameTime?: number,
+			foreground?: boolean,
+		) => {
+			const renderer = rendererRef.current;
+			if (!renderer) return;
+			const position = getPosition?.(frameTime);
+			const view =
+				follow && position !== undefined
+					? waveformWindow(position, duration, end - start)
+					: { start, end };
+			renderer.render({
+				points: analysis.waveform,
+				beats: analysis.beats,
+				waveformDuration: analysis.waveform_duration ?? duration,
+				duration,
+				...view,
+				position: onFrame ? position : undefined,
+				width,
+				height,
+				pixelRatio: window.devicePixelRatio || 1,
+				frameTime:
+					animating && follow && foreground !== false ? frameTime : undefined,
+			});
+			if (position !== undefined) onFrame?.(view.start, view.end, position);
+		},
+	);
 	useEffect(() => {
+		const surface = surfaceRef.current;
 		const canvas = canvasRef.current;
-		if (!canvas) return;
-		let width = canvas.clientWidth;
-		let height = canvas.clientHeight;
-		const paint = () => draw(width, height);
+		const marker = markerRef.current;
+		if (!surface || !canvas || !marker) return;
+		const renderer = new WaveformRenderer(canvas, marker);
+		rendererRef.current = renderer;
+		let width = surface.clientWidth;
+		let height = surface.clientHeight;
+		const paint = (frameTime?: number, foreground?: boolean) =>
+			draw(width, height, frameTime, foreground);
 		redrawRef.current = paint;
 		const observer = new ResizeObserver(() => {
 			// Measure only on resize, not after the overview's style writes every frame.
-			width = canvas.clientWidth;
-			height = canvas.clientHeight;
+			width = surface.clientWidth;
+			height = surface.clientHeight;
 			if (!animating) paint();
 		});
-		observer.observe(canvas);
+		observer.observe(surface);
 		const stopUpdates = animating ? startPlaybackUpdates(paint) : undefined;
 		return () => {
 			redrawRef.current = null;
 			observer.disconnect();
 			stopUpdates?.();
+			renderer.dispose();
+			rendererRef.current = null;
 		};
 	}, [animating]);
 	// biome-ignore lint/correctness/useExhaustiveDependencies: The Effect Event reads these inputs; static canvases redraw only when they change.
@@ -113,11 +95,21 @@ export function WaveformCanvas({
 		if (!animating) redrawRef.current?.();
 	}, [analysis, duration, start, end, animating, getPosition, follow, onFrame]);
 	return (
-		<canvas
-			ref={canvasRef}
-			tabIndex={-1}
+		<div
+			ref={surfaceRef}
 			aria-hidden="true"
-			className="pointer-events-none absolute inset-0 h-full w-full"
-		/>
+			className="pointer-events-none absolute inset-0 overflow-hidden"
+		>
+			<canvas
+				ref={canvasRef}
+				tabIndex={-1}
+				className="absolute left-0 top-0 h-full w-full"
+			/>
+			<div
+				ref={markerRef}
+				style={{ display: "none" }}
+				className="absolute inset-y-0 left-0 w-0.5 bg-white"
+			/>
+		</div>
 	);
 }
