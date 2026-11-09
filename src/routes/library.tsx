@@ -11,15 +11,32 @@ import { Button } from "@/components/ui/button";
 import { DataTable } from "@/components/ui/data-table";
 import { Input } from "@/components/ui/input";
 import { Page } from "@/components/ui/page";
-import { useAudioPlayer } from "@/hooks/useAudioPlayer";
+import {
+	useAudioPlayer,
+	useAudioPlayerSelection,
+} from "@/hooks/useAudioPlayer";
 import { useLibrarySongs } from "@/hooks/useLibrarySongs";
 
 export const Route = createFileRoute("/library")({
 	component: Library,
 });
 
-function Library() {
+function ConnectedPlayer() {
 	const player = useAudioPlayer();
+	return (
+		<Player
+			{...player}
+			onToggle={player.toggle}
+			onSeek={player.seek}
+			onSkipBar={player.skipBar}
+			onVolumeChange={player.setVolume}
+			onClose={player.stop}
+		/>
+	);
+}
+
+function Library() {
+	const player = useAudioPlayerSelection();
 	const [query, setQuery] = useState("");
 	const {
 		songs,
@@ -42,7 +59,7 @@ function Library() {
 				missingIds,
 				rekordboxSupported,
 				{
-					songId: player.song?.id,
+					songId: player.songId,
 					onLoad: player.loadSong,
 				},
 			),
@@ -51,7 +68,7 @@ function Library() {
 			handleUpdateTags,
 			missingIds,
 			rekordboxSupported,
-			player.song?.id,
+			player.songId,
 			player.loadSong,
 		],
 	);
@@ -112,14 +129,7 @@ function Library() {
 				aria-label="Music collection"
 				className="flex min-h-0 min-w-0 flex-1 flex-col gap-4"
 			>
-				<Player
-					{...player}
-					onToggle={player.toggle}
-					onSeek={player.seek}
-					onSkipBar={player.skipBar}
-					onVolumeChange={player.setVolume}
-					onClose={player.stop}
-				/>
+				<ConnectedPlayer />
 				{!loading && !songs.length ? (
 					<EmptyState
 						icon={Music}
@@ -133,7 +143,7 @@ function Library() {
 						columns={columns}
 						data={filteredSongs}
 						getRowId={(song) => song.id}
-						activeRowId={player.song?.id}
+						activeRowId={player.songId}
 						loading={loading}
 						emptyMessage="No tracks match your search."
 					/>
