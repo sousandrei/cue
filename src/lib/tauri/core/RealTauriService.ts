@@ -17,6 +17,7 @@ import type {
 	Song,
 	TauriEventMap,
 	TauriService,
+	TrackAnalysis,
 } from "./types";
 
 export class RealTauriService implements TauriService {
@@ -82,6 +83,10 @@ export class RealTauriService implements TauriService {
 
 	async checkHealth(): Promise<boolean> {
 		return await invoke<boolean>("check_health");
+	}
+
+	async getSongAnalysis(id: string): Promise<TrackAnalysis | null> {
+		return await invoke<TrackAnalysis | null>("get_song_analysis", { id });
 	}
 
 	async getSongAudioUrl(id: string): Promise<string> {

@@ -43,6 +43,49 @@ pub async fn get_song_audio_path(
     Ok(path.to_string_lossy().into_owned())
 }
 
+#[tauri::command]
+pub async fn get_song_analysis(
+    id: String,
+    state: State<'_, DbState>,
+) -> Result<Option<cue_rekordbox::TrackAnalysis>, String> {
+    if !crate::rekordbox::supported() {
+        return Ok(None);
+    }
+    let db = state
+        .lock()
+        .map_err(|e| e.to_string())?
+        .clone()
+        .ok_or("Database not initialized")?;
+    let song = db
+        .get_song_by_id(&id)
+        .await
+        .map_err(|e| e.to_string())?
+        .ok_or("Song not found")?;
+    tauri::async_runtime::spawn_blocking(
+        move || -> anyhow::Result<Option<cue_rekordbox::TrackAnalysis>> {
+            let snapshot = crate::rekordbox::read_library()?;
+            let matched = crate::rekordbox::match_tracks(
+                &[song],
+                Path::new(&db.library_path),
+                &snapshot.tracks,
+            );
+            let Some(track) = matched
+                .first()
+                .filter(|track| track.status == crate::rekordbox::ImportStatus::Imported)
+            else {
+                return Ok(None);
+            };
+            let Some(id) = &track.rekordbox_id else {
+                return Ok(None);
+            };
+            cue_rekordbox::read_track_analysis(id)
+        },
+    )
+    .await
+    .map_err(|e| e.to_string())?
+    .map_err(|e| e.to_string())
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
