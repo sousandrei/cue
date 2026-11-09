@@ -143,3 +143,51 @@ test("overview clicks and drags also seek during playback", () => {
 		release.mockRestore();
 	}
 });
+
+test("React position updates do not rewind frame-driven overview markers", () => {
+	const focus = rs.spyOn(document, "hasFocus").mockReturnValue(true);
+	const request = rs.spyOn(window, "requestAnimationFrame").mockReturnValue(1);
+	const cancel = rs
+		.spyOn(window, "cancelAnimationFrame")
+		.mockImplementation(() => {});
+	const getPosition = () => 12.08;
+	const props = {
+		analysis: exampleAnalysis,
+		position: 12,
+		duration: 32,
+		playing: true,
+		getPosition,
+		onSeek: () => {},
+	};
+	try {
+		const view = render(
+			<div style={{ width: 1000 }}>
+				<Waveform {...props} />
+			</div>,
+		);
+		const viewport = within(view.container).getByTestId("waveform-viewport");
+		const playhead = within(view.container).getByTestId(
+			"waveform-overview-playhead",
+		);
+		const left = getComputedStyle(playhead).left;
+		const start = getComputedStyle(viewport).left;
+		view.rerender(
+			<div style={{ width: 1000 }}>
+				<Waveform {...props} position={12.01} />
+			</div>,
+		);
+		expect(getComputedStyle(playhead).left).toBe(left);
+		expect(getComputedStyle(viewport).left).toBe(start);
+		view.rerender(
+			<div style={{ width: 1000 }}>
+				<Waveform {...props} playing={false} position={4} />
+			</div>,
+		);
+		expect(playhead.style.left).toBe("12.5%");
+		view.unmount();
+	} finally {
+		focus.mockRestore();
+		request.mockRestore();
+		cancel.mockRestore();
+	}
+});
