@@ -9,6 +9,7 @@ import {
 } from "react";
 import { barSeekTarget } from "@/lib/audio";
 import { MemoryAudioPlayer } from "@/lib/MemoryAudioPlayer";
+import { startPlaybackUpdates } from "@/lib/playbackScheduling";
 import type { Song, TrackAnalysis } from "@/lib/tauri/core/types";
 import { useTauri } from "@/lib/tauri/TauriProvider";
 import { useTrackAnalysis } from "./useTrackAnalysis";
@@ -218,21 +219,25 @@ export function AudioPlayerProvider({
 				playing: false,
 				position: audio.duration,
 			}));
-		const timer = window.setInterval(() => {
-			if (audio.playing)
-				setState((previous) => ({
-					...previous,
-					playing: true,
-					position: audio.position,
-				}));
-		}, 100);
+
 		return () => {
 			requestRef.current++;
 			abortRef.current?.abort();
-			window.clearInterval(timer);
 			audio.dispose();
 		};
 	}, []);
+
+	useEffect(() => {
+		const audio = audioRef.current;
+		if (!state.playing || !audio) return;
+		return startPlaybackUpdates(() => {
+			if (!audio.playing) return;
+			const position = audio.position;
+			setState((previous) =>
+				previous.position === position ? previous : { ...previous, position },
+			);
+		}, 100);
+	}, [state.playing]);
 
 	useEffect(() => {
 		const validateTrack = async () => {
