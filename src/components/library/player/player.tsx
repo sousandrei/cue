@@ -45,9 +45,13 @@ function PlayerSlider({
 			step={step}
 			disabled={disabled}
 			onValueChange={onChange}
-			onKeyDown={(event) => {
+			onKeyDownCapture={(event) => {
 				if (
 					onSkipBar &&
+					!event.altKey &&
+					!event.ctrlKey &&
+					!event.metaKey &&
+					!event.shiftKey &&
 					(event.key === "ArrowLeft" || event.key === "ArrowRight")
 				) {
 					event.preventDefault();
