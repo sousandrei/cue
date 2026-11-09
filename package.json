@@ -14,10 +14,12 @@
 		"check:stories": "bun scripts/check-component-stories.mjs",
 		"test": "bun run check:stories && rstest run",
 		"test:storybook": "bun run test",
-		"test:watch": "rstest"
+		"test:watch": "rstest",
+		"test:waveform": "rstest run --config packages/waveform/rstest.config.ts"
 	},
 	"dependencies": {
 		"@base-ui/react": "^1.9.0",
+		"@cue/waveform": "workspace:*",
 		"@fontsource-variable/inter": "^5.3.0",
 		"@tanstack/react-router": "^1.170.46",
 		"@tanstack/react-router-devtools": "^1.167.2",
@@ -60,5 +62,8 @@
 		"storybook-react-rsbuild": "^3.6.2",
 		"typescript": "~7.0.2"
 	},
-	"license": "GPL-3.0-only"
+	"license": "GPL-3.0-only",
+	"workspaces": [
+		"packages/*"
+	]
 }

@@ -24,6 +24,6 @@
 			"@/*": ["./src/*"]
 		}
 	},
-	"include": ["src"],
+	"include": ["src", "packages/waveform/src"],
 	"references": [{ "path": "./tsconfig.node.json" }]
 }

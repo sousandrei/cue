@@ -1,3 +1,5 @@
+export { waveformWindow } from "@cue/waveform";
+
 export function formatTime(seconds: number) {
 	const total = Number.isFinite(seconds) ? Math.max(0, Math.floor(seconds)) : 0;
 	return `${Math.floor(total / 60)}:${String(total % 60).padStart(2, "0")}`;
@@ -42,16 +44,6 @@ export function barSeekTarget(
 	const fraction = (position - start) / length;
 	const target = index + direction;
 	return timeAt(target) + fraction * (timeAt(target + 1) - timeAt(target));
-}
-
-export function waveformWindow(
-	position: number,
-	duration: number,
-	span: number,
-) {
-	const length = Math.min(duration, span);
-	const start = Math.max(0, Math.min(position - length / 2, duration - length));
-	return { start, end: start + length };
 }
 
 export function beatAt(beats: readonly Beat[], position: number) {

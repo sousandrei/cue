@@ -6,6 +6,7 @@
       "name": "cue",
       "dependencies": {
         "@base-ui/react": "^1.9.0",
+        "@cue/waveform": "workspace:*",
         "@fontsource-variable/inter": "^5.3.0",
         "@tanstack/react-router": "^1.170.46",
         "@tanstack/react-router-devtools": "^1.167.2",
@@ -48,6 +49,10 @@
         "storybook-react-rsbuild": "^3.6.2",
         "typescript": "~7.0.2",
       },
+    },
+    "packages/waveform": {
+      "name": "@cue/waveform",
+      "version": "0.1.0",
     },
   },
   "packages": {
@@ -114,6 +119,8 @@
     "@biomejs/cli-win32-arm64": ["@biomejs/cli-win32-arm64@2.6.6", "", { "os": "win32", "cpu": "arm64" }, "sha512-DjVXwQAQeHrO1JEZAEus54k40Tnh4glyU3VFLcDBKwoz0xnxCEnqw6TCMXoujcQMQynWd3AY8bLrbR1o0XNqow=="],
 
     "@biomejs/cli-win32-x64": ["@biomejs/cli-win32-x64@2.6.6", "", { "os": "win32", "cpu": "x64" }, "sha512-B7KMG26A4I9lAuxwBGMmiVcjMGAeJRoz+pzFt9brRvOAsIrgOu8ptJld5rUWui6tM1uiJwxeJhhDPuAiZtxXdw=="],
+
+    "@cue/waveform": ["@cue/waveform@workspace:packages/waveform"],
 
     "@emnapi/core": ["@emnapi/core@1.9.2", "", { "dependencies": { "@emnapi/wasi-threads": "1.2.1", "tslib": "^2.4.0" } }, "sha512-UC+ZhH3XtczQYfOlu3lNEkdW/p4dsJ1r/bP7H8+rhao3TTTMO1ATq/4DdIi23XuGoFY+Cz0JmCbdVl0hz9jZcA=="],
 

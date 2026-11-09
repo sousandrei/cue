@@ -4,7 +4,11 @@ import { defineConfig } from "@rstest/core";
 
 export default defineConfig({
 	plugins: [pluginReact()],
-	include: ["src/**/*.test.{ts,tsx}", "tests/**/*.test.{ts,tsx}"],
+	include: [
+		"src/**/*.test.{ts,tsx}",
+		"tests/**/*.test.{ts,tsx}",
+		"packages/*/src/**/*.test.ts",
+	],
 	setupFiles: ["./tests/setup.ts"],
 	resolve: {
 		alias: {

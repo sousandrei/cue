@@ -9,6 +9,7 @@
 		"ignoreUnknown": false,
 		"includes": [
 			"src/**/*",
+			"packages/**/*",
 			".storybook/**/*",
 			"tests/**/*",
 			"scripts/**/*.mjs",
