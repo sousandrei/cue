@@ -1,5 +1,5 @@
 import type { ColumnDef } from "@tanstack/react-table";
-import { AlertCircle, Plus, Trash2 } from "lucide-react";
+import { AlertCircle, Plus, Trash2, Upload } from "lucide-react";
 import { useState } from "react";
 
 import { TagBadge } from "@/components/library/tag-badge";
@@ -65,6 +65,10 @@ export const createColumns = (
 	handleUpdateTags: (id: string, tags: string) => void,
 	missingIds: Set<string>,
 	rekordboxSupported = true,
+	playback?: {
+		songId?: string;
+		onLoad: (song: Song) => void;
+	},
 ): ColumnDef<typeof dataTableFeatures, Song>[] => {
 	const columns: ColumnDef<typeof dataTableFeatures, Song>[] = [
 		{
@@ -83,6 +87,29 @@ export const createColumns = (
 							isMissing ? "File missing locally. Use Sync to re-download." : ""
 						}
 					>
+						{playback && (
+							<Button
+								variant={
+									playback.songId === row.original.id ? "outline" : "ghost"
+								}
+								size="icon"
+								className="size-8"
+								disabled={isMissing}
+								aria-label={`Load ${row.original.title} into player`}
+								aria-pressed={playback.songId === row.original.id}
+								title={
+									playback.songId === row.original.id
+										? "Loaded in player"
+										: "Load into player"
+								}
+								onClick={() => {
+									if (playback.songId !== row.original.id)
+										playback.onLoad(row.original);
+								}}
+							>
+								<Upload aria-hidden="true" />
+							</Button>
+						)}
 						{isMissing && <AlertCircle className="w-4 h-4 text-destructive" />}
 						<span className="truncate">{row.getValue("title")}</span>
 						{rekordboxSupported && (

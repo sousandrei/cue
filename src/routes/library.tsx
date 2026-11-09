@@ -5,11 +5,13 @@ import { useMemo, useState } from "react";
 import { EmptyState } from "@/components/empty-state";
 import { Header } from "@/components/header";
 import { createColumns } from "@/components/library/columns";
+import { Player } from "@/components/library/player";
 import { RekordboxConnection } from "@/components/library/rekordbox-connection";
 import { Button } from "@/components/ui/button";
 import { DataTable } from "@/components/ui/data-table";
 import { Input } from "@/components/ui/input";
 import { Page } from "@/components/ui/page";
+import { useAudioPlayer } from "@/hooks/useAudioPlayer";
 import { useLibrarySongs } from "@/hooks/useLibrarySongs";
 
 export const Route = createFileRoute("/library")({
@@ -17,6 +19,7 @@ export const Route = createFileRoute("/library")({
 });
 
 function Library() {
+	const player = useAudioPlayer();
 	const [query, setQuery] = useState("");
 	const {
 		songs,
@@ -38,8 +41,19 @@ function Library() {
 				handleUpdateTags,
 				missingIds,
 				rekordboxSupported,
+				{
+					songId: player.song?.id,
+					onLoad: player.loadSong,
+				},
 			),
-		[handleDelete, handleUpdateTags, missingIds, rekordboxSupported],
+		[
+			handleDelete,
+			handleUpdateTags,
+			missingIds,
+			rekordboxSupported,
+			player.song?.id,
+			player.loadSong,
+		],
 	);
 	const normalizedQuery = query.trim().toLocaleLowerCase();
 	const filteredSongs = songs.filter((song) =>
@@ -101,6 +115,13 @@ function Library() {
 						/>
 					</div>
 				</div>
+				<Player
+					{...player}
+					onToggle={player.toggle}
+					onSeek={player.seek}
+					onVolumeChange={player.setVolume}
+					onClose={player.stop}
+				/>
 				{!loading && !songs.length ? (
 					<EmptyState
 						icon={Music}
@@ -114,6 +135,7 @@ function Library() {
 						columns={columns}
 						data={filteredSongs}
 						getRowId={(song) => song.id}
+						activeRowId={player.song?.id}
 						loading={loading}
 						emptyMessage="No tracks match your search."
 					/>

@@ -36,6 +36,7 @@ interface DataTableProps<TData extends RowData> {
 	emptyMessage?: string;
 	getRowId?: (row: TData) => string;
 	fill?: boolean;
+	activeRowId?: string;
 }
 
 function DataTable<TData extends RowData>({
@@ -46,6 +47,7 @@ function DataTable<TData extends RowData>({
 	emptyMessage = "No results found.",
 	getRowId,
 	fill = false,
+	activeRowId,
 }: DataTableProps<TData>) {
 	const table = useTable({
 		features: dataTableFeatures,
@@ -137,7 +139,15 @@ function DataTable<TData extends RowData>({
 						</TableRow>
 					) : table.getRowModel().rows?.length ? (
 						table.getRowModel().rows.map((row) => (
-							<TableRow key={row.id}>
+							<TableRow
+								key={row.id}
+								data-active={row.id === activeRowId || undefined}
+								className={
+									row.id === activeRowId
+										? "bg-primary/5 hover:bg-primary/10"
+										: undefined
+								}
+							>
 								{row.getAllCells().map((cell) => (
 									<TableCell
 										key={cell.id}
