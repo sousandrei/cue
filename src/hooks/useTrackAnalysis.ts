@@ -16,7 +16,12 @@ export function useTrackAnalysis(songId: string | undefined) {
 		let request = 0;
 		const refresh = async () => {
 			const current = ++request;
-			setState({ songId, analysis: null, status: "loading" });
+			// Keep an existing same-track waveform mounted during background refreshes.
+			setState((previous) =>
+				previous.songId === songId && previous.analysis
+					? { ...previous, status: "ready" }
+					: { songId, analysis: null, status: "loading" },
+			);
 			try {
 				const analysis = await tauri.getSongAnalysis(songId);
 				if (!disposed && current === request)
@@ -27,7 +32,11 @@ export function useTrackAnalysis(songId: string | undefined) {
 					});
 			} catch {
 				if (!disposed && current === request)
-					setState({ songId, analysis: null, status: "error" });
+					setState((previous) => ({
+						songId,
+						analysis: previous.songId === songId ? previous.analysis : null,
+						status: "error",
+					}));
 			}
 		};
 		void refresh();
