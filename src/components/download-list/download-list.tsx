@@ -1,7 +1,6 @@
 import { AnimatePresence } from "framer-motion";
 import { History } from "lucide-react";
 import { DownloadItem } from "@/components/download-item";
-import { EmptyState } from "@/components/empty-state";
 import { Button } from "@/components/ui/button";
 import type { DownloadJob } from "@/hooks/useDownload";
 import { cn } from "@/lib/utils";
@@ -56,13 +55,14 @@ export function DownloadList({
 				className={cn(
 					"relative space-y-3",
 					fill &&
+						history.length > 0 &&
 						"min-h-0 flex-1 overflow-y-auto overscroll-contain px-1 pb-2 focus-visible:outline-2 focus-visible:outline-inset focus-visible:outline-ring",
 				)}
 				{...(fill
 					? {
 							role: "region",
 							"aria-label": "Recent activity history",
-							tabIndex: 0,
+							tabIndex: history.length > 0 ? 0 : undefined,
 						}
 					: {})}
 			>
@@ -77,12 +77,15 @@ export function DownloadList({
 				</AnimatePresence>
 
 				{history.length === 0 && (
-					<EmptyState
-						className={fill ? "min-h-full py-6" : undefined}
-						icon={History}
-						title="No recent activity"
-						description="Your download history will appear here once you start syncing songs."
-					/>
+					<div className="flex items-center gap-3 rounded-xl border border-dashed border-border bg-card/40 px-4 py-4 text-muted-foreground">
+						<History className="size-4 shrink-0" aria-hidden="true" />
+						<div className="min-w-0">
+							<p className="text-sm">No recent activity</p>
+							<p className="mt-0.5 text-xs">
+								Completed downloads will appear here.
+							</p>
+						</div>
+					</div>
 				)}
 			</div>
 		</div>

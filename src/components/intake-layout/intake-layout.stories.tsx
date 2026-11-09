@@ -89,3 +89,30 @@ export const ExpandedQueue: Story = {
 		await verifyLayout(canvasElement);
 	},
 };
+
+export const DownloadingWithoutHistory: Story = {
+	args: {
+		historyEmpty: true,
+		history: (
+			<DownloadList
+				fill
+				downloads={[activeDownload]}
+				removeDownload={fn()}
+				onClear={fn()}
+			/>
+		),
+	},
+	play: async ({ canvasElement }) => {
+		const canvas = within(canvasElement);
+		const history = canvas.getByRole("region", {
+			name: "Recent activity history",
+		});
+		const empty = canvas.getByText("No recent activity");
+		await waitFor(() => expect(empty).toBeVisible());
+		await expect(history.getBoundingClientRect().height).toBeLessThan(100);
+		await expect(empty.getBoundingClientRect().bottom).toBeLessThan(
+			history.getBoundingClientRect().bottom,
+		);
+		await expect(history.scrollHeight - history.clientHeight).toBeLessThan(2);
+	},
+};
