@@ -1,5 +1,52 @@
 # Changelog
 
+## [1.7.0](https://github.com/sousandrei/cue/compare/v1.6.0...v1.7.0) (2026-11-09)
+
+
+### Features
+
+* **audio:** decode active tracks for responsive seeking ([9394cc0](https://github.com/sousandrei/cue/commit/9394cc0cc7f1342e42e18a48f1b70531defd31d0))
+* **audio:** serve local library tracks for playback ([21a695d](https://github.com/sousandrei/cue/commit/21a695d1c79aec3d143b7828183f9eefcaf8d62e))
+* **collection:** add Rekordbox metadata and reusable status UI ([bf6292d](https://github.com/sousandrei/cue/commit/bf6292d89c74364ed0636aa88db6e6c56432e913))
+* **library:** add player with paused track loading ([6aefb5e](https://github.com/sousandrei/cue/commit/6aefb5ea3a5eaf30a08679f48fd392a1947bd479))
+* **player:** add zoomable RGB waveform and song overview ([5d37c16](https://github.com/sousandrei/cue/commit/5d37c16eadb6373ba1aaa246d918bc137d40db07))
+* **rekordbox:** add native workspace library ([b5d0f22](https://github.com/sousandrei/cue/commit/b5d0f220274c0a6cc4737bdde601a0ce69b289a1))
+* **rekordbox:** expose saved waveforms and beat grids ([29de4cd](https://github.com/sousandrei/cue/commit/29de4cd72196826fe13d4f66bdc1a995a1deb6dc))
+* **rekordbox:** reconcile Cue tags with the local library ([08ba6d6](https://github.com/sousandrei/cue/commit/08ba6d611d23c2d9dcf872d4b94bf02d684eafab))
+* **ui:** balance vibrant accents with neutral ink surfaces ([8666853](https://github.com/sousandrei/cue/commit/86668538851a18daf1c80e44ec274951fa68cf44))
+* **ui:** compose accessible music workflows from shared primitives ([74cca32](https://github.com/sousandrei/cue/commit/74cca3276fdeabe1a0a3c030286d8cae6fd4a369))
+* **ui:** establish Base UI foundations and Rstest story harness ([e8a0900](https://github.com/sousandrei/cue/commit/e8a09008d1d3de02d12968070934b3436abd57f4))
+* **waveform:** add a tested compositor rendering package ([7c244df](https://github.com/sousandrei/cue/commit/7c244dfdd5c8e2c4bf3ddc64815a9b02d8f42d6f))
+
+
+### Bug Fixes
+
+* **audio:** interpolate visual position against the display clock ([33f8e92](https://github.com/sousandrei/cue/commit/33f8e92eb51b68c612b8caba6c150a211e234565))
+* **intake:** keep empty history compact during downloads ([49ef51f](https://github.com/sousandrei/cue/commit/49ef51f53de74fcaefa62c8c4468c2f94357fb11))
+* **player:** capture seek shortcuts before slider handling ([998a4ba](https://github.com/sousandrei/cue/commit/998a4ba571e1586b8cac162236efceadd1100689))
+* **player:** honor Space immediately after loading a track ([cf557b0](https://github.com/sousandrei/cue/commit/cf557b0da63db7c7aaa39ec5cb9d2dacdaea57d2))
+* **rekordbox:** delegate writes to rbox and test orchestration ([7c1014c](https://github.com/sousandrei/cue/commit/7c1014cd0f9a1e652afc313e45936f86a6349c5c))
+* **rekordbox:** keep only the newest three library backups ([1641a20](https://github.com/sousandrei/cue/commit/1641a20200a60e9494880706429de89e4c5db5b4))
+* **rekordbox:** keep playlist ownership only in Cue's database ([d8ab2b3](https://github.com/sousandrei/cue/commit/d8ab2b3c68e1b55987d8a52e2a44afcdc4dd054c))
+* **rekordbox:** match paths as text, ignoring case and Unicode form ([434b6b8](https://github.com/sousandrei/cue/commit/434b6b813b557aedbcebf2b72e53171193a65925))
+* **rekordbox:** preserve waveform state during analysis refresh ([7602768](https://github.com/sousandrei/cue/commit/7602768f34e82ca908edf18a6efb28e54fafcf3a))
+* **rekordbox:** reconcile the entire Cue playlist folder ([c0ec1e8](https://github.com/sousandrei/cue/commit/c0ec1e80f6009d75abae9b7ce4e7c60df5bf1432))
+* **rekordbox:** serialize syncs with an OS file lock ([a7b9ecc](https://github.com/sousandrei/cue/commit/a7b9ecc2c2c4ec573c14eac74ebeda42f98d06b8))
+* **rekordbox:** use one Rekordbox process check ([b1a2736](https://github.com/sousandrei/cue/commit/b1a27364c3a13e5047bb814e865559189b199e70))
+* **ui:** contain scrolling within collection, activity, and preferences ([9ab9544](https://github.com/sousandrei/cue/commit/9ab9544ba0bd6c9e3fe9f08cec3ba89c95d9a23c))
+* **ui:** preserve contrast in destructive states ([0720cd3](https://github.com/sousandrei/cue/commit/0720cd3c9161cc23f5d0c9ff96b141c7bd4e2725))
+* **ui:** preserve download card space and refresh README tour ([94ca46a](https://github.com/sousandrei/cue/commit/94ca46a4219cfc0995d0055b52d14932b3326e45))
+* **ui:** size notifications to their content ([7c10fa5](https://github.com/sousandrei/cue/commit/7c10fa5c64c9e92c6614217da09a51880424851f))
+
+
+### Performance Improvements
+
+* **library:** isolate collection rows from playback updates ([5c852e8](https://github.com/sousandrei/cue/commit/5c852e8055c88cc550ddeeb376f41f691bb95364))
+* **player:** throttle inactive updates and keep one waveform loop ([dc355da](https://github.com/sousandrei/cue/commit/dc355daebeb8012a9ff589d9e7152e31af191b87))
+* **rekordbox:** read a snapshot over one connection ([98b9600](https://github.com/sousandrei/cue/commit/98b96009bc05a7ae204e87ce4a1ea9e794d63123))
+* **rekordbox:** reload songs only after they change ([43ff306](https://github.com/sousandrei/cue/commit/43ff3067b3372477e1b68c8ac9408a96b749d892))
+* **waveform:** use compositor scrolling for playback ([3169a42](https://github.com/sousandrei/cue/commit/3169a42f7710eb2300849ee264a7403d15c6cea2))
+
 ## [1.6.0](https://github.com/sousandrei/cue/compare/v1.5.1...v1.6.0) (2026-09-08)
 
 
