@@ -1,5 +1,6 @@
 import type { Meta, StoryObj } from "@storybook/react";
 import { useState } from "react";
+import { exampleAnalysis } from "@/test/analysis";
 import { Player } from "./player";
 
 const meta = {
@@ -56,4 +57,15 @@ export const Unavailable: Story = {
 		duration: 0,
 		position: 0,
 	},
+};
+export const WithWaveform: Story = {
+	args: {
+		analysis: exampleAnalysis,
+		analysisStatus: "ready",
+		duration: 32,
+		position: 8,
+	},
+};
+export const AnalysisUnavailable: Story = {
+	args: { analysis: null, analysisStatus: "unavailable" },
 };
