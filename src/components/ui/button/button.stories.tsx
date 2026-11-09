@@ -40,3 +40,16 @@ export const Variants: Story = {
 		</div>
 	),
 };
+
+export const DestructiveSurfaces: Story = {
+	render: () => (
+		<div className="space-y-4 p-6">
+			<div className="rounded-xl bg-card p-6">
+				<Button variant="destructive">Remove from card</Button>
+			</div>
+			<div className="rounded-2xl bg-surface-raised p-6">
+				<Button variant="destructive">Remove from dialog</Button>
+			</div>
+		</div>
+	),
+};
