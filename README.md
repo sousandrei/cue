@@ -5,7 +5,7 @@ Download music and organize your tracks with tags. On Windows and macOS, turn th
 **[Download Cue](https://github.com/sousandrei/cue/releases)** for Windows, macOS, or Linux.
 
 <p align="center">
-  <img alt="Add music, browse the collection, and change preferences in Cue" src="assets/demo.gif" width="960">
+  <img alt="Download a track, play imported and unimported tracks, scrub the waveform, and add tags in Cue" src="assets/demo.gif" width="960">
 </p>
 
 *Demo with sample tracks.*
