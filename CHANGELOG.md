@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.7.1](https://github.com/sousandrei/cue/compare/v1.7.0...v1.7.1) (2026-11-25)
+
+
+### Bug Fixes
+
+* center the desktop icon chevron ([0d07a99](https://github.com/sousandrei/cue/commit/0d07a99b98746664eefdeff9deb5f2f67e2d6019))
+* use source-neutral download copy ([3327e47](https://github.com/sousandrei/cue/commit/3327e47410032e52beb663c22be57f9feb26cf60))
+
 ## [1.7.0](https://github.com/sousandrei/cue/compare/v1.6.0...v1.7.0) (2026-11-09)
 
 
