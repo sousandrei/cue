@@ -29,7 +29,7 @@ function Index() {
 
 		if (error) {
 			console.error("Failed to start download process:", error);
-			toast.error(`Failed to execute: ${error}`);
+			toast.error("Couldn’t add this link. Check it and try again.");
 			return;
 		}
 

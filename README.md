@@ -12,7 +12,7 @@ Download music and organize your tracks with tags. On Windows and macOS, turn th
 
 ## What you can do
 
-- Download tracks and playlists from YouTube and SoundCloud.
+- Download tracks and playlists from [sites supported by yt-dlp](https://github.com/yt-dlp/yt-dlp/blob/master/supportedsites.md).
 - Save your music as MP3 files.
 - Follow download progress and see recent activity.
 - Search your collection by track, artist, album, or tag.

@@ -37,7 +37,7 @@ export const AddsOnEnter: Story = {
 		const canvas = within(canvasElement);
 		await userEvent.type(
 			canvas.getByRole("textbox", { name: "Track or playlist link" }),
-			"https://soundcloud.com/example/track{Enter}",
+			"https://example.com/track{Enter}",
 		);
 		await expect(args.onAdd).toHaveBeenCalledOnce();
 		await userEvent.click(canvas.getByRole("button", { name: "Import links" }));
@@ -45,7 +45,7 @@ export const AddsOnEnter: Story = {
 	},
 };
 export const Busy: Story = {
-	args: { loading: true, url: "https://soundcloud.com/example/track" },
+	args: { loading: true, url: "https://example.com/track" },
 	play: async ({ canvasElement }) => {
 		await expect(within(canvasElement).getByRole("textbox")).toBeDisabled();
 	},

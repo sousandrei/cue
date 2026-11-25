@@ -15,8 +15,8 @@ export const Default: Story = {
 		const input = within(canvasElement).getByRole("textbox", {
 			name: "Track URL",
 		});
-		await userEvent.type(input, "https://soundcloud.com/example/track");
-		await expect(input).toHaveValue("https://soundcloud.com/example/track");
+		await userEvent.type(input, "https://example.com/track");
+		await expect(input).toHaveValue("https://example.com/track");
 	},
 };
 export const Disabled: Story = {
@@ -27,7 +27,7 @@ export const Invalid: Story = {
 		<Field invalid className="w-80">
 			<FieldLabel>Track link</FieldLabel>
 			<Input defaultValue="not a link" />
-			<FieldDescription>Use a YouTube or SoundCloud URL.</FieldDescription>
+			<FieldDescription>Paste a link to a track.</FieldDescription>
 			<FieldError match>
 				Enter a complete link beginning with https://.
 			</FieldError>

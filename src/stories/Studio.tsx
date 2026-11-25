@@ -83,7 +83,7 @@ export function Studio() {
 								</div>
 								<Field>
 									<FieldLabel>Track or playlist link</FieldLabel>
-									<Input placeholder="Paste a YouTube or SoundCloud link" />
+									<Input placeholder="Paste a link" />
 									<FieldDescription>
 										One track, or your whole next set.
 									</FieldDescription>

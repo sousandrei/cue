@@ -32,7 +32,7 @@ export function DownloadInput({
 				<FieldLabel>Track or playlist link</FieldLabel>
 				<Input
 					inputMode="url"
-					placeholder="Paste a YouTube or SoundCloud link"
+					placeholder="Paste a link"
 					className="h-12"
 					value={url}
 					onChange={(event) => setUrl(event.target.value)}
